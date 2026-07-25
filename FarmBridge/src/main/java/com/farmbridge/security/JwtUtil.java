@@ -22,19 +22,26 @@ public class JwtUtil {
         );
     }
 
-    // Generate JWT Token
-    public String generateToken(String email) {
+    // Generate JWT Token with Email and Role
+    public String generateToken(String email, String role) {
 
         return Jwts.builder()
                 .subject(email)
+
+                // Add user's role inside JWT
+                .claim("role", role)
+
                 .issuedAt(new Date())
+
                 .expiration(
                         new Date(
                                 System.currentTimeMillis()
                                         + 1000 * 60 * 60
                         )
                 )
+
                 .signWith(secretKey)
+
                 .compact();
     }
 
@@ -43,6 +50,13 @@ public class JwtUtil {
 
         return extractAllClaims(token)
                 .getSubject();
+    }
+
+    // Extract role from JWT
+    public String extractRole(String token) {
+
+        return extractAllClaims(token)
+                .get("role", String.class);
     }
 
     // Validate JWT

@@ -49,19 +49,20 @@ public class SecurityConfig {
                                 SessionCreationPolicy.STATELESS
                         )
                 )
-
-                // API authorization rules
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public authentication APIs
-                        .requestMatchers(
-                                "/api/auth/**"
-                        ).permitAll()
+                        // Public APIs
+                        .requestMatchers("/api/auth/**").permitAll()
 
-                        // Everything else requires JWT
-                        .anyRequest()
-                        .authenticated()
+                        // Role-based APIs
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/farmer/**").hasRole("FARMER")
+                        .requestMatchers("/api/buyer/**").hasRole("BUYER")
+
+                        // Everything else
+                        .anyRequest().authenticated()
                 )
+
 
                 // Add JWT filter
                 .addFilterBefore(
