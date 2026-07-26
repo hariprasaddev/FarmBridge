@@ -1,7 +1,5 @@
 package com.farmbridge.security;
 
-import com.farmbridge.entity.User;
-import com.farmbridge.repository.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,14 +19,9 @@ import java.util.List;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
 
-    public JwtAuthFilter(
-            JwtUtil jwtUtil,
-            UserRepository userRepository) {
-
+    public JwtAuthFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -41,7 +34,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String authHeader =
                 request.getHeader("Authorization");
 
-        // Check if Authorization header exists
+        // Check Authorization header
         if (authHeader == null ||
                 !authHeader.startsWith("Bearer ")) {
 
@@ -49,42 +42,36 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Extract JWT token
-        String token =
-                authHeader.substring(7);
+        // Extract token
+        String token = authHeader.substring(7);
 
         // Validate token
         if (jwtUtil.isTokenValid(token)) {
 
-            // Extract email from token
+            // Extract email
             String email =
                     jwtUtil.extractEmail(token);
 
-            // Find user in database
-            User user =
-                    userRepository.findByEmail(email)
-                            .orElse(null);
+            // Extract role
+            String role =
+                    jwtUtil.extractRole(token);
 
-            if (user != null) {
+            // Create authentication
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(
+                            email,
+                            null,
+                            List.of(
+                                    new SimpleGrantedAuthority(
+                                            "ROLE_" + role
+                                    )
+                            )
+                    );
 
-                // Create authentication object
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                user.getEmail(),
-                                null,
-                                List.of(
-                                        new SimpleGrantedAuthority(
-                                                "ROLE_" +
-                                                        user.getRole().name()
-                                        )
-                                )
-                        );
-
-                // Set authentication
-                SecurityContextHolder
-                        .getContext()
-                        .setAuthentication(authentication);
-            }
+            // Set authentication
+            SecurityContextHolder
+                    .getContext()
+                    .setAuthentication(authentication);
         }
 
         // Continue request
