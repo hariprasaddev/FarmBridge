@@ -14,4 +14,6 @@ public interface ProductRepository
 
     // Find products by category
     List<Product> findByCategoryIgnoreCase(String category);
+
+    List<Product> findByFarmerEmail(String email);
 }

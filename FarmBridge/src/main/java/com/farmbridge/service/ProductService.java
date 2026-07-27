@@ -86,12 +86,14 @@ public class ProductService {
     // SEARCH PRODUCTS BY NAME
     // ==========================================
 
-    public List<ProductResponse> searchProducts(
-            String name) {
+    // ==========================================
+// GET PRODUCTS OF LOGGED-IN FARMER
+// ==========================================
+
+    public List<ProductResponse> getMyProducts(String email) {
 
         List<Product> products =
-                productRepository
-                        .findByNameContainingIgnoreCase(name);
+                productRepository.findByFarmerEmail(email);
 
         return products.stream()
                 .map(product ->
@@ -133,5 +135,92 @@ public class ProductService {
                         )
                 )
                 .toList();
+
+
+
+    }
+    // ==========================================
+// UPDATE MY PRODUCT
+// ==========================================
+
+    public ProductResponse updateProduct(
+            Long id,
+            ProductRequest request,
+            String email) {
+
+        // Find the product
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found")
+                );
+
+        // Check if this product belongs to logged-in farmer
+        if (!product.getFarmer().getEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "You are not allowed to update this product"
+            );
+        }
+
+        // Update product details
+        product.setName(request.getName());
+
+        product.setDescription(
+                request.getDescription()
+        );
+
+        product.setPrice(
+                request.getPrice()
+        );
+
+        product.setQuantity(
+                request.getQuantity()
+        );
+
+        product.setCategory(
+                request.getCategory()
+        );
+
+        // Save updated product
+        Product updatedProduct =
+                productRepository.save(product);
+
+        // Return response
+        return new ProductResponse(
+                updatedProduct.getId(),
+                updatedProduct.getName(),
+                updatedProduct.getDescription(),
+                updatedProduct.getPrice(),
+                updatedProduct.getQuantity(),
+                updatedProduct.getCategory(),
+                updatedProduct.getFarmer().getName()
+        );
+    }
+    // ==========================================
+// DELETE MY PRODUCT
+// ==========================================
+
+    public void deleteProduct(
+            Long id,
+            String email) {
+
+        // Find product
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found")
+                );
+
+        // Check product belongs to logged-in farmer
+        if (!product.getFarmer().getEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "You are not allowed to delete this product"
+            );
+        }
+
+        // Delete product
+        productRepository.delete(product);
     }
 }

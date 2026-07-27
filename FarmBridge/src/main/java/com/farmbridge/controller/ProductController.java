@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/farmer/products")
 public class ProductController {
@@ -35,4 +37,65 @@ public class ProductController {
 
         return ResponseEntity.ok(response);
     }
-}
+
+        @GetMapping("/my-products")
+        public ResponseEntity<List<ProductResponse>> getMyProducts(
+                Authentication authentication) {
+
+            // Get logged-in farmer's email from JWT
+            String email = authentication.getName();
+
+            // Get products belonging to this farmer
+            List<ProductResponse> products =
+                    productService.getMyProducts(email);
+
+            return ResponseEntity.ok(products);
+        }
+    // ==========================================
+// UPDATE MY PRODUCT
+// ==========================================
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductRequest request,
+            Authentication authentication) {
+
+        // Get logged-in farmer email from JWT
+        String email = authentication.getName();
+
+        // Update product
+        ProductResponse response =
+                productService.updateProduct(
+                        id,
+                        request,
+                        email
+                );
+
+        return ResponseEntity.ok(response);
+    }
+    // ==========================================
+// DELETE MY PRODUCT
+// ==========================================
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteProduct(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        // Get logged-in farmer email from JWT
+        String email = authentication.getName();
+
+        // Delete product
+        productService.deleteProduct(
+                id,
+                email
+        );
+
+        return ResponseEntity.ok(
+                "Product deleted successfully"
+        );
+    }
+
+    }
+
