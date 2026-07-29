@@ -25,25 +25,17 @@ public class FarmerProfileController {
     // ==========================================
 
     @GetMapping
-    public ResponseEntity<?> getProfile(
+    public ResponseEntity<FarmerProfileResponse> getProfile(
             Authentication authentication) {
 
         // Get email of logged-in farmer from JWT authentication
         String email = authentication.getName();
 
-        try {
+        // Get farmer profile — GlobalExceptionHandler handles 404 if not found
+        FarmerProfileResponse response =
+                farmerProfileService.getProfile(email);
 
-            // Get farmer profile
-            FarmerProfileResponse response =
-                    farmerProfileService.getProfile(email);
-
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-
-            // Profile not found — return 404
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(response);
     }
 
     // ==========================================
@@ -51,29 +43,21 @@ public class FarmerProfileController {
     // ==========================================
 
     @PutMapping
-    public ResponseEntity<?> updateProfile(
+    public ResponseEntity<FarmerProfileResponse> updateProfile(
             @Valid @RequestBody FarmerProfileRequest request,
             Authentication authentication) {
 
         // Get email of logged-in farmer from JWT authentication
         String email = authentication.getName();
 
-        try {
+        // Update farmer profile — GlobalExceptionHandler handles 404 if not found
+        FarmerProfileResponse response =
+                farmerProfileService.updateProfile(
+                        request,
+                        email
+                );
 
-            // Update farmer profile
-            FarmerProfileResponse response =
-                    farmerProfileService.updateProfile(
-                            request,
-                            email
-                    );
-
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-
-            // Profile not found — return 404
-            return ResponseEntity.notFound().build();
-        }
+        return ResponseEntity.ok(response);
     }
 
     // ==========================================
