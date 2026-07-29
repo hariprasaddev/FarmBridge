@@ -182,7 +182,7 @@ An admin is a user with the ADMIN role who manages the platform.
 | ID | Requirement | Status | Verified in Code |
 |---|---|---|---|
 | FR-AUTH-01 | The system shall allow a user to register with name, email, password, and role. | ✅ Implemented | `AuthController.register()`, `AuthServiceImpl.register()` |
-| FR-AUTH-02 | The system shall reject registration with an already-existing email. | ✅ Implemented | `userRepository.existsByEmail()` check in `AuthServiceImpl` |
+| FR-AUTH-02 | The system shall respond when a user attempts to register with an already-existing email, returning HTTP 200 OK with the message "Email already exists". | ⚠️ Implemented (returns 200 OK, not an HTTP error) | `userRepository.existsByEmail()` in `AuthServiceImpl` returns 200 OK string via `AuthController.register()` |
 | FR-AUTH-03 | The system shall encrypt passwords using BCrypt before storing. | ✅ Implemented | `BCryptPasswordEncoder` in `AuthServiceImpl` |
 | FR-AUTH-04 | The system shall allow a user to login with email and password. | ✅ Implemented | `AuthController.login()`, `AuthServiceImpl.login()` |
 | FR-AUTH-05 | The system shall return a JWT token on successful login. | ✅ Implemented | `JwtUtil.generateToken()` with 1-hour expiry |
@@ -354,7 +354,7 @@ An admin is a user with the ADMIN role who manages the platform.
 | ID | Criteria |
 |---|---|
 | AC-AUTH-01 | A user can register with a valid name, email, password, and role. |
-| AC-AUTH-02 | Registration with an existing email returns an error message. |
+| AC-AUTH-02 | Registration with an existing email returns HTTP 200 OK with the message "Email already exists". |
 | AC-AUTH-03 | A user can log in with valid credentials and receive a JWT token. |
 | AC-AUTH-04 | Login with invalid credentials returns an error. |
 | AC-AUTH-05 | Accessing a protected endpoint without a JWT returns 401. |

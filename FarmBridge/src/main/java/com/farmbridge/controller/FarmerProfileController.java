@@ -20,6 +20,66 @@ public class FarmerProfileController {
         this.farmerProfileService = farmerProfileService;
     }
 
+    // ==========================================
+    // GET MY PROFILE
+    // ==========================================
+
+    @GetMapping
+    public ResponseEntity<?> getProfile(
+            Authentication authentication) {
+
+        // Get email of logged-in farmer from JWT authentication
+        String email = authentication.getName();
+
+        try {
+
+            // Get farmer profile
+            FarmerProfileResponse response =
+                    farmerProfileService.getProfile(email);
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
+            // Profile not found — return 404
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ==========================================
+    // UPDATE MY PROFILE
+    // ==========================================
+
+    @PutMapping
+    public ResponseEntity<?> updateProfile(
+            @Valid @RequestBody FarmerProfileRequest request,
+            Authentication authentication) {
+
+        // Get email of logged-in farmer from JWT authentication
+        String email = authentication.getName();
+
+        try {
+
+            // Update farmer profile
+            FarmerProfileResponse response =
+                    farmerProfileService.updateProfile(
+                            request,
+                            email
+                    );
+
+            return ResponseEntity.ok(response);
+
+        } catch (RuntimeException e) {
+
+            // Profile not found — return 404
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // ==========================================
+    // CREATE PROFILE
+    // ==========================================
+
     @PostMapping
     public ResponseEntity<FarmerProfileResponse> createProfile(
             @Valid @RequestBody FarmerProfileRequest request,

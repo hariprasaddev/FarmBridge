@@ -22,6 +22,85 @@ public class FarmerProfileService {
         this.userRepository = userRepository;
     }
 
+    // ==========================================
+    // GET MY PROFILE
+    // ==========================================
+
+    public FarmerProfileResponse getProfile(String email) {
+
+        FarmerProfile profile = farmerProfileRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Farmer profile not found")
+                );
+
+        return new FarmerProfileResponse(
+                profile.getId(),
+                profile.getFarmName(),
+                profile.getLocation(),
+                profile.getLandSize(),
+                profile.getCultivationMethod(),
+                profile.getCropsCultivated(),
+                profile.getFarmingType()
+        );
+    }
+
+    // ==========================================
+    // UPDATE MY PROFILE
+    // ==========================================
+
+    public FarmerProfileResponse updateProfile(
+            FarmerProfileRequest request,
+            String email) {
+
+        FarmerProfile profile = farmerProfileRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Farmer profile not found")
+                );
+
+        profile.setFarmName(
+                request.getFarmName()
+        );
+
+        profile.setLocation(
+                request.getLocation()
+        );
+
+        profile.setLandSize(
+                request.getLandSize()
+        );
+
+        profile.setCultivationMethod(
+                request.getCultivationMethod()
+        );
+
+        profile.setCropsCultivated(
+                request.getCropsCultivated()
+        );
+
+        profile.setFarmingType(
+                request.getFarmingType()
+        );
+
+        FarmerProfile updatedProfile =
+                farmerProfileRepository.save(profile);
+
+        return new FarmerProfileResponse(
+                updatedProfile.getId(),
+                updatedProfile.getFarmName(),
+                updatedProfile.getLocation(),
+                updatedProfile.getLandSize(),
+                updatedProfile.getCultivationMethod(),
+                updatedProfile.getCropsCultivated(),
+                updatedProfile.getFarmingType()
+        );
+    }
+
+    // ==========================================
+    // CREATE PROFILE
+    // ==========================================
+
     public FarmerProfileResponse createProfile(
             FarmerProfileRequest request,
             String email) {
@@ -32,6 +111,14 @@ public class FarmerProfileService {
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
+
+        // Check if profile already exists for this farmer
+        farmerProfileRepository.findByUserEmail(email)
+                .ifPresent(profile -> {
+                    throw new RuntimeException(
+                            "Farmer profile already exists"
+                    );
+                });
 
         // Create FarmerProfile entity
         FarmerProfile farmerProfile = new FarmerProfile();

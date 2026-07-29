@@ -231,13 +231,16 @@ Completed areas include:
 - Role-based authorization
 - Farmer profile
 - Product management
-- Product search
-- Product category filtering
 - Buyer order placement
 - Farmer order management
 - Order status management
 - MySQL database integration
 - GitHub repository
+
+Partially implemented items (backend support exists, controller integration pending):
+
+- Product search — `ProductRepository.findByNameContainingIgnoreCase()` exists, but no service method or controller endpoint exposes it yet
+- Product category filtering — `ProductService.getProductsByCategory()` exists, but no buyer controller endpoint calls it yet
 
 Remaining project work includes:
 

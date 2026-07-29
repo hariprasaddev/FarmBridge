@@ -270,9 +270,10 @@ Buyers can then:
 Buyer
 → Login
 → Receive JWT
-→ Search Products
-→ Filter by Category
+→ Browse Products (all products listed by all farmers)
 → View Products
+
+> ⚠️ **Planned:** Product search by name and category filtering are **not yet exposed** as buyer API endpoints. The repository supports `findByNameContainingIgnoreCase()` and the service supports `getProductsByCategory()`, but no controller endpoint calls either feature. These are pending controller integration.
 
 ---
 
@@ -355,8 +356,8 @@ Responsibilities:
 - Retrieve products
 - Update products
 - Delete products
-- Search products
-- Filter products by category
+- Filter products by category (service method `getProductsByCategory()` exists — controller endpoint pending)
+- Search products by name (⚠️ **only repository support** — no service method or controller endpoint exists yet)
 
 ---
 

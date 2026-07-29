@@ -123,7 +123,10 @@ User Registered Successfully
 **Error Responses:**
 
 - **400 Bad Request** — Validation errors (missing fields, invalid email)
-- **500 Internal Server Error** — Email already exists (returns `RuntimeException` message), or role is null
+- **200 OK** — Returns the string `"Email already exists"` if the email is already registered (returned as a 200 success response, not an error — see note below)
+- **500 Internal Server Error** — Role is null (database constraint violation), or other server errors
+
+> ⚠️ **Note on duplicate email:** The current implementation returns `200 OK` with body `"Email already exists"` rather than throwing an error. The `role` field has no `@NotNull` validation annotation; if omitted it defaults to `null` and causes a database constraint violation (`500`).
 
 **Sample cURL:**
 
