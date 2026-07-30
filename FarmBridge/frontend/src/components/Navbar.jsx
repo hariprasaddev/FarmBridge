@@ -6,6 +6,7 @@ function Navbar() {
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
+  const isProductActive = location.pathname.startsWith('/farmer/products');
 
   return (
     <nav className="navbar">
@@ -30,6 +31,12 @@ function Navbar() {
               className={`nav-link ${isActive('/farmer/profile') ? 'active' : ''}`}
             >
               My Profile
+            </Link>
+            <Link
+              to="/farmer/products"
+              className={`nav-link ${isProductActive ? 'active' : ''}`}
+            >
+              My Products
             </Link>
           </>
         )}

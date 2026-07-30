@@ -21,14 +21,14 @@ function FarmerDashboard() {
           <span className="dash-card-arrow">→</span>
         </Link>
 
-        <div className="dash-card disabled">
+        <Link to="/farmer/products" className="dash-card">
           <div className="dash-card-icon">📦</div>
           <div className="dash-card-content">
             <h3>My Products</h3>
             <p>Manage your product listings</p>
-            <span className="coming-soon">Coming soon</span>
           </div>
-        </div>
+          <span className="dash-card-arrow">→</span>
+        </Link>
 
         <div className="dash-card disabled">
           <div className="dash-card-icon">📋</div>
@@ -42,9 +42,14 @@ function FarmerDashboard() {
 
       <div className="dashboard-quick-actions">
         <h2>Quick Actions</h2>
-        <Link to="/farmer/profile" className="btn btn-primary">
-          {">"} Set Up Your Farm Profile
-        </Link>
+        <div className="quick-actions-row">
+          <Link to="/farmer/profile" className="btn btn-primary">
+            {">"} Set Up Your Farm Profile
+          </Link>
+          <Link to="/farmer/products/add" className="btn btn-secondary">
+            {">"} Add New Product
+          </Link>
+        </div>
       </div>
     </div>
   );

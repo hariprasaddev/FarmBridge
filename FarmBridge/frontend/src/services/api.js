@@ -53,4 +53,18 @@ export const farmerProfileAPI = {
   updateProfile: (data) => api.put('/farmer/profile', data),
 };
 
+// Farmer Products API
+export const farmerProductsAPI = {
+  createProduct: (data) => api.post('/farmer/products', data),
+  getMyProducts: () => api.get('/farmer/products/my-products'),
+  getProductById: (id) => api.get(`/farmer/products/${id}`),
+  updateProduct: (id, data) => api.put(`/farmer/products/${id}`, data),
+  deleteProduct: (id) => api.delete(`/farmer/products/${id}`),
+};
+
+// Buyer Products API
+export const buyerProductsAPI = {
+  getAllProducts: () => api.get('/buyer/products'),
+};
+
 export default api;

@@ -6,6 +6,9 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import FarmerDashboard from './pages/FarmerDashboard';
 import FarmerProfilePage from './pages/FarmerProfilePage';
+import ProductsPage from './pages/ProductsPage';
+import AddProductPage from './pages/AddProductPage';
+import EditProductPage from './pages/EditProductPage';
 import './App.css';
 
 function App() {
@@ -40,6 +43,30 @@ function App() {
             element={
               <ProtectedRoute role="FARMER">
                 <FarmerProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/products"
+            element={
+              <ProtectedRoute role="FARMER">
+                <ProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/products/add"
+            element={
+              <ProtectedRoute role="FARMER">
+                <AddProductPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/farmer/products/edit/:id"
+            element={
+              <ProtectedRoute role="FARMER">
+                <EditProductPage />
               </ProtectedRoute>
             }
           />
