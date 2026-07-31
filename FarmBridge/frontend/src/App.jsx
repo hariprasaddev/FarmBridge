@@ -9,6 +9,9 @@ import FarmerProfilePage from './pages/FarmerProfilePage';
 import ProductsPage from './pages/ProductsPage';
 import AddProductPage from './pages/AddProductPage';
 import EditProductPage from './pages/EditProductPage';
+import BuyerProductsPage from './pages/BuyerProductsPage';
+import BuyerOrdersPage from './pages/BuyerOrdersPage';
+import FarmerOrdersPage from './pages/FarmerOrdersPage';
 import './App.css';
 
 function App() {
@@ -70,7 +73,32 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/farmer/orders"
+            element={
+              <ProtectedRoute role="FARMER">
+                <FarmerOrdersPage />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Buyer routes */}
+          <Route
+            path="/buyer/products"
+            element={
+              <ProtectedRoute role="BUYER">
+                <BuyerProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/orders"
+            element={
+              <ProtectedRoute role="BUYER">
+                <BuyerOrdersPage />
+              </ProtectedRoute>
+            }
+          />
           {/* Default redirect */}
           <Route path="/" element={<Navigate to={token ? getDefaultRoute() : '/login'} />} />
           <Route path="*" element={<Navigate to={token ? getDefaultRoute() : '/login'} />} />

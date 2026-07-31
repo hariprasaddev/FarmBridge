@@ -7,6 +7,7 @@ function Navbar() {
 
   const isActive = (path) => location.pathname === path;
   const isProductActive = location.pathname.startsWith('/farmer/products');
+  const isBuyerProductActive = location.pathname.startsWith('/buyer/products');
 
   return (
     <nav className="navbar">
@@ -37,6 +38,29 @@ function Navbar() {
               className={`nav-link ${isProductActive ? 'active' : ''}`}
             >
               My Products
+            </Link>
+            <Link
+              to="/farmer/orders"
+              className={`nav-link ${isActive('/farmer/orders') ? 'active' : ''}`}
+            >
+              Orders
+            </Link>
+          </>
+        )}
+
+        {role === 'BUYER' && (
+          <>
+            <Link
+              to="/buyer/products"
+              className={`nav-link ${isBuyerProductActive ? 'active' : ''}`}
+            >
+              Browse Products
+            </Link>
+            <Link
+              to="/buyer/orders"
+              className={`nav-link ${isActive('/buyer/orders') ? 'active' : ''}`}
+            >
+              My Orders
             </Link>
           </>
         )}

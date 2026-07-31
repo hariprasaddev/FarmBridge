@@ -616,6 +616,10 @@ PENDING
 | `REJECTED` | None (locked) |
 | `COMPLETED` | None (locked) |
 
+> **Stock behavior:** Placing an order deducts the product quantity immediately.
+> Rejecting a `PENDING` order automatically **restores** the reserved quantity back to the product.
+> Accepted and completed orders keep the deduction.
+
 **Request Body:**
 
 ```json
@@ -773,7 +777,7 @@ curl -X GET http://localhost:8080/api/buyer/products \
 | `productId` | Long | ✅ Yes | Cannot be null |
 | `quantity` | Integer | ✅ Yes | Must be at least 1 |
 
-**Success Response (200 OK):**
+**Success Response (201 Created):**
 
 ```json
 {
@@ -791,7 +795,7 @@ curl -X GET http://localhost:8080/api/buyer/products \
 **Error Responses:**
 
 - **400 Bad Request** — Validation errors
-- **500 Internal Server Error** — Product not found, or "Insufficient product quantity"
+- **500 Internal Server Error** — Product not found, "Insufficient product quantity", or "You cannot order your own product"
 
 **Sample cURL:**
 
@@ -932,7 +936,7 @@ curl -X GET http://localhost:8080/api/test \
 | 9 | `PUT` | `/api/farmer/products/{id}` | JWT | FARMER | Update my product |
 | 10 | `DELETE` | `/api/farmer/products/{id}` | JWT | FARMER | Delete my product |
 | 11 | `GET` | `/api/buyer/products` | JWT | BUYER | Browse all products |
-| 12 | `POST` | `/api/buyer/orders` | JWT | BUYER | Place an order |
+| 12 | `POST` | `/api/buyer/orders` | JWT | BUYER | Place an order (201 Created) |
 | 13 | `GET` | `/api/buyer/orders` | JWT | BUYER | Get my orders |
 | 14 | `GET` | `/api/farmer/orders` | JWT | FARMER | Get received orders |
 | 15 | `PUT` | `/api/farmer/orders/{orderId}/status` | JWT | FARMER | Update order status |

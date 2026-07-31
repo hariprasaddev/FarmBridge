@@ -67,4 +67,17 @@ export const buyerProductsAPI = {
   getAllProducts: () => api.get('/buyer/products'),
 };
 
+// Buyer Orders API
+export const buyerOrdersAPI = {
+  placeOrder: (data) => api.post('/buyer/orders', data),
+  getMyOrders: () => api.get('/buyer/orders'),
+};
+
+// Farmer Orders API
+export const farmerOrdersAPI = {
+  getOrders: () => api.get('/farmer/orders'),
+  updateStatus: (orderId, status) =>
+    api.put(`/farmer/orders/${orderId}/status`, { status }),
+};
+
 export default api;

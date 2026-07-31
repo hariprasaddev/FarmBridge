@@ -30,14 +30,14 @@ function FarmerDashboard() {
           <span className="dash-card-arrow">→</span>
         </Link>
 
-        <div className="dash-card disabled">
+        <Link to="/farmer/orders" className="dash-card">
           <div className="dash-card-icon">📋</div>
           <div className="dash-card-content">
             <h3>Orders Received</h3>
             <p>View and manage buyer orders</p>
-            <span className="coming-soon">Coming soon</span>
           </div>
-        </div>
+          <span className="dash-card-arrow">→</span>
+        </Link>
       </div>
 
       <div className="dashboard-quick-actions">
