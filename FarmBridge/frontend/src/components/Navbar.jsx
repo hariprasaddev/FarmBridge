@@ -64,6 +64,41 @@ function Navbar() {
             </Link>
           </>
         )}
+
+        {role === 'ADMIN' && (
+          <>
+            <Link
+              to="/admin/dashboard"
+              className={`nav-link ${isActive('/admin/dashboard') ? 'active' : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/admin/users"
+              className={`nav-link ${isActive('/admin/users') ? 'active' : ''}`}
+            >
+              Users
+            </Link>
+            <Link
+              to="/admin/products"
+              className={`nav-link ${isActive('/admin/products') ? 'active' : ''}`}
+            >
+              Products
+            </Link>
+            <Link
+              to="/admin/orders"
+              className={`nav-link ${isActive('/admin/orders') ? 'active' : ''}`}
+            >
+              Orders
+            </Link>
+            <Link
+              to="/admin/verification"
+              className={`nav-link ${isActive('/admin/verification') ? 'active' : ''}`}
+            >
+              Verification
+            </Link>
+          </>
+        )}
       </div>
 
       <div className="navbar-user">

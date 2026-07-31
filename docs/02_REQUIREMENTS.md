@@ -198,9 +198,9 @@ An admin is a user with the ADMIN role who manages the platform.
 |---|---|---|---|
 | FR-FARMER-01 | A farmer shall be able to create a farmer profile with farm details. | ✅ Implemented | `FarmerProfileController.createProfile()`, `FarmerProfileService.createProfile()` |
 | FR-FARMER-02 | The farmer profile shall include farm name, location, land size, cultivation method, crops cultivated, and farming type. | ✅ Implemented | `FarmerProfileRequest` DTO with all fields |
-| FR-FARMER-03 | A farmer shall be able to retrieve their own profile. | ❌ Missing | No `GET` endpoint exists for farmer profile |
-| FR-FARMER-04 | A farmer shall be able to update their own profile. | ❌ Missing | No `PUT` endpoint exists for farmer profile |
-| FR-FARMER-05 | A farmer shall not be able to create multiple profiles. | ❌ Missing | No check for existing profile in `FarmerProfileService` |
+| FR-FARMER-03 | A farmer shall be able to retrieve their own profile. | ✅ Implemented | `FarmerProfileController.getProfile()` via `GET /api/farmer/profile` |
+| FR-FARMER-04 | A farmer shall be able to update their own profile. | ✅ Implemented | `FarmerProfileController.updateProfile()` via `PUT /api/farmer/profile` |
+| FR-FARMER-05 | A farmer shall not be able to create multiple profiles. | ✅ Implemented | Duplicate check in `FarmerProfileService.createProfile()` throws "Farmer profile already exists" |
 | FR-FARMER-06 | A farmer shall be able to create a product with name, description, price, quantity, and category. | ✅ Implemented | `ProductController.createProduct()`, `ProductService.createProduct()` |
 | FR-FARMER-07 | A farmer shall be able to view all their own products. | ✅ Implemented | `ProductController.getMyProducts()` |
 | FR-FARMER-08 | A farmer shall be able to update their own products. | ✅ Implemented | `ProductController.updateProduct()` with ownership check |
@@ -230,13 +230,13 @@ An admin is a user with the ADMIN role who manages the platform.
 
 | ID | Requirement | Status | Verified in Code |
 |---|---|---|---|
-| FR-ADMIN-01 | An admin shall be able to view a dashboard. | ⚠️ Stub Only | `AdminController.adminDashboard()` returns plain text string |
-| FR-ADMIN-02 | An admin shall be able to view all registered users. | ❌ Missing | No endpoint or service exists |
-| FR-ADMIN-03 | An admin shall be able to manage farmer accounts. | ❌ Missing | No endpoint or service exists |
-| FR-ADMIN-04 | An admin shall be able to manage buyer accounts. | ❌ Missing | No endpoint or service exists |
-| FR-ADMIN-05 | An admin shall be able to view all products. | ❌ Missing | No endpoint or service exists |
-| FR-ADMIN-06 | An admin shall be able to view all orders. | ❌ Missing | No endpoint or service exists |
-| FR-ADMIN-07 | An admin shall be able to verify farmers. | ❌ Missing | No verification system exists |
+| FR-ADMIN-01 | An admin shall be able to view a dashboard. | ✅ Implemented | `AdminController.getStats()` returns platform-wide counts via `GET /api/admin/stats` |
+| FR-ADMIN-02 | An admin shall be able to view all registered users. | ✅ Implemented | `AdminController.getAllUsers()` via `GET /api/admin/users` |
+| FR-ADMIN-03 | An admin shall be able to manage farmer accounts. | ✅ Implemented | `AdminController.getFarmers()` via `GET /api/admin/farmers`, plus user update/delete via `/api/admin/users/{id}` |
+| FR-ADMIN-04 | An admin shall be able to manage buyer accounts. | ✅ Implemented | `AdminController.getBuyers()` via `GET /api/admin/buyers`, plus user update/delete via `/api/admin/users/{id}` |
+| FR-ADMIN-05 | An admin shall be able to view all products. | ✅ Implemented | `AdminController.getAllProducts()` via `GET /api/admin/products` |
+| FR-ADMIN-06 | An admin shall be able to view all orders. | ✅ Implemented | `AdminController.getAllOrders()` via `GET /api/admin/orders` |
+| FR-ADMIN-07 | An admin shall be able to verify farmers. | ✅ Implemented | `FarmerProfile.verified` field, `GET /api/admin/farmers/unverified`, `PUT /api/admin/farmers/{profileId}/verify` |
 
 ### 6.5 System Features (FR-SYS)
 
@@ -247,7 +247,7 @@ An admin is a user with the ADMIN role who manages the platform.
 | FR-SYS-03 | The system shall use constructor injection. | ✅ Implemented | All services and controllers use constructor injection |
 | FR-SYS-04 | The system shall validate all API request inputs. | ✅ Implemented | Jakarta `@Valid` + validation annotations on all request DTOs |
 | FR-SYS-05 | The system shall return appropriate HTTP status codes. | ⚠️ Partial | Returns 200 OK for all success cases; errors throw exceptions (no `@ControllerAdvice`) |
-| FR-SYS-06 | The system shall provide meaningful error messages for validation failures. | ❌ Missing | No global exception handler; validation errors return default Spring error structure |
+| FR-SYS-06 | The system shall provide meaningful error messages for validation failures. | ✅ Implemented | `GlobalExceptionHandler` (`@RestControllerAdvice`) returns structured `ErrorResponse` with field errors |
 | FR-SYS-07 | The system shall use environment variables for sensitive configuration. | ❌ Missing | Database password and JWT secret are hardcoded in `application.properties` |
 | FR-SYS-08 | The system shall have a health-check endpoint. | ✅ Implemented | `TestController` at `GET /api/test` |
 
@@ -418,15 +418,15 @@ plus the following additions to make the system complete and usable:
 | P0 | Order placement with stock validation | ✅ Implemented |
 | P0 | Order status management | ✅ Implemented |
 | P0 | Product browsing for buyers | ✅ Implemented |
-| P1 | Global exception handler | ❌ Missing |
+| P1 | Global exception handler | ✅ Implemented |
 | P1 | Product search by name (expose API) | ⚠️ Partially done |
 | P1 | Product category filter (expose API) | ⚠️ Partially done |
-| P1 | Farmer profile get/update endpoints | ❌ Missing |
-| P1 | Prevent duplicate farmer profiles | ❌ Missing |
+| P1 | Farmer profile get/update endpoints | ✅ Implemented |
+| P1 | Prevent duplicate farmer profiles | ✅ Implemented |
 | P1 | Environment variables for credentials | ❌ Missing |
 | P1 | Refactor BuyerProductController to use Service layer | ❌ Missing |
-| P2 | Admin user management | ❌ Missing |
-| P2 | Admin product and order oversight | ❌ Missing |
+| P2 | Admin user management | ✅ Implemented |
+| P2 | Admin product and order oversight | ✅ Implemented |
 
 ### Frontend MVP Requirements
 
@@ -449,7 +449,7 @@ The following features are planned for post-MVP releases:
 
 | Feature | Description | Priority |
 |---|---|---|
-| Farmer Verification | Verified badge for farmers who have passed identity verification | Medium |
+| Farmer Verification Badge | Display a public verified badge on farmer profiles (backend `verified` flag already exists) | Medium |
 | Shopping Cart | Allow buyers to collect multiple items before placing an order | Medium |
 | Wishlist | Allow buyers to save products for future purchase | Low |
 | Payment Integration | Online payment processing (credit card, UPI, etc.) | High |

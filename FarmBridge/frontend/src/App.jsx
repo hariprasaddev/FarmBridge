@@ -12,6 +12,11 @@ import EditProductPage from './pages/EditProductPage';
 import BuyerProductsPage from './pages/BuyerProductsPage';
 import BuyerOrdersPage from './pages/BuyerOrdersPage';
 import FarmerOrdersPage from './pages/FarmerOrdersPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminProductsPage from './pages/AdminProductsPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
+import AdminVerificationPage from './pages/AdminVerificationPage';
 import './App.css';
 
 function App() {
@@ -96,6 +101,48 @@ function App() {
             element={
               <ProtectedRoute role="BUYER">
                 <BuyerOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminUsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/verification"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminVerificationPage />
               </ProtectedRoute>
             }
           />

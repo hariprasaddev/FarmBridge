@@ -22,6 +22,10 @@ public class FarmerProfile {
 
     private String farmingType;
 
+    // Whether this farmer has been verified by an admin
+    @Column(columnDefinition = "boolean default false")
+    private Boolean verified = false;
+
     // Connect FarmerProfile with User
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -89,6 +93,14 @@ public class FarmerProfile {
 
     public void setFarmingType(String farmingType) {
         this.farmingType = farmingType;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
     }
 
     public User getUser() {

@@ -80,4 +80,16 @@ export const farmerOrdersAPI = {
     api.put(`/farmer/orders/${orderId}/status`, { status }),
 };
 
+// Admin API
+export const adminAPI = {
+  getStats: () => api.get('/admin/stats'),
+  getAllUsers: () => api.get('/admin/users'),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getAllProducts: () => api.get('/admin/products'),
+  getAllOrders: () => api.get('/admin/orders'),
+  getUnverifiedFarmers: () => api.get('/admin/farmers/unverified'),
+  verifyFarmer: (profileId) => api.put(`/admin/farmers/${profileId}/verify`),
+};
+
 export default api;

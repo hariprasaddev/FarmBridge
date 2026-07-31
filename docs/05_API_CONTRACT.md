@@ -75,7 +75,7 @@ The JWT token contains:
 | `403 Forbidden` | Authenticated but wrong role |
 | `500 Internal Server Error` | Server-side error (exception thrown) |
 
-> **Note:** Currently there is **no global exception handler** (`@ControllerAdvice`). When services throw `RuntimeException`, the client receives a default Spring Boot error response with status 500. Validation errors (Jakarta `@Valid`) return a default 400 error response from Spring.
+> **Note:** A global exception handler (`@ControllerAdvice` via `GlobalExceptionHandler`) maps business errors and validation failures to structured `ErrorResponse` bodies — see [§7 Error Response Format](#7-error-response-format).
 
 ---
 
@@ -285,9 +285,9 @@ curl -X GET http://localhost:8080/api/farmer \
 | `cropsCultivated` | String | Crops cultivated |
 | `farmingType` | String | Type of farming |
 
-> ⚠️ **Known Limitation:** Currently there is **no duplicate profile check**. A farmer can create multiple profiles. This will be fixed in a future update.
+> ✅ **Implemented:** A duplicate profile check exists — creating a second profile for the same farmer throws `"Farmer profile already exists"`.
 
-> ❌ **Missing Endpoints:** GET (retrieve profile) and PUT (update profile) endpoints are **not yet implemented**.
+> ✅ **Implemented:** GET (retrieve profile) and PUT (update profile) endpoints are implemented — see rows 16–17 in the endpoint summary.
 
 **Sample cURL:**
 
@@ -861,13 +861,13 @@ curl -X GET http://localhost:8080/api/buyer/orders \
 
 ### 3.4 Admin APIs
 
-#### 3.4.1 Admin Dashboard (Stub)
+#### 3.4.1 Admin Dashboard (Greeting)
 
 | Property | Value |
 |---|---|
 | **Endpoint** | `/api/admin` |
 | **HTTP Method** | `GET` |
-| **Description** | Simple greeting endpoint to verify admin authentication works. Returns a plain text welcome message. This is a stub and the entire admin module needs to be built. |
+| **Description** | Simple greeting endpoint to verify admin authentication works. Returns a plain text welcome message. |
 | **Authentication** | JWT required |
 | **Required Role** | ADMIN |
 
@@ -884,13 +884,257 @@ curl -X GET http://localhost:8080/api/admin \
   -H "Authorization: Bearer <JWT_TOKEN>"
 ```
 
-> ❌ **Missing Admin APIs:** There are currently NO implemented admin management endpoints. The following are needed:
-> - View all users
-> - Manage farmers
-> - Manage buyers
-> - View all products
-> - View all orders
-> - Verify farmers
+---
+
+#### 3.4.2 Get Dashboard Stats
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/stats` |
+| **HTTP Method** | `GET` |
+| **Description** | Returns platform-wide counts: total users, farmers, buyers, products, orders, and pending verifications. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Success Response (200 OK):**
+
+```json
+{
+  "totalUsers": 50,
+  "totalFarmers": 30,
+  "totalBuyers": 19,
+  "totalProducts": 45,
+  "totalOrders": 120,
+  "pendingVerifications": 3
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `totalUsers` | Long | Total registered users |
+| `totalFarmers` | Long | Users with FARMER role |
+| `totalBuyers` | Long | Users with BUYER role |
+| `totalProducts` | Long | Total product listings |
+| `totalOrders` | Long | Total orders placed |
+| `pendingVerifications` | Long | Farmer profiles not yet verified |
+
+**Sample cURL:**
+
+```bash
+curl -X GET http://localhost:8080/api/admin/stats \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+---
+
+#### 3.4.3 Get All Users
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/users` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists every registered user across all roles. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Success Response (200 OK):**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "John Farmer",
+    "email": "john@farm.com",
+    "role": "FARMER"
+  }
+]
+```
+
+**Sample cURL:**
+
+```bash
+curl -X GET http://localhost:8080/api/admin/users \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+---
+
+#### 3.4.4 Get User by ID
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/users/{id}` |
+| **HTTP Method** | `GET` |
+| **Description** | Fetches a single user by their ID. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Error Responses:**
+
+- **404 Not Found** — "User not found with id: {id}"
+
+---
+
+#### 3.4.5 Update User
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/users/{id}` |
+| **HTTP Method** | `PUT` |
+| **Description** | Admin updates a user's name, email, or role. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Request Body:**
+
+```json
+{
+  "name": "John Farmer",
+  "email": "john@farm.com",
+  "role": "FARMER"
+}
+```
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `name` | String | ✅ Yes | Cannot be blank |
+| `email` | String | ✅ Yes | Valid email format |
+| `role` | String (enum) | ✅ Yes | `ADMIN`, `FARMER`, or `BUYER` |
+
+**Error Responses:**
+
+- **404 Not Found** — "User not found with id: {id}"
+- **409 Conflict** — "Email already in use: {email}"
+
+---
+
+#### 3.4.6 Delete User
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/users/{id}` |
+| **HTTP Method** | `DELETE` |
+| **Description** | Deletes a user account. Fails if the user has related records (products, orders, or profile). |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Success Response (200 OK):**
+
+```
+User deleted successfully
+```
+
+**Error Responses:**
+
+- **404 Not Found** — "User not found with id: {id}"
+- **400 Bad Request** — "Cannot delete this record because it has related data" (FK constraint)
+
+---
+
+#### 3.4.7 Get All Farmers
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/farmers` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists all users with the FARMER role. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+---
+
+#### 3.4.8 Get All Buyers
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/buyers` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists all users with the BUYER role. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+---
+
+#### 3.4.9 Get All Products (Admin)
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/products` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists every product listed across the platform. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+---
+
+#### 3.4.10 Get All Orders (Admin)
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/orders` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists every order placed across the platform. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+---
+
+#### 3.4.11 Get Unverified Farmers
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/farmers/unverified` |
+| **HTTP Method** | `GET` |
+| **Description** | Lists farmer profiles that have not been verified yet. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Success Response (200 OK):**
+
+```json
+[
+  {
+    "profileId": 3,
+    "userId": 7,
+    "farmerName": "Sarah Farmer",
+    "email": "sarah@farm.com",
+    "farmName": "Green Acres",
+    "location": "Rural District",
+    "verified": false
+  }
+]
+```
+
+---
+
+#### 3.4.12 Verify Farmer
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/farmers/{profileId}/verify` |
+| **HTTP Method** | `PUT` |
+| **Description** | Marks a farmer profile as verified. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Path Variables:**
+
+| Variable | Type | Description |
+|---|---|---|
+| `profileId` | Long | ID of the farmer profile to verify |
+
+**Success Response (200 OK):** Same shape as `FarmerVerificationResponse` with `verified: true`.
+
+**Error Responses:**
+
+- **404 Not Found** — "Farmer profile not found"
+
+**Sample cURL:**
+
+```bash
+curl -X PUT http://localhost:8080/api/admin/farmers/3/verify \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
 
 ---
 
@@ -940,9 +1184,27 @@ curl -X GET http://localhost:8080/api/test \
 | 13 | `GET` | `/api/buyer/orders` | JWT | BUYER | Get my orders |
 | 14 | `GET` | `/api/farmer/orders` | JWT | FARMER | Get received orders |
 | 15 | `PUT` | `/api/farmer/orders/{orderId}/status` | JWT | FARMER | Update order status |
-| 16 | `GET` | `/api/test` | JWT | Any | Health check / test |
+| 16 | `GET` | `/api/farmer/profile` | JWT | FARMER | Get my farmer profile |
+| 17 | `PUT` | `/api/farmer/profile` | JWT | FARMER | Update my farmer profile |
+| 18 | `GET` | `/api/admin` | JWT | ADMIN | Admin greeting (stub) |
+| 19 | `GET` | `/api/admin/stats` | JWT | ADMIN | Get dashboard stats |
+| 20 | `GET` | `/api/admin/users` | JWT | ADMIN | Get all users |
+| 21 | `GET` | `/api/admin/users/{id}` | JWT | ADMIN | Get user by ID |
+| 22 | `PUT` | `/api/admin/users/{id}` | JWT | ADMIN | Update user |
+| 23 | `DELETE` | `/api/admin/users/{id}` | JWT | ADMIN | Delete user |
+| 24 | `GET` | `/api/admin/farmers` | JWT | ADMIN | Get all farmers |
+| 25 | `GET` | `/api/admin/buyers` | JWT | ADMIN | Get all buyers |
+| 26 | `GET` | `/api/admin/products` | JWT | ADMIN | Get all products |
+| 27 | `GET` | `/api/admin/orders` | JWT | ADMIN | Get all orders |
+| 28 | `GET` | `/api/admin/farmers/unverified` | JWT | ADMIN | Get unverified farmers |
+| 29 | `PUT` | `/api/admin/farmers/{profileId}/verify` | JWT | ADMIN | Verify a farmer profile |
+| 30 | `GET` | `/api/users` | JWT | ADMIN | Get all users (User module) |
+| 31 | `GET` | `/api/users/{id}` | JWT | ADMIN | Get user by ID (User module) |
+| 32 | `PUT` | `/api/users/{id}` | JWT | ADMIN | Update user (User module) |
+| 33 | `DELETE` | `/api/users/{id}` | JWT | ADMIN | Delete user (User module) |
+| 34 | `GET` | `/api/test` | JWT | Any | Health check / test |
 
-**Total Implemented Endpoints: 16**
+**Total Implemented Endpoints: 34**
 
 ---
 
@@ -1050,12 +1312,12 @@ curl -X GET http://localhost:8080/api/test \
 
 The following APIs are planned but **not yet implemented**. They are documented here for future reference.
 
-### 6.1 Farmer Profile (Planned)
+### 6.1 Farmer Profile (Implemented)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/farmer/profile` | Retrieve the logged-in farmer's profile |
-| `PUT` | `/api/farmer/profile` | Update the logged-in farmer's profile |
+| `GET` | `/api/farmer/profile` | ✅ Implemented — retrieve the logged-in farmer's profile |
+| `PUT` | `/api/farmer/profile` | ✅ Implemented — update the logged-in farmer's profile |
 
 ### 6.2 Buyer Product Search & Filter (Planned)
 
@@ -1064,16 +1326,23 @@ The following APIs are planned but **not yet implemented**. They are documented 
 | `GET` | `/api/buyer/products/search?name={name}` | Search products by name (logic exists in `ProductRepository` but no controller endpoint) |
 | `GET` | `/api/buyer/products/category/{category}` | Filter products by category (logic exists in `ProductService` but no controller endpoint) |
 
-### 6.3 Admin Management (Planned)
+### 6.3 Admin Management (Implemented)
+
+All admin endpoints are now implemented — see [§3.4 Admin APIs](#34-admin-apis).
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/admin/users` | View all registered users |
-| `GET` | `/api/admin/farmers` | View all farmers |
-| `GET` | `/api/admin/buyers` | View all buyers |
-| `GET` | `/api/admin/products` | View all products |
-| `GET` | `/api/admin/orders` | View all orders |
-| `PUT` | `/api/admin/farmers/{id}/verify` | Verify a farmer's identity |
+| `GET` | `/api/admin/stats` | ✅ Implemented — dashboard stats |
+| `GET` | `/api/admin/users` | ✅ Implemented — view all registered users |
+| `GET` | `/api/admin/users/{id}` | ✅ Implemented — view a user |
+| `PUT` | `/api/admin/users/{id}` | ✅ Implemented — update a user |
+| `DELETE` | `/api/admin/users/{id}` | ✅ Implemented — delete a user |
+| `GET` | `/api/admin/farmers` | ✅ Implemented — view all farmers |
+| `GET` | `/api/admin/buyers` | ✅ Implemented — view all buyers |
+| `GET` | `/api/admin/products` | ✅ Implemented — view all products |
+| `GET` | `/api/admin/orders` | ✅ Implemented — view all orders |
+| `GET` | `/api/admin/farmers/unverified` | ✅ Implemented — unverified farmers |
+| `PUT` | `/api/admin/farmers/{profileId}/verify` | ✅ Implemented — verify a farmer's identity |
 
 ### 6.4 System (Planned)
 
@@ -1099,9 +1368,11 @@ When request validation fails (Jakarta `@Valid`), Spring Boot returns a default 
 }
 ```
 
-> ⚠️ Currently there is **no global exception handler** (`@ControllerAdvice`), so:
-> - Validation errors return Spring's default 400 response (field-specific errors are not shown)
-> - Business logic errors (e.g., "Email already exists", "Invalid email or password") throw `RuntimeException` and return a 500 error with the exception message
+> ✅ **Implemented:** `GlobalExceptionHandler` (`@RestControllerAdvice`) handles:
+> - `MethodArgumentNotValidException` → 400 with field-specific error map
+> - `RuntimeException` → status mapped from the message (404 for "not found", 409 for "already exists"/"already in use", else 400)
+> - `DataIntegrityViolationException` → 400 with a friendly message
+> - Any other exception → 500 with a generic message
 
 ### 7.2 Authentication Errors (401 Unauthorized)
 

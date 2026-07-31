@@ -79,7 +79,7 @@ A buyer can:
 
 ### Admin
 
-The Admin role is planned for platform management.
+The Admin role manages the platform (users, products, orders, and farmer verification).
 
 Planned responsibilities include:
 

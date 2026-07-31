@@ -5,6 +5,7 @@ import com.farmbridge.dto.UserResponse;
 import com.farmbridge.entity.User;
 import com.farmbridge.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -40,6 +41,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserResponse updateUser(Long id, UserRequest request) {
 
         User user = userRepository
@@ -67,6 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long id) {
 
         if (!userRepository.existsById(id)) {

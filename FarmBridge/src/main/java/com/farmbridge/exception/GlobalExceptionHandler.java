@@ -1,5 +1,6 @@
 package com.farmbridge.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -55,6 +56,23 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(status).body(response);
+    }
+
+    // ==========================================
+    // HANDLE DATABASE CONSTRAINT VIOLATIONS
+    // HTTP 400 — Bad Request
+    // ==========================================
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Cannot delete this record because it has related data"
+        );
+
+        return ResponseEntity.badRequest().body(response);
     }
 
     // ==========================================

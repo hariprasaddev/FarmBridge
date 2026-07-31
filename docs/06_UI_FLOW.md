@@ -3,7 +3,7 @@
 > **Document Version:** 1.0  
 > **Last Updated:** 2026-07-29  
 > **Framework:** TrainingMug ADF v1.0  
-> **Status:** ✅ Based on actual backend APIs (16 implemented) and requirements/docs 01–05
+> **Status:** ✅ Based on actual backend APIs (34 implemented) and requirements/docs 01–05
 
 ---
 
@@ -166,19 +166,16 @@ Admin (after login)
 ├── Header
 │   ├── App logo / name → /admin/dashboard
 │   ├── Navigation links
-│   │   ├── Dashboard        → /admin/dashboard          ⚠️ Planned
-│   │   ├── Manage Users     → /admin/users              ⚠️ Planned
-│   │   ├── All Products     → /admin/products           ⚠️ Planned
-│   │   ├── All Orders       → /admin/orders             ⚠️ Planned
-│   │   └── Farmer Verification → /admin/verification    ⚠️ Planned
+│   │   ├── Dashboard        → /admin/dashboard          ✅ Implemented
+│   │   ├── Manage Users     → /admin/users              ✅ Implemented
+│   │   ├── All Products     → /admin/products           ✅ Implemented
+│   │   ├── All Orders       → /admin/orders             ✅ Implemented
+│   │   └── Farmer Verification → /admin/verification    ✅ Implemented
 │   └── User dropdown
 │       └── Logout
 │
 └── Footer (optional)
 ```
-
-> ⚠️ **Note:** The entire Admin navigation section is **Planned** because only
-> a stub endpoint (`GET /api/admin` returning "Welcome Admin!") currently exists.
 
 ---
 
@@ -198,11 +195,11 @@ Admin (after login)
 | 10 | Product Detail | `/buyer/products/:id` | BUYER | ⚠️ Partial (no dedicated API) | Single product view + place order (data extracted from list) |
 | 11 | Place Order | `/buyer/orders/new` | BUYER | ✅ Implemented | Order form (modal or page) |
 | 12 | My Orders | `/buyer/orders` | BUYER | ✅ Implemented | Order history with status tracking |
-| 13 | Admin Dashboard | `/admin/dashboard` | ADMIN | ⚠️ Planned | Admin overview and KPIs |
-| 14 | Manage Users | `/admin/users` | ADMIN | ⚠️ Planned | View and manage all users |
-| 15 | All Products | `/admin/products` | ADMIN | ⚠️ Planned | View all products across platform |
-| 16 | All Orders | `/admin/orders` | ADMIN | ⚠️ Planned | View all orders across platform |
-| 17 | Farmer Verification | `/admin/verification` | ADMIN | ⚠️ Planned | Verify farmer identities |
+| 13 | Admin Dashboard | `/admin/dashboard` | ADMIN | ✅ Implemented | Admin overview and KPIs (from `GET /api/admin/stats`) |
+| 14 | Manage Users | `/admin/users` | ADMIN | ✅ Implemented | View, edit, and delete all users |
+| 15 | All Products | `/admin/products` | ADMIN | ✅ Implemented | View all products across platform |
+| 16 | All Orders | `/admin/orders` | ADMIN | ✅ Implemented | View all orders across platform |
+| 17 | Farmer Verification | `/admin/verification` | ADMIN | ✅ Implemented | Verify farmer identities |
 | 18 | Health / Test | `/test` | Any Auth | ✅ Implemented | Simple JWT verification page |
 
 ---
@@ -278,7 +275,7 @@ Admin (after login)
 > repository and service support these features, but no controller endpoint
 > exposes them yet.
 
-### 5.3 Admin Dashboard Layout (`/admin/dashboard`) — Planned
+### 5.3 Admin Dashboard Layout (`/admin/dashboard`) — Implemented
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -303,8 +300,9 @@ Admin (after login)
 └──────────────────────────────────────────────────────────────┘
 ```
 
-> ⚠️ Entire Admin dashboard is **Planned** — only a stub endpoint
-> (`GET /api/admin` returning "Welcome Admin!") currently exists.
+> ✅ Admin dashboard is **Implemented** — KPI cards are populated from
+> `GET /api/admin/stats` (total users, farmers, buyers, products, orders,
+> pending verifications).
 
 ---
 
@@ -459,33 +457,31 @@ Buyer on `/buyer/orders`
 └── Auto-refresh or pull-to-refresh for status updates
 ```
 
-### 6.3 Admin User Journey — All Planned
+### 6.3 Admin User Journey — Implemented
 
 ```
-Admin logs in → `/admin/dashboard`      ⚠️ Planned
-├── Overview stats (total users, farmers, buyers, orders)
+Admin logs in → /admin/dashboard      ✅ Implemented
+├── Overview stats (total users, farmers, buyers, orders,
+│   products, pending verifications) from GET /api/admin/stats
 │
-├── Manage Users `/admin/users`          ⚠️ Planned
+├── Manage Users `/admin/users`          ✅ Implemented
 │   ├── Table of all users
 │   ├── Filter by role
-│   └── Actions: View, Disable
+│   └── Actions: Edit (modal), Delete
 │
-├── All Products `/admin/products`       ⚠️ Planned
+├── All Products `/admin/products`       ✅ Implemented
 │   ├── Table of all products
-│   └── Actions: View, Remove
+│   └── Category, price, quantity, farmer columns
 │
-├── All Orders `/admin/orders`           ⚠️ Planned
+├── All Orders `/admin/orders`           ✅ Implemented
 │   ├── Table of all orders
 │   └── Filter by status
 │
-└── Farmer Verification                  ⚠️ Planned
+└── Farmer Verification                  ✅ Implemented
     `/admin/verification`
     ├── List of unverified farmers
     └── [Verify] button per farmer
 ```
-
-> ⚠️ The entire Admin journey is **Planned** because only a stub
-> (`GET /api/admin` → "Welcome Admin!") exists in the backend.
 
 ---
 
@@ -540,12 +536,12 @@ App
 │           │       ├── OrderTable
 │           │       └── OrderStatusBadge
 │           │
-│           └── AdminRoutes              ⚠️ Planned
-│               ├── AdminDashboardPage    ⚠️ Planned
-│               ├── UsersPage             ⚠️ Planned
-│               ├── AdminProductsPage     ⚠️ Planned
-│               ├── AdminOrdersPage       ⚠️ Planned
-│               └── VerificationPage      ⚠️ Planned
+│           └── AdminRoutes              ✅ Implemented
+│               ├── AdminDashboardPage    ✅ Implemented
+│               ├── UsersPage             ✅ Implemented
+│               ├── AdminProductsPage     ✅ Implemented
+│               ├── AdminOrdersPage       ✅ Implemented
+│               └── VerificationPage      ✅ Implemented
 ```
 
 ### 7.2 Reusable UI Components
@@ -580,7 +576,7 @@ element.
 | 2 | `/api/auth/login` | POST | Login Page | Submit login form |
 | 3 | `GET /api/farmer` | GET | Farmer Dashboard | **Stub** — returns plain text; do not parse as JSON. Use `/api/farmer/products/my-products` and `/api/farmer/orders` for stat aggregation instead |
 | 4 | `GET /api/buyer` | GET | Buyer Dashboard | **Stub** — currently redirects to products |
-| 5 | `GET /api/admin` | GET | Admin Dashboard | **Stub** — entire admin module planned |
+| 5 | `GET /api/admin/stats` | GET | Admin Dashboard | KPI stat cards (users, farmers, buyers, products, orders, pending verifications) |
 | 6 | `POST /api/farmer/profile` | POST | Farmer Profile Page | Create profile form |
 | 7 | `POST /api/farmer/products` | POST | Create Product Page | Create product form |
 | 8 | `GET /api/farmer/products/my-products` | GET | My Products Page | List all farmer's products |
@@ -597,16 +593,16 @@ element.
 
 | # | Backend API | Status | UI Page / Component |
 |---|---|---|---|
-| 1 | `GET /api/farmer/profile` | ❌ Missing | Farmer Profile — View section |
-| 2 | `PUT /api/farmer/profile` | ❌ Missing | Farmer Profile — Edit section |
+| 1 | `GET /api/farmer/profile` | ✅ Implemented | Farmer Profile — View section |
+| 2 | `PUT /api/farmer/profile` | ✅ Implemented | Farmer Profile — Edit section |
 | 3 | `GET /api/buyer/products/search?name=` | ⚠️ Service exists, no endpoint | SearchBar on Browse Products |
 | 4 | `GET /api/buyer/products/category/{cat}` | ⚠️ Service exists, no endpoint | CategoryFilter on Browse Products |
-| 5 | `GET /api/admin/users` | ❌ Missing | Manage Users page |
-| 6 | `GET /api/admin/farmers` | ❌ Missing | Farmers list |
-| 7 | `GET /api/admin/buyers` | ❌ Missing | Buyers list |
-| 8 | `GET /api/admin/products` | ❌ Missing | All Products (admin) |
-| 9 | `GET /api/admin/orders` | ❌ Missing | All Orders (admin) |
-| 10 | `PUT /api/admin/farmers/{id}/verify` | ❌ Missing | Farmer Verification page |
+| 5 | `GET /api/admin/users` | ✅ Implemented | Manage Users page |
+| 6 | `GET /api/admin/farmers` | ✅ Implemented | Farmers list |
+| 7 | `GET /api/admin/buyers` | ✅ Implemented | Buyers list |
+| 8 | `GET /api/admin/products` | ✅ Implemented | All Products (admin) |
+| 9 | `GET /api/admin/orders` | ✅ Implemented | All Orders (admin) |
+| 10 | `PUT /api/admin/farmers/{profileId}/verify` | ✅ Implemented | Farmer Verification page |
 
 ---
 
@@ -643,11 +639,11 @@ corresponding backend APIs are built:
 | 2 | **Farmer — Edit Profile** | `/farmer/profile` | `PUT /api/farmer/profile` endpoint |
 | 3 | **Buyer — Search Products** | `/buyer/products` | Controller endpoint for `ProductRepository.findByNameContainingIgnoreCase()` |
 | 4 | **Buyer — Filter by Category** | `/buyer/products` | Controller endpoint for `ProductService.getProductsByCategory()` |
-| 5 | **Admin — Full Dashboard** | `/admin/dashboard` | All admin APIs (users, products, orders CRUD) |
-| 6 | **Admin — Manage Users** | `/admin/users` | `GET /api/admin/users`, role filters |
-| 7 | **Admin — All Products** | `/admin/products` | `GET /api/admin/products` |
-| 8 | **Admin — All Orders** | `/admin/orders` | `GET /api/admin/orders` |
-| 9 | **Admin — Farmer Verification** | `/admin/verification` | Farmer verification system + `PUT /api/admin/farmers/{id}/verify` |
+| 5 | **Admin — Full Dashboard** | `/admin/dashboard` | ✅ Implemented — `GET /api/admin/stats` |
+| 6 | **Admin — Manage Users** | `/admin/users` | ✅ Implemented — `GET /api/admin/users`, role filters |
+| 7 | **Admin — All Products** | `/admin/products` | ✅ Implemented — `GET /api/admin/products` |
+| 8 | **Admin — All Orders** | `/admin/orders` | ✅ Implemented — `GET /api/admin/orders` |
+| 9 | **Admin — Farmer Verification** | `/admin/verification` | ✅ Implemented — `GET /api/admin/farmers/unverified` + `PUT /api/admin/farmers/{profileId}/verify` |
 | 10 | **Farmer Dashboard Stats** | `/farmer/dashboard` | Dashboard aggregation API or client-side computation |
 | 11 | **Global Exception Handling** | All pages | `@ControllerAdvice` for consistent error responses |
 | 12 | **Environment Variable Configuration** | Build-time | Move hardcoded DB/JWT credentials to environment variables |
