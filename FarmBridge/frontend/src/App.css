@@ -1125,7 +1125,6 @@
   flex-wrap: wrap;
   padding: 1rem 2rem 0.5rem;
 }
-
 .filter-chip {
   padding: 0.4rem 1rem;
   font-size: 0.8rem;
@@ -1235,6 +1234,46 @@
   font-size: 0.78rem;
   font-weight: 400;
   color: var(--gray-500);
+}
+
+/* ==========================================
+   BUYER SEARCH BAR
+   ========================================== */
+
+.buyer-search-bar {
+  padding: 1rem 2rem 0.25rem;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+  background: white;
+}
+
+.search-input:focus {
+  border-color: var(--green-500);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
+}
+
+.search-input::placeholder {
+  color: var(--gray-400);
+}
+
+/* ==========================================
+   DASHBOARD RECENT ORDERS
+   ========================================== */
+
+.dashboard-recent-orders {
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  margin-bottom: 2rem;
 }
 
 /* ==========================================

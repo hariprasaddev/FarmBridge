@@ -38,10 +38,8 @@ function EditProductPage() {
     setLoading(true);
     setError('');
     try {
-      const response = await farmerProductsAPI.getMyProducts();
-      const product = response.data.find(
-        (p) => p.id === parseInt(id, 10)
-      );
+      const response = await farmerProductsAPI.getProductById(id);
+      const product = response.data;
 
       if (!product) {
         setNotFound(true);
@@ -56,7 +54,14 @@ function EditProductPage() {
         category: product.category || '',
       });
     } catch (err) {
-      setError('Failed to load product details.');
+      // Product missing — show not-found state
+      if (err.response?.status === 404) {
+        setNotFound(true);
+      } else {
+        // Server / network errors — show graceful error banner
+        const message = err.response?.data?.message;
+        setError(typeof message === 'string' ? message : 'Failed to load product details.');
+      }
     } finally {
       setLoading(false);
     }

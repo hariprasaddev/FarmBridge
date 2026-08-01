@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,7 +8,20 @@ function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { login } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Success message when redirected from registration (state passed by RegisterPage).
+  // Show it once, then clear the navigation state so it never reappears.
+  useEffect(() => {
+    if (location.state?.registered) {
+      setShowSuccess(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -45,6 +58,11 @@ function LoginPage() {
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
+        {showSuccess && (
+          <div className="alert alert-success">
+            Registration successful! Please login.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">

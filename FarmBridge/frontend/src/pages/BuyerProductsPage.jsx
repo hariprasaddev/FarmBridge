@@ -7,6 +7,10 @@ function BuyerProductsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Search & category filter state
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('ALL');
+
   // Place-order modal state
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -30,6 +34,26 @@ function BuyerProductsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Derived: all categories present in the loaded products
+  const categories = ['ALL', ...new Set(products.map((p) => p.category))];
+
+  // Derived: apply client-side search + category filter
+  const query = search.trim().toLowerCase();
+  const filteredProducts = products.filter((product) => {
+    const matchesSearch =
+      !query ||
+      product.name.toLowerCase().includes(query) ||
+      (product.description || '').toLowerCase().includes(query);
+    const matchesCategory =
+      category === 'ALL' || product.category === category;
+    return matchesSearch && matchesCategory;
+  });
+
+  const clearFilters = () => {
+    setSearch('');
+    setCategory('ALL');
   };
 
   const openOrderModal = (product) => {
@@ -97,17 +121,59 @@ function BuyerProductsPage() {
           </div>
         </div>
 
+        <div className="buyer-search-bar">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="🔍 Search products..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        <div className="filter-chips">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`filter-chip ${category === cat ? 'active' : ''}`}
+              onClick={() => setCategory(cat)}
+            >
+              {cat === 'ALL' ? 'All Categories' : cat}
+            </button>
+          ))}
+        </div>
+
+        {(search || category !== 'ALL') && (
+          <div className="buyer-search-bar">
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={clearFilters}
+            >
+              ✕ Clear Filters
+            </button>
+          </div>
+        )}
+
         {error && <div className="alert alert-error">{error}</div>}
 
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="products-empty">
-            <div className="empty-icon">🌾</div>
-            <h3>No products available</h3>
-            <p>Check back soon — farmers are adding new listings.</p>
+            <div className="empty-icon">🔍</div>
+            <h3>
+              {products.length === 0
+                ? 'No products available'
+                : 'No matching products found'}
+            </h3>
+            <p>
+              {products.length === 0
+                ? 'Check back soon — farmers are adding new listings.'
+                : 'Try adjusting your search or category filter.'}
+            </p>
           </div>
         ) : (
           <div className="products-grid">
-            {products.map((product) => (
+            {filteredProducts.map((product) => (
               <div key={product.id} className="product-card">
                 <div className="product-card-header">
                   <div className="product-category-badge">
