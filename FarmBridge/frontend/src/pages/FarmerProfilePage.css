@@ -1,0 +1,544 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   FARMER PROFILE — Premium SaaS presentation layer
+   All selectors are scoped with the `fp-` prefix so no other
+   page or shared component is affected.
+   ============================================================ */
+
+.fp-root {
+  --fp-primary: #2e7d32;
+  --fp-primary-soft: #66bb6a;
+  --fp-bg: #f8fafc;
+  --fp-card: #ffffff;
+  --fp-border: #e5e7eb;
+  --fp-text: #1f2937;
+  --fp-muted: #6b7280;
+  --fp-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--fp-text);
+  background: var(--fp-bg);
+  margin-top: -1rem; /* cancel .main-content top padding */
+  min-height: calc(100vh - var(--fp-navbar-h));
+}
+
+.fp-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   LAYOUT — two-column grid (left profile card / right info)
+   ------------------------------------------------------------ */
+
+.fp-grid {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.fp-card {
+  background: var(--fp-card);
+  border: 1px solid var(--fp-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* Hover lift applies to the profile/info cards (and empty state), not the
+   form card or skeletons — a form lifting on hover feels unusual. */
+.fp-profile-card:hover,
+.fp-info-card:hover,
+.fp-empty:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -12px rgba(16, 24, 40, 0.16);
+}
+
+/* ------------------------------------------------------------
+   LEFT PROFILE CARD
+   ------------------------------------------------------------ */
+
+.fp-profile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px 26px;
+}
+
+.fp-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2e7d32, #66bb6a);
+  color: #fff;
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 20px -8px rgba(46, 125, 50, 0.5);
+  margin-bottom: 16px;
+}
+
+.fp-farm-name {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fp-text);
+  line-height: 1.2;
+}
+
+.fp-farm-loc {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--fp-muted);
+  font-size: 0.9rem;
+  margin-top: 4px;
+}
+
+.fp-farm-loc svg {
+  flex-shrink: 0;
+}
+
+.fp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.fp-meta {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fp-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+}
+
+.fp-meta-item:hover {
+  background: #f8fafc;
+}
+
+.fp-meta-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fp-meta-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.fp-meta-value {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--fp-text);
+  margin-top: 1px;
+}
+
+/* ------------------------------------------------------------
+   RIGHT INFORMATION CARD
+   ------------------------------------------------------------ */
+
+.fp-info-card {
+  padding: 28px;
+}
+
+.fp-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.fp-card-head h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--fp-text);
+}
+
+.fp-card-sub {
+  font-size: 0.82rem;
+  color: var(--fp-muted);
+  margin-top: 2px;
+}
+
+.fp-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--fp-border);
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.fp-edit-btn:hover {
+  background: #e8f5e9;
+  border-color: #9ccc9c;
+  color: var(--fp-primary);
+  transform: translateY(-1px);
+}
+
+.fp-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 28px;
+}
+
+.fp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fp-field-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+}
+
+.fp-field-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--fp-text);
+}
+
+/* ------------------------------------------------------------
+   CREATE / EDIT FORM
+   ------------------------------------------------------------ */
+
+.fp-form-card {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 28px;
+}
+
+.fp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.fp-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.fp-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.fp-form-group label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.fp-form-input {
+  padding: 12px 14px;
+  border: 1px solid var(--fp-border);
+  border-radius: 10px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--fp-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fp-form-input::placeholder {
+  color: #9ca3af;
+}
+
+.fp-form-input:focus {
+  border-color: var(--fp-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+}
+
+.fp-form-input:focus-visible {
+  outline: 2px solid var(--fp-primary-soft);
+  outline-offset: 2px;
+}
+
+.fp-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  margin-top: 6px;
+}
+
+.fp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  background: var(--fp-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-btn-primary:hover:not(:disabled) {
+  background: #256b29;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -8px rgba(46, 125, 50, 0.45);
+}
+
+.fp-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 1px solid var(--fp-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--fp-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.fp-btn-outline:hover {
+  background: #f8fafc;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.fp-edit-btn:focus-visible,
+.fp-btn-primary:focus-visible,
+.fp-btn-outline:focus-visible {
+  outline: 2px solid var(--fp-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   EMPTY PROFILE STATE
+   ------------------------------------------------------------ */
+
+.fp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 72px 24px;
+  background: var(--fp-card);
+  border: 1px solid var(--fp-border);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.fp-empty-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 24px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.fp-empty h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fp-text);
+  margin-bottom: 8px;
+}
+
+.fp-empty p {
+  color: var(--fp-muted);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING
+   ------------------------------------------------------------ */
+
+.fp-skel-card {
+  padding: 32px 24px;
+}
+
+.fp-skel-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+}
+
+.fp-skel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.fp-skel-line,
+.fp-skel-avatar,
+.fp-skel-field {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: fpShimmer 1.4s ease infinite;
+}
+
+.fp-skel-line {
+  height: 14px;
+  border-radius: 7px;
+  margin-bottom: 10px;
+}
+
+.fp-skel-line--title {
+  width: 55%;
+  height: 18px;
+  margin: 0 auto 10px;
+}
+
+.fp-skel-line--sub {
+  width: 38%;
+  height: 12px;
+  margin: 0 auto 20px;
+}
+
+.fp-skel-field {
+  height: 46px;
+  border-radius: 10px;
+}
+
+@keyframes fpShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .fp-inner {
+    padding: 20px;
+  }
+
+  .fp-grid {
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .fp-inner {
+    padding: 16px;
+  }
+
+  /* Cards stack vertically on mobile */
+  .fp-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .fp-profile-card {
+    padding: 28px 20px 24px;
+  }
+
+  .fp-info-card,
+  .fp-form-card {
+    padding: 22px 20px;
+  }
+
+  .fp-card-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fp-edit-btn {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .fp-fields,
+  .fp-form-row,
+  .fp-skel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fp-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .fp-btn-primary,
+  .fp-btn-outline {
+    width: 100%;
+  }
+
+  .fp-empty {
+    padding: 56px 20px;
+  }
+}

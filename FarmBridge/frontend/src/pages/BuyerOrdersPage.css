@@ -1,0 +1,640 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   BUYER ORDERS — Premium SaaS presentation layer
+   All selectors are scoped with the `bo-` prefix so no other
+   page or shared component is affected.
+   ============================================================ */
+
+.bo-root {
+  --bo-primary: #2e7d32;
+  --bo-primary-soft: #66bb6a;
+  --bo-bg: #f8fafc;
+  --bo-card: #ffffff;
+  --bo-border: #e5e7eb;
+  --bo-text: #1f2937;
+  --bo-muted: #6b7280;
+  --bo-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--bo-text);
+  background: var(--bo-bg);
+  margin-top: -1rem; /* cancel .main-content top padding */
+  min-height: calc(100vh - var(--bo-navbar-h));
+}
+
+.bo-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   PAGE HEADER + SUMMARY CARDS
+   ------------------------------------------------------------ */
+
+.bo-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.bo-title h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bo-text);
+  line-height: 1.2;
+}
+
+.bo-sub {
+  font-size: 0.85rem;
+  color: var(--bo-muted);
+  margin-top: 0.15rem;
+}
+
+.bo-summary {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bo-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 132px;
+  padding: 0.7rem 0.9rem;
+  background: var(--bo-card);
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.bo-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px -10px rgba(16, 24, 40, 0.14);
+  border-color: #d1d5db;
+}
+
+.bo-summary-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bo-summary-icon-green { background: #e8f5e9; color: #2e7d32; }
+.bo-summary-icon-amber { background: #fef3c7; color: #b45309; }
+.bo-summary-icon-blue { background: #dbeafe; color: #1d4ed8; }
+.bo-summary-icon-emerald { background: #d1fae5; color: #047857; }
+.bo-summary-icon-red { background: #fee2e2; color: #b91c1c; }
+.bo-summary-icon-gray { background: #f1f5f9; color: #64748b; }
+
+.bo-summary-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--bo-text);
+  line-height: 1.1;
+}
+
+.bo-summary-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--bo-muted);
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------
+   SEARCH + FILTER BAR
+   ------------------------------------------------------------ */
+
+.bo-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.8rem 0.9rem;
+  background: var(--bo-card);
+  border: 1px solid var(--bo-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  margin-bottom: 1.25rem;
+}
+
+.bo-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 240px;
+  color: #9ca3af;
+}
+
+.bo-search > svg {
+  position: absolute;
+  left: 0.8rem;
+  pointer-events: none;
+}
+
+.bo-search input {
+  width: 100%;
+  padding: 0.6rem 2.4rem 0.6rem 2.4rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 10px;
+  background: #f9fafb;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--bo-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.bo-search input::placeholder {
+  color: #9ca3af;
+}
+
+.bo-search input:focus {
+  background: #fff;
+  border-color: var(--bo-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+}
+
+.bo-search-clear {
+  position: absolute;
+  right: 0.45rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 7px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bo-search-clear:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Status pills */
+.bo-pills {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.bo-pill {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--bo-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.bo-pill:hover {
+  border-color: #9ccc9c;
+  color: var(--bo-primary);
+}
+
+.bo-pill.active {
+  background: var(--bo-primary);
+  border-color: var(--bo-primary);
+  color: #fff;
+}
+
+.bo-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--bo-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--bo-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.bo-clear-btn:hover {
+  background: #e8f5e9;
+  border-color: #a7d3a9;
+  color: var(--bo-primary);
+}
+
+/* ------------------------------------------------------------
+   ORDER CARDS (stacked, all screen sizes)
+   ------------------------------------------------------------ */
+
+.bo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.bo-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--bo-card);
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.bo-card:hover {
+  transform: translateY(-2px);
+  border-color: #9ccc9c;
+  box-shadow: 0 12px 24px -12px rgba(16, 24, 40, 0.18);
+}
+
+.bo-card:focus-visible {
+  outline: 2px solid var(--bo-primary-soft);
+  outline-offset: 2px;
+}
+
+/* Rejected orders render dimmed */
+.bo-card-rejected {
+  opacity: 0.7;
+}
+
+.bo-card-rejected:hover {
+  opacity: 0.92;
+}
+
+/* Thumbnail */
+.bo-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bo-thumb-veg { background: #e8f5e9; color: #2e7d32; }
+.bo-thumb-fruit { background: #fff3e0; color: #c2410c; }
+.bo-thumb-grain { background: #fef9c3; color: #a16207; }
+.bo-thumb-dairy { background: #dbeafe; color: #1d4ed8; }
+
+/* Center info */
+.bo-card-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.bo-card-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--bo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bo-card-meta {
+  font-size: 0.85rem;
+  color: var(--bo-muted);
+  margin-top: 0.2rem;
+}
+
+.bo-card-ref {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #9ca3af;
+  margin-top: 0.35rem;
+}
+
+/* Right: price + status */
+.bo-card-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.bo-card-price {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #1b5e20;
+}
+
+/* Status badge color mapping for this page only:
+   Pending = yellow/orange, Accepted = green, Completed = blue,
+   Rejected = red. Scoped so the shared OrderStatusBadge / other
+   pages are unaffected. */
+.bo-card .order-badge-pending,
+.bo-modal .order-badge-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.bo-card .order-badge-accepted,
+.bo-modal .order-badge-accepted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.bo-card .order-badge-completed,
+.bo-modal .order-badge-completed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.bo-card .order-badge-rejected,
+.bo-modal .order-badge-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.bo-card .order-badge-cancelled,
+.bo-modal .order-badge-cancelled {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+/* ------------------------------------------------------------
+   EMPTY STATES
+   ------------------------------------------------------------ */
+
+.bo-empty-card {
+  background: var(--bo-card);
+  border: 1px solid var(--bo-border);
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+}
+
+.bo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 1.5rem;
+  color: var(--bo-muted);
+}
+
+.bo-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--bo-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+
+.bo-empty h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--bo-text);
+  margin-bottom: 0.35rem;
+}
+
+.bo-empty p {
+  font-size: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+
+.bo-empty-btn {
+  padding: 0.6rem 1.3rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--bo-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  text-decoration: none;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bo-empty-btn:hover {
+  background: #256b29;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -8px rgba(46, 125, 50, 0.45);
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING (mirrors the order card layout)
+   ------------------------------------------------------------ */
+
+.bo-skeleton {
+  border-radius: 12px;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: boShimmer 1.4s ease infinite;
+}
+
+@keyframes boShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.bo-skeleton-summary {
+  width: 132px;
+  height: 60px;
+}
+
+.bo-skeleton-toolbar {
+  height: 58px;
+  margin-bottom: 1.25rem;
+}
+
+.bo-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--bo-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.bo-skeleton-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  flex-shrink: 0;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: boShimmer 1.4s ease infinite;
+}
+
+.bo-skeleton-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.bo-skeleton-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.bo-skeleton-line {
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: boShimmer 1.4s ease infinite;
+}
+
+.bo-skeleton-line--name { width: 180px; height: 15px; }
+.bo-skeleton-line--meta { width: 240px; }
+.bo-skeleton-line--ref { width: 90px; height: 11px; }
+.bo-skeleton-line--price { width: 70px; height: 17px; }
+
+.bo-skeleton-badge {
+  width: 84px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: boShimmer 1.4s ease infinite;
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.bo-search input:focus-visible,
+.bo-pill:focus-visible,
+.bo-clear-btn:focus-visible,
+.bo-search-clear:focus-visible,
+.bo-empty-btn:focus-visible {
+  outline: 2px solid var(--bo-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .bo-inner {
+    padding: 20px;
+  }
+
+  .bo-card {
+    padding: 0.9rem 1.1rem;
+  }
+
+  .bo-search {
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 640px) {
+  .bo-inner {
+    padding: 16px;
+  }
+
+  .bo-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .bo-summary {
+    width: 100%;
+  }
+
+  .bo-summary-card {
+    flex: 1 1 calc(50% - 0.4rem);
+    min-width: 0;
+  }
+
+  .bo-toolbar {
+    align-items: stretch;
+  }
+
+  .bo-search {
+    min-width: 100%;
+  }
+
+  .bo-pills {
+    order: 3;
+  }
+
+  /* Price and status move below the content on small screens */
+  .bo-card {
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+  }
+
+  .bo-card-info {
+    flex: 1 1 calc(100% - 72px);
+  }
+
+  .bo-card-side {
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.7rem;
+  }
+
+  .bo-skeleton-card {
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+  }
+
+  .bo-skeleton-body {
+    flex: 1 1 calc(100% - 72px);
+  }
+
+  .bo-skeleton-side {
+    flex: 1 1 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 0.7rem;
+  }
+}

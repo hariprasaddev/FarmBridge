@@ -1,0 +1,501 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   BUYER PRODUCTS — Premium marketplace presentation layer
+   All selectors are scoped with the `bp-` prefix so no other
+   page or shared component is affected.
+   ============================================================ */
+
+.bp-root {
+  --bp-primary: #2e7d32;
+  --bp-primary-soft: #66bb6a;
+  --bp-bg: #f8fafc;
+  --bp-card: #ffffff;
+  --bp-border: #e5e7eb;
+  --bp-text: #1f2937;
+  --bp-muted: #6b7280;
+  --bp-warning: #f59e0b;
+  --bp-danger: #ef4444;
+  --bp-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--bp-text);
+  background: var(--bp-bg);
+  margin-top: -1rem; /* cancel .main-content top padding */
+  min-height: calc(100vh - var(--bp-navbar-h));
+}
+
+.bp-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   PAGE HEADER
+   ------------------------------------------------------------ */
+
+.bp-head {
+  margin-bottom: 1.5rem;
+}
+
+.bp-head h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bp-text);
+  line-height: 1.2;
+}
+
+.bp-sub {
+  font-size: 0.85rem;
+  color: var(--bp-muted);
+  margin-top: 0.15rem;
+}
+
+/* ------------------------------------------------------------
+   TOOLBAR — Search + category pills
+   ------------------------------------------------------------ */
+
+.bp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+}
+
+.bp-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+  color: #9ca3af;
+}
+
+.bp-search > svg {
+  position: absolute;
+  left: 0.9rem;
+  pointer-events: none;
+}
+
+.bp-search input {
+  width: 100%;
+  padding: 0.7rem 2.6rem 0.7rem 2.6rem;
+  border: 1px solid var(--bp-border);
+  border-radius: 12px;
+  background: var(--bp-card);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--bp-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bp-search input::placeholder {
+  color: #9ca3af;
+}
+
+.bp-search input:focus {
+  border-color: var(--bp-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+}
+
+.bp-search-clear {
+  position: absolute;
+  right: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bp-search-clear:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.bp-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bp-pill {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--bp-border);
+  background: #fff;
+  color: var(--bp-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.bp-pill:hover {
+  border-color: var(--bp-primary-soft);
+  color: var(--bp-primary);
+  transform: translateY(-1px);
+}
+
+.bp-pill.active {
+  background: var(--bp-primary);
+  border-color: var(--bp-primary);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------
+   PRODUCT GRID
+   ------------------------------------------------------------ */
+
+.bp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+/* ------------------------------------------------------------
+   PRODUCT CARD
+   Fixed-height so the hover "Add to Order" button never
+   shifts the layout.
+   ------------------------------------------------------------ */
+
+.bp-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bp-card);
+  border: 1px solid var(--bp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  height: 100%;
+  min-height: 100%;
+}
+
+.bp-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 32px -14px rgba(16, 24, 40, 0.18);
+  border-color: var(--bp-primary);
+}
+
+.bp-card-media {
+  position: relative;
+  height: 175px;
+  flex-shrink: 0;
+}
+
+.bp-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.25rem;
+  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 60%, #e0f2e9 100%);
+}
+
+.bp-stock {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: #fff;
+  box-shadow: 0 2px 8px -2px rgba(16, 24, 40, 0.18);
+}
+
+.bp-stock-in { color: #166534; background: #dcfce7; }
+.bp-stock-low { color: #b45309; background: #fef3c7; }
+.bp-stock-out { color: #b91c1c; background: #fee2e2; }
+
+.bp-card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 0.9rem 1rem 0.6rem;
+  min-height: 92px;
+}
+
+.bp-card-name {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--bp-text);
+  line-height: 1.3;
+  margin-bottom: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bp-card-farmer {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--bp-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bp-card-farmer svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.bp-card-foot {
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+.bp-card-price {
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--bp-primary);
+}
+
+/* Hover action zone — fixed space, button fades/slides in */
+.bp-card-actions {
+  height: 46px;
+  padding: 0 1rem 0.9rem;
+  flex-shrink: 0;
+}
+
+.bp-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  height: 38px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bp-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, background 0.15s ease;
+}
+
+.bp-card:hover .bp-add-btn:not(:disabled) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.bp-add-btn:hover:not(:disabled) {
+  background: #256b29;
+}
+
+.bp-add-btn:disabled {
+  opacity: 1;
+  transform: none;
+  background: #e5e7eb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.bp-add-btn:focus-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* On touch devices there is no hover — always show the button */
+@media (hover: none) {
+  .bp-add-btn:not(:disabled) {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING CARDS
+   ------------------------------------------------------------ */
+
+.bp-skeleton {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--bp-border);
+  border-radius: 12px;
+  overflow: hidden;
+  height: 100%;
+}
+
+.bp-skeleton-media {
+  height: 175px;
+  flex-shrink: 0;
+}
+
+.bp-skeleton-body {
+  padding: 1rem;
+  flex: 1;
+}
+
+.bp-skeleton-line {
+  border-radius: 6px;
+  margin-bottom: 0.6rem;
+}
+
+.bp-skeleton-line--lg {
+  height: 14px;
+  width: 70%;
+}
+
+.bp-skeleton-line--sm {
+  height: 11px;
+  width: 45%;
+}
+
+.bp-skeleton-line--price {
+  height: 18px;
+  width: 35%;
+  margin-top: 0.9rem;
+  margin-bottom: 0;
+}
+
+/* Match the reserved action zone of real cards so skeletons have
+   the exact same dimensions (no height jump when content loads). */
+.bp-skeleton-actions {
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.bp-skeleton-media,
+.bp-skeleton-line {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: bpShimmer 1.4s ease infinite;
+}
+
+@keyframes bpShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ------------------------------------------------------------
+   EMPTY STATE
+   ------------------------------------------------------------ */
+
+.bp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 1.5rem;
+  color: var(--bp-muted);
+}
+
+.bp-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--bp-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+
+.bp-empty h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--bp-text);
+  margin-bottom: 0.35rem;
+}
+
+.bp-empty p {
+  font-size: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+
+.bp-empty-btn {
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--bp-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--bp-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.bp-empty-btn:hover {
+  background: #e8f5e9;
+  border-color: #a7d3a9;
+  color: var(--bp-primary);
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.bp-search input:focus-visible,
+.bp-pill:focus-visible,
+.bp-add-btn:focus-visible,
+.bp-search-clear:focus-visible,
+.bp-empty-btn:focus-visible {
+  outline: 2px solid var(--bp-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .bp-inner {
+    padding: 20px;
+  }
+
+  .bp-search {
+    max-width: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .bp-inner {
+    padding: 16px;
+  }
+
+  .bp-head h1 {
+    font-size: 1.25rem;
+  }
+
+  .bp-toolbar {
+    gap: 0.75rem;
+  }
+
+  .bp-card-actions {
+    height: auto;
+    padding: 0 1rem 0.9rem;
+  }
+
+  .bp-add-btn:not(:disabled) {
+    opacity: 1;
+    transform: none;
+  }
+}

@@ -1,6 +1,29 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerProductsAPI, buyerOrdersAPI, getErrorMessage } from '../services/api';
+import Icon from '../components/Icon';
+import './BuyerProductsPage.css';
+
+// Decorative category placeholder emoji (presentation only — products
+// have no image field, so a category-tinted placeholder is shown).
+const CATEGORY_EMOJI = {
+  Vegetables: '🥦',
+  Fruits: '🍎',
+  Grains: '🌾',
+  Dairy: '🥛',
+  Poultry: '🍗',
+  Spices: '🌶️',
+  Pulses: '🫘',
+  Oilseeds: '🌻',
+  Other: '🧺',
+};
+
+// Availability derived from the existing product.quantity value.
+const getStock = (qty) => {
+  if (qty <= 0) return { label: 'Out of Stock', tone: 'out' };
+  if (qty <= 20) return { label: 'Low Stock', tone: 'low' };
+  return { label: 'In Stock', tone: 'in' };
+};
 
 function BuyerProductsPage() {
   const [products, setProducts] = useState([]);
@@ -86,131 +109,126 @@ function BuyerProductsPage() {
     }
   };
 
-  // ==========================================
-  // LOADING STATE
-  // ==========================================
+  const renderSkeletons = () =>
+    Array.from({ length: 8 }).map((_, i) => (
+      <div key={i} className="bp-skeleton" aria-hidden="true">
+        <div className="bp-skeleton-media" />
+        <div className="bp-skeleton-body">
+          <div className="bp-skeleton-line bp-skeleton-line--lg" />
+          <div className="bp-skeleton-line bp-skeleton-line--sm" />
+          <div className="bp-skeleton-line bp-skeleton-line--price" />
+        </div>
+        <div className="bp-skeleton-actions" />
+      </div>
+    ));
 
-  if (loading) {
+  const renderCard = (product) => {
+    const stock = getStock(product.quantity);
+    const emoji = CATEGORY_EMOJI[product.category] || CATEGORY_EMOJI.Other;
+
     return (
-      <div className="page-container">
-        <div className="loading-container">
-          <div className="spinner" />
-          <p>Loading products...</p>
+      <div key={product.id} className="bp-card">
+        <div className="bp-card-media">
+          <span className="bp-placeholder" role="img" aria-label={product.category}>
+            {emoji}
+          </span>
+          <span className={`bp-stock bp-stock-${stock.tone}`}>{stock.label}</span>
+        </div>
+
+        <div className="bp-card-body">
+          <h3 className="bp-card-name" title={product.name}>
+            {product.name}
+          </h3>
+          <p className="bp-card-farmer">
+            <Icon name="profile" size={13} />
+            by {product.farmerName}
+          </p>
+          <div className="bp-card-foot">
+            <span className="bp-card-price">₹{product.price?.toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="bp-card-actions">
+          <button
+            className="bp-add-btn"
+            onClick={() => openOrderModal(product)}
+            disabled={product.quantity <= 0}
+          >
+            <Icon name="cart" size={16} />
+            {product.quantity > 0 ? 'Add to Order' : 'Out of Stock'}
+          </button>
         </div>
       </div>
     );
-  }
-
-  // ==========================================
-  // RENDER
-  // ==========================================
+  };
 
   return (
-    <div className="page-container">
-      <div className="products-page">
-        <div className="products-header">
-          <div>
-            <h1>Browse Products</h1>
-            <p className="products-subtitle">
-              Fresh produce straight from farmers
-            </p>
+    <div className="bp-root">
+      <div className="bp-inner">
+        <header className="bp-head">
+          <h1>Browse Products</h1>
+          <p className="bp-sub">Fresh produce straight from farmers</p>
+        </header>
+
+        <div className="bp-toolbar">
+          <div className="bp-search">
+            <Icon name="search" size={18} />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                className="bp-search-clear"
+                onClick={() => setSearch('')}
+                aria-label="Clear search"
+              >
+                <Icon name="x" size={14} />
+              </button>
+            )}
+          </div>
+
+          <div className="bp-pills">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                className={`bp-pill ${category === cat ? 'active' : ''}`}
+                onClick={() => setCategory(cat)}
+              >
+                {cat === 'ALL' ? 'All' : cat}
+              </button>
+            ))}
           </div>
         </div>
-
-        <div className="buyer-search-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="🔍 Search products..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-
-        <div className="filter-chips">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              className={`filter-chip ${category === cat ? 'active' : ''}`}
-              onClick={() => setCategory(cat)}
-            >
-              {cat === 'ALL' ? 'All Categories' : cat}
-            </button>
-          ))}
-        </div>
-
-        {(search || category !== 'ALL') && (
-          <div className="buyer-search-bar">
-            <button
-              type="button"
-              className="btn btn-outline btn-sm"
-              onClick={clearFilters}
-            >
-              ✕ Clear Filters
-            </button>
-          </div>
-        )}
 
         {error && <div className="alert alert-error">{error}</div>}
 
-        {filteredProducts.length === 0 ? (
-          <div className="products-empty">
-            <div className="empty-icon">🔍</div>
-            <h3>
-              {products.length === 0
-                ? 'No products available'
-                : 'No matching products found'}
-            </h3>
+        {loading ? (
+          <div className="bp-grid">{renderSkeletons()}</div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="bp-empty">
+            <span className="bp-empty-icon">
+              <Icon name="search" size={28} />
+            </span>
+            <h2>
+              {products.length === 0 ? 'No products available' : 'No products found'}
+            </h2>
             <p>
               {products.length === 0
                 ? 'Check back soon — farmers are adding new listings.'
-                : 'Try adjusting your search or category filter.'}
+                : 'Try another search or category.'}
             </p>
+            {(search || category !== 'ALL') && (
+              <button type="button" className="bp-empty-btn" onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="products-grid">
-            {filteredProducts.map((product) => (
-              <div key={product.id} className="product-card">
-                <div className="product-card-header">
-                  <div className="product-category-badge">
-                    {product.category}
-                  </div>
-                  <div className="product-price">
-                    ₹{product.price?.toLocaleString()}
-                  </div>
-                </div>
-
-                <div className="product-card-body">
-                  <h3 className="product-name">{product.name}</h3>
-                  {product.description && (
-                    <p className="product-description">
-                      {product.description.length > 100
-                        ? product.description.substring(0, 100) + '...'
-                        : product.description}
-                    </p>
-                  )}
-                  <div className="product-meta">
-                    <span className="product-quantity">
-                      📦 Available: {product.quantity}
-                    </span>
-                    <span className="product-quantity">
-                      👨‍🌾 {product.farmerName}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="product-card-actions">
-                  <button
-                    className="btn btn-primary btn-sm btn-full"
-                    onClick={() => openOrderModal(product)}
-                    disabled={product.quantity <= 0}
-                  >
-                    {product.quantity > 0 ? '🛒 Place Order' : 'Out of Stock'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+          <div className="bp-grid">{filteredProducts.map(renderCard)}</div>
         )}
       </div>
 

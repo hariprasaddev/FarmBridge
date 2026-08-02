@@ -1,0 +1,580 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   FARMER ORDERS — Premium SaaS presentation layer
+   All selectors are scoped with the `fo-` prefix so no other
+   page or shared component is affected.
+   ============================================================ */
+
+.fo-root {
+  --fo-primary: #2e7d32;
+  --fo-primary-soft: #66bb6a;
+  --fo-bg: #f8fafc;
+  --fo-card: #ffffff;
+  --fo-border: #e5e7eb;
+  --fo-text: #1f2937;
+  --fo-muted: #6b7280;
+  --fo-danger: #ef4444;
+  --fo-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--fo-text);
+  background: var(--fo-bg);
+  margin-top: -1rem; /* cancel .main-content top padding */
+  min-height: calc(100vh - var(--fo-navbar-h));
+}
+
+.fo-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   PAGE HEADER
+   ------------------------------------------------------------ */
+
+.fo-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.fo-title h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--fo-text);
+  line-height: 1.2;
+}
+
+.fo-sub {
+  font-size: 0.85rem;
+  color: var(--fo-muted);
+  margin-top: 0.15rem;
+}
+
+.fo-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid var(--fo-border);
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.fo-export-btn:hover {
+  background: #f8fafc;
+  border-color: #d1d5db;
+  color: var(--fo-primary);
+  transform: translateY(-1px);
+}
+
+.fo-export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ------------------------------------------------------------
+   FILTER PILLS
+   ------------------------------------------------------------ */
+
+.fo-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.fo-pill {
+  padding: 0.5rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--fo-border);
+  background: #fff;
+  color: var(--fo-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.fo-pill:hover {
+  border-color: var(--fo-primary-soft);
+  color: var(--fo-primary);
+  transform: translateY(-1px);
+}
+
+.fo-pill.active {
+  background: var(--fo-primary);
+  border-color: var(--fo-primary);
+  color: #fff;
+}
+
+.fo-pill-count {
+  opacity: 0.65;
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------
+   SEARCH BAR
+   ------------------------------------------------------------ */
+
+.fo-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  color: #9ca3af;
+}
+
+.fo-search > svg {
+  position: absolute;
+  left: 0.9rem;
+  pointer-events: none;
+}
+
+.fo-search input {
+  width: 100%;
+  padding: 0.7rem 2.6rem 0.7rem 2.6rem;
+  border: 1px solid var(--fo-border);
+  border-radius: 12px;
+  background: var(--fo-card);
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--fo-text);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.fo-search input::placeholder {
+  color: #9ca3af;
+}
+
+.fo-search input:focus {
+  border-color: var(--fo-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+}
+
+.fo-search-clear {
+  position: absolute;
+  right: 0.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.fo-search-clear:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ------------------------------------------------------------
+   ORDER CARDS
+   ------------------------------------------------------------ */
+
+.fo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.fo-card {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.1rem 1.3rem;
+  background: var(--fo-card);
+  border: 1px solid var(--fo-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.fo-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -12px rgba(16, 24, 40, 0.16);
+  border-color: var(--fo-primary);
+}
+
+/* Avatar */
+.fo-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.fo-avatar-0 { background: #7c9a6d; }
+.fo-avatar-1 { background: #6d8a9a; }
+.fo-avatar-2 { background: #9a7c6d; }
+.fo-avatar-3 { background: #6d9a8a; }
+.fo-avatar-4 { background: #8a6d9a; }
+
+/* Center info */
+.fo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.fo-info-top {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.fo-buyer {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--fo-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fo-order-id {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9ca3af;
+  background: #f8fafc;
+  border: 1px solid var(--fo-border);
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.fo-product {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--fo-muted);
+  margin-top: 0.3rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fo-product svg {
+  color: var(--fo-primary);
+  flex-shrink: 0;
+}
+
+.fo-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--fo-muted);
+  flex-wrap: wrap;
+}
+
+.fo-meta-dot {
+  color: #d1d5db;
+}
+
+.fo-total {
+  font-weight: 700;
+  color: var(--fo-primary);
+  font-size: 0.95rem;
+}
+
+/* Right side */
+.fo-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Status badge mapping for this page only:
+   Pending = yellow, Accepted = green, Completed = blue, Rejected = red.
+   Scoped so the shared OrderStatusBadge / other pages are unaffected. */
+.fo-side .order-badge-accepted,
+.fo-card .order-badge-accepted {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.fo-side .order-badge-completed,
+.fo-card .order-badge-completed {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.fo-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.fo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.55rem 1.05rem;
+  border-radius: 10px;
+  border: none;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.fo-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.fo-btn-accept {
+  background: var(--fo-primary);
+  color: #fff;
+}
+
+.fo-btn-accept:hover:not(:disabled) {
+  background: #256b29;
+  transform: translateY(-1px);
+}
+
+.fo-btn-complete {
+  background: var(--fo-primary);
+  color: #fff;
+}
+
+.fo-btn-complete:hover:not(:disabled) {
+  background: #256b29;
+  transform: translateY(-1px);
+}
+
+.fo-btn-reject {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.fo-btn-reject:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+/* ------------------------------------------------------------
+   EMPTY STATES
+   ------------------------------------------------------------ */
+
+.fo-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 1.5rem;
+  color: var(--fo-muted);
+}
+
+.fo-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--fo-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+
+.fo-empty h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--fo-text);
+  margin-bottom: 0.35rem;
+}
+
+.fo-empty p {
+  font-size: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+
+.fo-clear-btn {
+  padding: 0.55rem 1.25rem;
+  border: 1px solid var(--fo-border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--fo-muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.fo-clear-btn:hover {
+  background: #e8f5e9;
+  border-color: #a7d3a9;
+  color: var(--fo-primary);
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING
+   ------------------------------------------------------------ */
+
+.fo-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 1.1rem 1.3rem;
+  background: #fff;
+  border: 1px solid var(--fo-border);
+  border-radius: 12px;
+}
+
+.fo-skeleton-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fo-skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.fo-skeleton-side {
+  width: 120px;
+  height: 72px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.fo-skeleton-line {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: foShimmer 1.4s ease infinite;
+}
+
+.fo-skeleton-line--lg {
+  height: 14px;
+  width: 38%;
+}
+
+.fo-skeleton-line--sm {
+  height: 11px;
+  width: 55%;
+}
+
+.fo-skeleton-avatar,
+.fo-skeleton-side {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: foShimmer 1.4s ease infinite;
+}
+
+@keyframes foShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.fo-search input:focus-visible,
+.fo-pill:focus-visible,
+.fo-export-btn:focus-visible,
+.fo-btn:focus-visible,
+.fo-search-clear:focus-visible,
+.fo-clear-btn:focus-visible {
+  outline: 2px solid var(--fo-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .fo-inner {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fo-inner {
+    padding: 16px;
+  }
+
+  .fo-title h1 {
+    font-size: 1.25rem;
+  }
+
+  .fo-export-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Everything stacks vertically on mobile */
+  .fo-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.9rem;
+    padding: 1.1rem;
+  }
+
+  .fo-info-top {
+    align-items: center;
+  }
+
+  .fo-side {
+    align-items: stretch;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.9rem;
+  }
+
+  .fo-actions {
+    justify-content: flex-end;
+    flex: 1;
+  }
+
+  .fo-btn {
+    flex: 1;
+  }
+}

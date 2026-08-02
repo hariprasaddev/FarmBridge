@@ -1,10 +1,27 @@
 import { useState, useEffect } from 'react';
 import { adminAPI, getErrorMessage } from '../services/api';
+import Icon from '../components/Icon';
+import AdminLayout from '../components/AdminLayout';
+import AdminPagination from '../components/AdminPagination';
+import './AdminPages.css';
+
+const PAGE_SIZE = 10;
+
+// Stock status derived from the existing quantity value:
+// 0 = Out of Stock, 1–10 = Low Stock, >10 = In Stock.
+const getStock = (qty) => {
+  if (!qty || qty <= 0) return { label: 'Out of Stock', tone: 'out' };
+  if (qty <= 10) return { label: 'Low Stock', tone: 'low' };
+  return { label: 'In Stock', tone: 'in' };
+};
 
 function AdminProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('ALL');
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     loadProducts();
@@ -23,84 +40,178 @@ function AdminProductsPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="page-container">
-        <div className="loading-container">
-          <div className="spinner" />
-          <p>Loading products...</p>
-        </div>
-      </div>
-    );
-  }
+  // Derived: all categories present in the loaded products.
+  const categories = ['ALL', ...new Set(products.map((p) => p.category).filter(Boolean))];
+
+  // Client-side search + category filter over the already-fetched products.
+  const query = search.trim().toLowerCase();
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = category === 'ALL' || p.category === category;
+    const matchesSearch =
+      !query ||
+      (p.name || '').toLowerCase().includes(query) ||
+      (p.farmerName || '').toLowerCase().includes(query) ||
+      (p.description || '').toLowerCase().includes(query);
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageProducts = filteredProducts.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const filtersActive = search.trim() !== '' || category !== 'ALL';
+
+  const clearFilters = () => {
+    setSearch('');
+    setCategory('ALL');
+    setPage(1);
+  };
 
   return (
-    <div className="page-container admin-page">
-      <div className="orders-page">
-        <div className="products-header">
-          <div>
-            <h1>All Products</h1>
-            <p className="products-subtitle">
-              Every product listed across the platform
-            </p>
-          </div>
+    <AdminLayout title="All Products" subtitle="Every product listed across the platform">
+      {error && <div className="alert alert-error">{error}</div>}
+
+      <div className="adm-toolbar">
+        <div className="adm-search">
+          <Icon name="search" size={17} />
+          <input
+            type="text"
+            name="search"
+            placeholder="Search by product, farmer, or description..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+          {search && (
+            <button
+              type="button"
+              className="adm-search-clear"
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+            >
+              <Icon name="x" size={13} />
+            </button>
+          )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        <div className="adm-pills">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={`adm-pill${category === cat ? ' active' : ''}`}
+              onClick={() => {
+                setCategory(cat);
+                setPage(1);
+              }}
+            >
+              {cat === 'ALL' ? 'All Categories' : cat}
+            </button>
+          ))}
+        </div>
 
-        {products.length === 0 ? (
-          <div className="products-empty">
-            <div className="empty-icon">📦</div>
-            <h3>No products listed</h3>
-            <p>Farmers haven't listed any products yet.</p>
+        {filtersActive && (
+          <button type="button" className="adm-clear" onClick={clearFilters}>
+            Clear Filters
+          </button>
+        )}
+
+        <span className="adm-count">{filteredProducts.length} products</span>
+      </div>
+
+      {loading ? (
+        <div className="adm-skeleton-table" aria-hidden="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="adm-skeleton-row">
+              <div className="adm-skeleton-cell adm-skeleton-cell--avatar" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--lg" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--sm" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--flex" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--sm" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--sm" />
+            </div>
+          ))}
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <div className="adm-table-card">
+          <div className="adm-empty">
+            <span className="adm-empty-icon">
+              <Icon name="package" size={28} />
+            </span>
+            <h2>No products found</h2>
+            <p>There are no products matching this search or filter.</p>
           </div>
-        ) : (
-          <div className="order-table-wrap">
-            <table className="order-table">
+        </div>
+      ) : (
+        <div className="adm-table-card">
+          <div className="adm-table-wrap">
+            <table className="adm-table">
               <thead>
                 <tr>
-                  <th>ID</th>
                   <th>Product</th>
                   <th>Category</th>
-                  <th>Price</th>
-                  <th>Qty</th>
                   <th>Farmer</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {products.map((product) => (
-                  <tr key={product.id}>
-                    <td className="order-id">#{product.id}</td>
-                    <td>
-                      <div className="admin-product-name">
-                        {product.name}
-                        {product.description && (
-                          <span className="admin-product-desc">
-                            {product.description.length > 60
-                              ? product.description.substring(0, 60) + '...'
-                              : product.description}
+                {pageProducts.map((product) => {
+                  const stock = getStock(product.quantity);
+                  return (
+                    <tr key={product.id}>
+                      <td>
+                        <div className="adm-entity-cell">
+                          <span className="adm-avatar adm-avatar-square">
+                            <Icon name="package" size={16} />
                           </span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span className="product-category-badge">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="order-price">
-                      ₹{product.price?.toLocaleString()}
-                    </td>
-                    <td>{product.quantity}</td>
-                    <td>{product.farmerName}</td>
-                  </tr>
-                ))}
+                          <div className="adm-entity-name--block">
+                            <span className="adm-entity-name adm-entity-name--block">
+                              {product.name}
+                            </span>
+                            {product.description && (
+                              <span className="adm-entity-sub">
+                                {product.description.length > 60
+                                  ? product.description.substring(0, 60) + '...'
+                                  : product.description}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="adm-badge adm-badge-category">
+                          {product.category || '—'}
+                        </span>
+                      </td>
+                      <td>{product.farmerName}</td>
+                      <td className="adm-price">₹{product.price?.toLocaleString()}</td>
+                      <td className="adm-qty">{product.quantity}</td>
+                      <td>
+                        <span className={`adm-badge adm-badge-${stock.tone}`}>
+                          {stock.label}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        )}
-      </div>
-    </div>
+
+          <AdminPagination
+            page={safePage}
+            totalPages={totalPages}
+            total={filteredProducts.length}
+            pageSize={PAGE_SIZE}
+            onChange={setPage}
+          />
+        </div>
+      )}
+    </AdminLayout>
   );
 }
 

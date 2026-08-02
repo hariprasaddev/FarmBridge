@@ -1,0 +1,443 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   AUTH — Premium split-screen design system
+   Shared by the Login and Register pages. All selectors are
+   scoped with the `auth-` prefix.
+   ============================================================ */
+
+.auth-shell {
+  --auth-primary: #2e7d32;
+  --auth-primary-dark: #256b29;
+  --auth-primary-soft: #66bb6a;
+  --auth-green-deep: #173404;
+  --auth-text: #1f2937;
+  --auth-muted: #6b7280;
+  --auth-border: #e5e7eb;
+
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  margin: -2rem -1rem; /* cancel .main-content.public padding for a true full-screen split */
+  background: #fff;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  color: var(--auth-text);
+  animation: authFade 0.3s ease both;
+}
+
+@keyframes authFade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------
+   LEFT — white form panel
+   ------------------------------------------------------------ */
+
+.auth-left {
+  flex: 1 1 50%;
+  display: flex;
+  flex-direction: column;
+  padding: 40px 56px;
+  background: #fff;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.auth-brand-mark {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #66bb6a, #2e7d32);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px -3px rgba(46, 125, 50, 0.45);
+  flex-shrink: 0;
+}
+
+.auth-brand-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--auth-text);
+}
+
+.auth-left-inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 48px 0;
+}
+
+.auth-heading {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--auth-text);
+  line-height: 1.25;
+}
+
+.auth-subtitle {
+  font-size: 15px;
+  color: var(--auth-muted);
+  margin-top: 4px;
+  margin-bottom: 28px;
+}
+
+/* ------------------------------------------------------------
+   FORM ELEMENTS
+   ------------------------------------------------------------ */
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.auth-input-wrap > svg {
+  position: absolute;
+  left: 14px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.auth-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px 0 40px;
+  border: 1px solid var(--auth-border);
+  border-radius: 8px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  color: var(--auth-text);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-input::placeholder {
+  color: #9ca3af;
+}
+
+.auth-input:hover {
+  border-color: #d1d5db;
+}
+
+.auth-input:focus {
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.14);
+}
+
+.auth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.auth-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  user-select: none;
+}
+
+.auth-checkbox input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--auth-primary);
+  cursor: pointer;
+}
+
+.auth-btn {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  background: var(--auth-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.auth-btn:hover:not(:disabled) {
+  background: var(--auth-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px -10px rgba(46, 125, 50, 0.55);
+}
+
+.auth-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-switch {
+  text-align: center;
+  font-size: 14px;
+  color: var(--auth-muted);
+  margin-top: 24px;
+}
+
+.auth-switch a {
+  color: var(--auth-primary);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-switch a:hover {
+  color: #1b5e20;
+}
+
+/* ------------------------------------------------------------
+   ROLE SELECTION (Register) — modern selectable cards
+   ------------------------------------------------------------ */
+
+.auth-roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.auth-role {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 2px solid var(--auth-border);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auth-role:hover {
+  border-color: var(--auth-primary-soft);
+  transform: translateY(-1px);
+}
+
+.auth-role-selected,
+.auth-role-selected:hover {
+  border-color: var(--auth-primary);
+  background: #e8f5e9;
+  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
+  transform: none;
+}
+
+/* Radio stays in the DOM (functionality unchanged) but is visually hidden
+   while remaining keyboard-focusable. */
+.auth-role input[type='radio'] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.auth-role:focus-within {
+  outline: 2px solid var(--auth-primary-soft);
+  outline-offset: 2px;
+}
+
+.auth-role-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  background: #f3f4f6;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.auth-role-selected .auth-role-icon {
+  background: #fff;
+}
+
+.auth-role-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--auth-text);
+}
+
+.auth-role-desc {
+  display: block;
+  font-size: 12.5px;
+  color: var(--auth-muted);
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------
+   RIGHT — dark green brand panel
+   ------------------------------------------------------------ */
+
+.auth-right {
+  flex: 1 1 50%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2e7d32 0%, #173404 100%);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px;
+}
+
+.auth-right-deco {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.auth-right-deco-1 {
+  width: 340px;
+  height: 340px;
+  background: rgba(255, 255, 255, 0.05);
+  top: -140px;
+  right: -120px;
+}
+
+.auth-right-deco-2 {
+  width: 220px;
+  height: 220px;
+  background: rgba(255, 255, 255, 0.04);
+  bottom: -90px;
+  left: -70px;
+}
+
+.auth-illustration {
+  margin-bottom: 32px;
+  position: relative;
+}
+
+.auth-illustration svg {
+  width: 300px;
+  height: 300px;
+  display: block;
+}
+
+.auth-right-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  max-width: 420px;
+}
+
+.auth-right-text {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 420px;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.auth-input:focus-visible,
+.auth-btn:focus-visible,
+.auth-switch a:focus-visible {
+  outline: 2px solid var(--auth-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .auth-left {
+    padding: 32px 40px;
+  }
+
+  .auth-right {
+    flex: 1 1 40%;
+    padding: 40px 32px;
+  }
+
+  .auth-illustration svg {
+    width: 210px;
+    height: 210px;
+  }
+
+  .auth-illustration {
+    margin-bottom: 24px;
+  }
+
+  .auth-right-title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 768px) {
+  .auth-shell {
+    min-height: 100vh;
+  }
+
+  .auth-right {
+    display: none;
+  }
+
+  .auth-left {
+    flex: 1 1 100%;
+    padding: 24px;
+  }
+
+  .auth-left-inner {
+    padding: 40px 0;
+  }
+}

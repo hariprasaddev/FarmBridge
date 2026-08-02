@@ -1,0 +1,515 @@
+/* ============================================================
+   ADMIN DASHBOARD — content styles (shell lives in AdminLayout.css)
+   Scoped with the `ad-` prefix so no other page is affected.
+   ============================================================ */
+
+.ad-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6rem 2rem;
+  color: var(--ad-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.ad-content {
+  animation: adFade 0.35s ease both;
+}
+
+/* ------------------------------------------------------------
+   STATISTICS GRID
+   ------------------------------------------------------------ */
+
+.ad-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(225px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.ad-stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1.25rem 1.3rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+a.ad-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -10px rgba(16, 24, 40, 0.14);
+  border-color: #d1d5db;
+}
+
+.ad-stat-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.ad-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ad-stat-icon-green { background: #e8f5e9; color: #2e7d32; }
+.ad-stat-icon-emerald { background: #d1fae5; color: #047857; }
+.ad-stat-icon-amber { background: #fef3c7; color: #b45309; }
+.ad-stat-icon-blue { background: #dbeafe; color: #1d4ed8; }
+.ad-stat-icon-indigo { background: #e0e7ff; color: #4338ca; }
+.ad-stat-icon-purple { background: #ede9fe; color: #6d28d9; }
+.ad-stat-icon-red { background: #fee2e2; color: #b91c1c; }
+
+.ad-stat-arrow {
+  color: #cbd5e1;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, color 0.18s ease;
+}
+
+a.ad-stat-card:hover .ad-stat-arrow {
+  opacity: 1;
+  transform: none;
+  color: #94a3b8;
+}
+
+.ad-stat-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+  line-height: 1.1;
+}
+
+.ad-stat-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.ad-stat-desc {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* ------------------------------------------------------------
+   BOTTOM GRID — Chart + Verification panel
+   ------------------------------------------------------------ */
+
+.ad-grid {
+  display: grid;
+  grid-template-columns: 1.55fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  margin-bottom: 1.25rem;
+}
+
+.ad-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  overflow: hidden;
+}
+
+.ad-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.ad-card-head h2 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #111827;
+}
+
+.ad-card-sub {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-top: 0.15rem;
+}
+
+/* ---------- Chart placeholder ---------- */
+
+.ad-chart-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.ad-chart-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.ad-chart-metric strong {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+  line-height: 1;
+}
+
+.ad-chart-metric span {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.ad-chart-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 140px;
+  margin-bottom: 1rem;
+}
+
+.ad-chart-bar {
+  flex: 1;
+  border-radius: 5px 5px 2px 2px;
+  background: linear-gradient(180deg, #4caf50 0%, #2e7d32 100%);
+  opacity: 0.55;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.ad-chart-bar:hover {
+  opacity: 1;
+  transform: scaleY(1.02);
+  transform-origin: bottom;
+}
+
+.ad-chart-note {
+  font-size: 0.7rem;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 1.1rem;
+}
+
+.ad-chart-footer {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ad-chart-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 9px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.ad-chart-chip strong {
+  font-weight: 700;
+  color: #111827;
+}
+
+.ad-chart-chip svg {
+  color: #2e7d32;
+}
+
+/* ---------- Verification panel ---------- */
+
+.ad-verif-list {
+  padding: 0.35rem 0.6rem 0.6rem;
+}
+
+.ad-verif-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+
+.ad-verif-item:hover {
+  background: #f8fafc;
+}
+
+.ad-verif-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.ad-verif-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.ad-verif-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-verif-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.74rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ad-badge-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.ad-badge-verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.ad-verif-view {
+  padding: 0.38rem 0.8rem;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.ad-verif-view:hover {
+  background: #e8f5e9;
+  border-color: #a7d3a9;
+  color: #1b5e20;
+}
+
+.ad-verif-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.25rem 1.5rem;
+  color: #6b7280;
+}
+
+.ad-verif-empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  margin-bottom: 0.75rem;
+}
+
+.ad-verif-empty p {
+  font-size: 0.85rem;
+}
+
+.ad-verif-foot {
+  padding: 0.7rem 1.5rem 1rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.ad-verif-foot a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2e7d32;
+  text-decoration: none;
+}
+
+.ad-verif-foot a:hover {
+  color: #174e2c;
+}
+
+/* ------------------------------------------------------------
+   RECENT USERS / RECENT ORDERS
+   ------------------------------------------------------------ */
+
+.ad-recent-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.ad-recent-list {
+  padding: 0.35rem 0.6rem 0.6rem;
+}
+
+.ad-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+
+.ad-recent-item:hover {
+  background: #f8fafc;
+}
+
+.ad-recent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #e8f5e9;
+  color: #1b5e20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.ad-recent-avatar-order {
+  border-radius: 10px;
+  color: #2e7d32;
+}
+
+.ad-recent-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.ad-recent-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-recent-meta {
+  font-size: 0.74rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ad-role-pill {
+  display: inline-flex;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ad-role-pill-farmer { background: #e8f5e9; color: #1b5e20; }
+.ad-role-pill-buyer { background: #dbeafe; color: #1e40af; }
+.ad-role-pill-admin { background: #f3e8ff; color: #6b21a8; }
+
+/* Order status badges on the dashboard — consistent colors */
+.ad-card .order-badge-pending { background: #fef3c7; color: #b45309; }
+.ad-card .order-badge-accepted { background: #dcfce7; color: #166534; }
+.ad-card .order-badge-completed { background: #dbeafe; color: #1e40af; }
+.ad-card .order-badge-rejected { background: #fee2e2; color: #b91c1c; }
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+a.ad-stat-card:focus-visible,
+.ad-verif-view:focus-visible,
+.ad-verif-foot a:focus-visible {
+  outline: 2px solid #66bb6a;
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .ad-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-recent-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .ad-card-head {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .ad-chart-body {
+    padding: 1.1rem 1.25rem 1.25rem;
+  }
+
+  .ad-verif-item,
+  .ad-recent-item {
+    padding: 0.7rem 0.6rem;
+  }
+
+  .ad-badge {
+    display: none;
+  }
+}

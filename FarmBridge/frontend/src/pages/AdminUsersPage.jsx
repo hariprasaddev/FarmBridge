@@ -1,7 +1,28 @@
 import { useState, useEffect } from 'react';
 import { adminAPI, getErrorMessage } from '../services/api';
+import Icon from '../components/Icon';
+import AdminLayout from '../components/AdminLayout';
+import AdminPagination from '../components/AdminPagination';
+import './AdminPages.css';
 
-const ROLE_FILTERS = ['ALL', 'ADMIN', 'FARMER', 'BUYER'];
+const ROLE_FILTERS = [
+  { value: 'ALL', label: 'All' },
+  { value: 'FARMER', label: 'Farmers' },
+  { value: 'BUYER', label: 'Buyers' },
+];
+
+const PAGE_SIZE = 10;
+
+// Presentation helper — initials derived from the user's name.
+const getInitials = (name) => {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return parts
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+};
 
 function AdminUsersPage() {
   const [users, setUsers] = useState([]);
@@ -9,6 +30,8 @@ function AdminUsersPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [filter, setFilter] = useState('ALL');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState(null);
 
   // Edit modal state
@@ -34,8 +57,28 @@ function AdminUsersPage() {
     }
   };
 
-  const filteredUsers =
-    filter === 'ALL' ? users : users.filter((u) => u.role === filter);
+  // Client-side search + role filter over the already-fetched users.
+  const query = search.trim().toLowerCase();
+  const filteredUsers = users.filter((u) => {
+    const matchesRole = filter === 'ALL' || u.role === filter;
+    const matchesSearch =
+      !query ||
+      (u.name || '').toLowerCase().includes(query) ||
+      (u.email || '').toLowerCase().includes(query);
+    return matchesRole && matchesSearch;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageUsers = filteredUsers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const filtersActive = search.trim() !== '' || filter !== 'ALL';
+
+  const clearFilters = () => {
+    setSearch('');
+    setFilter('ALL');
+    setPage(1);
+  };
 
   const openEdit = (user) => {
     setEditingUser(user);
@@ -86,89 +129,126 @@ function AdminUsersPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="page-container">
-        <div className="loading-container">
-          <div className="spinner" />
-          <p>Loading users...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="page-container admin-page">
-      <div className="orders-page">
-        <div className="products-header">
-          <div>
-            <h1>Manage Users</h1>
-            <p className="products-subtitle">
-              View and manage all registered users
-            </p>
-          </div>
+    <AdminLayout title="Manage Users" subtitle="View and manage all registered users">
+      {error && <div className="alert alert-error">{error}</div>}
+      {success && <div className="alert alert-success">{success}</div>}
+
+      <div className="adm-toolbar">
+        <div className="adm-search">
+          <Icon name="search" size={17} />
+          <input
+            type="text"
+            name="search"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+          {search && (
+            <button
+              type="button"
+              className="adm-search-clear"
+              onClick={() => setSearch('')}
+              aria-label="Clear search"
+            >
+              <Icon name="x" size={13} />
+            </button>
+          )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
-
-        <div className="filter-chips">
+        <div className="adm-pills">
           {ROLE_FILTERS.map((role) => (
             <button
-              key={role}
-              className={`filter-chip ${filter === role ? 'active' : ''}`}
-              onClick={() => setFilter(role)}
+              key={role.value}
+              type="button"
+              className={`adm-pill${filter === role.value ? ' active' : ''}`}
+              onClick={() => {
+                setFilter(role.value);
+                setPage(1);
+              }}
             >
-              {role === 'ALL' ? 'All Roles' : role}
+              {role.label}
             </button>
           ))}
         </div>
 
-        {filteredUsers.length === 0 ? (
-          <div className="products-empty">
-            <div className="empty-icon">👥</div>
-            <h3>No users found</h3>
-            <p>There are no users matching this filter.</p>
+        {filtersActive && (
+          <button type="button" className="adm-clear" onClick={clearFilters}>
+            Clear Filters
+          </button>
+        )}
+
+        <span className="adm-count">{filteredUsers.length} users</span>
+      </div>
+
+      {loading ? (
+        <div className="adm-skeleton-table" aria-hidden="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="adm-skeleton-row">
+              <div className="adm-skeleton-cell adm-skeleton-cell--avatar" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--lg" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--flex" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--sm" />
+              <div className="adm-skeleton-cell adm-skeleton-cell--md" />
+            </div>
+          ))}
+        </div>
+      ) : filteredUsers.length === 0 ? (
+        <div className="adm-table-card">
+          <div className="adm-empty">
+            <span className="adm-empty-icon">
+              <Icon name="users" size={28} />
+            </span>
+            <h2>No users found</h2>
+            <p>There are no users matching this search or filter.</p>
           </div>
-        ) : (
-          <div className="order-table-wrap">
-            <table className="order-table">
+        </div>
+      ) : (
+        <div className="adm-table-card">
+          <div className="adm-table-wrap">
+            <table className="adm-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
+                  <th>User</th>
                   <th>Email</th>
                   <th>Role</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => (
+                {pageUsers.map((user) => (
                   <tr key={user.id}>
-                    <td className="order-id">#{user.id}</td>
-                    <td>{user.name}</td>
+                    <td>
+                      <div className="adm-entity-cell">
+                        <span className="adm-avatar">{getInitials(user.name)}</span>
+                        <span className="adm-entity-name">{user.name}</span>
+                      </div>
+                    </td>
                     <td>{user.email}</td>
                     <td>
-                      <span
-                        className={`role-badge role-${user.role.toLowerCase()}`}
-                      >
+                      <span className={`adm-badge adm-badge-${user.role.toLowerCase()}`}>
                         {user.role}
                       </span>
                     </td>
                     <td>
-                      <div className="order-actions">
+                      <div className="adm-actions">
                         <button
-                          className="btn btn-secondary btn-sm"
+                          className="adm-action-btn"
                           onClick={() => openEdit(user)}
                         >
-                          ✏️ Edit
+                          <Icon name="edit" size={14} />
+                          Edit
                         </button>
                         <button
-                          className="btn btn-outline btn-sm btn-danger-outline"
+                          className="adm-action-btn adm-action-btn-danger"
                           onClick={() => handleDelete(user.id)}
                           disabled={deleting === user.id}
                         >
-                          {deleting === user.id ? 'Deleting...' : '🗑️ Delete'}
+                          <Icon name="trash" size={14} />
+                          {deleting === user.id ? 'Deleting...' : 'Delete'}
                         </button>
                       </div>
                     </td>
@@ -177,8 +257,16 @@ function AdminUsersPage() {
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+
+          <AdminPagination
+            page={safePage}
+            totalPages={totalPages}
+            total={filteredUsers.length}
+            pageSize={PAGE_SIZE}
+            onChange={setPage}
+          />
+        </div>
+      )}
 
       {/* ==========================================
           EDIT USER MODAL
@@ -266,7 +354,7 @@ function AdminUsersPage() {
           </div>
         </div>
       )}
-    </div>
+    </AdminLayout>
   );
 }
 

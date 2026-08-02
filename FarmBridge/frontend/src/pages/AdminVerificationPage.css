@@ -1,0 +1,205 @@
+/* ============================================================
+   ADMIN VERIFICATION — premium pending-review cards
+   Rendered inside the shared AdminLayout shell. Scoped with the
+   `av-` prefix so no other page or shared component is affected.
+   ============================================================ */
+
+.av-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.av-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.av-card:hover {
+  transform: translateY(-2px);
+  border-color: #9ccc9c;
+  box-shadow: 0 12px 24px -12px rgba(16, 24, 40, 0.16);
+}
+
+.av-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.av-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.av-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.av-farmer {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f1f5f9;
+  border: 1px solid #e5e7eb;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.av-meta {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.av-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.av-meta svg {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.av-approve {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border: none;
+  border-radius: 9px;
+  background: #2e7d32;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.av-approve:hover:not(:disabled) {
+  background: #256b29;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -8px rgba(46, 125, 50, 0.45);
+}
+
+.av-approve:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.av-approve:focus-visible {
+  outline: 2px solid #66bb6a;
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING
+   ------------------------------------------------------------ */
+
+.av-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.av-skeleton-avatar,
+.av-skeleton-line,
+.av-skeleton-btn {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: avShimmer 1.4s ease infinite;
+}
+
+.av-skeleton-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.av-skeleton-lines {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.av-skeleton-line {
+  height: 13px;
+  border-radius: 6px;
+}
+
+.av-skeleton-line--lg { width: 40%; }
+.av-skeleton-line--sm { width: 65%; height: 11px; }
+
+.av-skeleton-btn {
+  width: 110px;
+  height: 38px;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+@keyframes avShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .av-card {
+    flex-wrap: wrap;
+    padding: 0.9rem 1rem;
+  }
+
+  .av-avatar {
+    width: 42px;
+    height: 42px;
+  }
+
+  .av-approve {
+    flex: 1 1 100%;
+    justify-content: center;
+    padding: 0.6rem 1.1rem;
+  }
+
+  .av-meta {
+    gap: 0.75rem 1rem;
+  }
+}
