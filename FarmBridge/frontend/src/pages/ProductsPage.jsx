@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { farmerProductsAPI } from '../services/api';
+import { farmerProductsAPI, getErrorMessage } from '../services/api';
 
 function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -21,7 +21,7 @@ function ProductsPage() {
       const response = await farmerProductsAPI.getMyProducts();
       setProducts(response.data);
     } catch (err) {
-      setError('Failed to load products. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load your products. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -41,9 +41,7 @@ function ProductsPage() {
       setProducts((prev) => prev.filter((p) => p.id !== id));
       setSuccess('Product deleted successfully');
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Failed to delete product';
-      setError(typeof message === 'string' ? message : 'Failed to delete product');
+      setError(getErrorMessage(err, 'Failed to delete the product. Please try again.'));
     } finally {
       setDeleting(null);
     }

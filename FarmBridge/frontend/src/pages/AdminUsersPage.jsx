@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, getErrorMessage } from '../services/api';
 
 const ROLE_FILTERS = ['ALL', 'ADMIN', 'FARMER', 'BUYER'];
 
@@ -28,7 +28,7 @@ function AdminUsersPage() {
       const response = await adminAPI.getAllUsers();
       setUsers(response.data);
     } catch (err) {
-      setError('Failed to load users. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load the users. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -60,13 +60,7 @@ function AdminUsersPage() {
       setSuccess(`User #${editingUser.id} updated successfully`);
       closeEdit();
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.defaultMessage ||
-        'Failed to update user';
-      setFormError(
-        typeof message === 'string' ? message : 'Failed to update user'
-      );
+      setFormError(getErrorMessage(err, 'Failed to update the user. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -86,11 +80,7 @@ function AdminUsersPage() {
       setUsers((prev) => prev.filter((u) => u.id !== id));
       setSuccess('User deleted successfully');
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Failed to delete user';
-      setError(
-        typeof message === 'string' ? message : 'Failed to delete user'
-      );
+      setError(getErrorMessage(err, 'Failed to delete the user. Please try again.'));
     } finally {
       setDeleting(null);
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { farmerOrdersAPI } from '../services/api';
+import { farmerOrdersAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 
 function FarmerOrdersPage() {
@@ -20,13 +20,18 @@ function FarmerOrdersPage() {
       const response = await farmerOrdersAPI.getOrders();
       setOrders(response.data);
     } catch (err) {
-      setError('Failed to load orders. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load your orders. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleStatusChange = async (orderId, status) => {
+    // Rejecting an order is irreversible — confirm before proceeding.
+    if (status === 'REJECTED' && !window.confirm('Reject this order?')) {
+      return;
+    }
+
     setUpdating(orderId);
     setError('');
     setSuccess('');
@@ -39,11 +44,7 @@ function FarmerOrdersPage() {
       );
       setSuccess(`Order #${orderId} marked as ${status}`);
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Failed to update order status';
-      setError(
-        typeof message === 'string' ? message : 'Failed to update order status'
-      );
+      setError(getErrorMessage(err, 'Failed to update the order status. Please try again.'));
     } finally {
       setUpdating(null);
     }

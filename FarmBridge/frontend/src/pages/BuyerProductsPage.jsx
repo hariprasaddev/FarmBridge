@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { buyerProductsAPI, buyerOrdersAPI } from '../services/api';
+import { buyerProductsAPI, buyerOrdersAPI, getErrorMessage } from '../services/api';
 
 function BuyerProductsPage() {
   const [products, setProducts] = useState([]);
@@ -30,7 +30,7 @@ function BuyerProductsPage() {
       const response = await buyerProductsAPI.getAllProducts();
       setProducts(response.data);
     } catch (err) {
-      setError('Failed to load products. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load available products. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -80,11 +80,7 @@ function BuyerProductsPage() {
       closeOrderModal();
       navigate('/buyer/orders');
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Failed to place order';
-      setOrderError(
-        typeof message === 'string' ? message : 'Failed to place order'
-      );
+      setOrderError(getErrorMessage(err, 'Failed to place your order. Please try again.'));
     } finally {
       setPlacing(false);
     }

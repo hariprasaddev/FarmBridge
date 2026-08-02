@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { farmerProfileAPI } from '../services/api';
+import { farmerProfileAPI, getErrorMessage } from '../services/api';
 
 const emptyForm = {
   farmName: '',
@@ -33,7 +33,7 @@ function FarmerProfilePage() {
         // No profile exists — show create form
         setMode('create');
       } else {
-        setError('Failed to load profile. Please try again.');
+        setError(getErrorMessage(err, 'Failed to load your profile. Please try again.'));
         setMode('view');
       }
     }
@@ -86,8 +86,7 @@ function FarmerProfilePage() {
       setProfile(response.data);
       setMode('view');
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to create profile';
-      setError(typeof message === 'string' ? message : 'Failed to create profile');
+      setError(getErrorMessage(err, 'Failed to create your profile. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -107,8 +106,7 @@ function FarmerProfilePage() {
       setProfile(response.data);
       setMode('view');
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to update profile';
-      setError(typeof message === 'string' ? message : 'Failed to update profile');
+      setError(getErrorMessage(err, 'Failed to update your profile. Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -131,7 +129,7 @@ function FarmerProfilePage() {
     return (
       <div className="page-container">
         <div className="profile-error">
-          <h2>Something went wrong</h2>
+          <h2>We couldn't load your profile</h2>
           <p>{error}</p>
           <button className="btn btn-primary" onClick={loadProfile}>
             Try Again

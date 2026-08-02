@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, getErrorMessage } from '../services/api';
 
 function AdminProductsPage() {
   const [products, setProducts] = useState([]);
@@ -17,7 +17,7 @@ function AdminProductsPage() {
       const response = await adminAPI.getAllProducts();
       setProducts(response.data);
     } catch (err) {
-      setError('Failed to load products. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load the products. Please try again.'));
     } finally {
       setLoading(false);
     }

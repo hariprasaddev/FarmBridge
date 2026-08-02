@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { adminAPI } from '../services/api';
+import { adminAPI, getErrorMessage } from '../services/api';
 
 function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
@@ -18,7 +18,7 @@ function AdminDashboardPage() {
       const response = await adminAPI.getStats();
       setStats(response.data);
     } catch (err) {
-      setError('Failed to load dashboard stats. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load dashboard statistics. Please try again.'));
     } finally {
       setLoading(false);
     }

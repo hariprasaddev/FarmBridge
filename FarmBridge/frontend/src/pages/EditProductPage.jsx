@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { farmerProductsAPI } from '../services/api';
+import { farmerProductsAPI, getErrorMessage } from '../services/api';
 
 const categoryOptions = [
   'Vegetables',
@@ -59,8 +59,7 @@ function EditProductPage() {
         setNotFound(true);
       } else {
         // Server / network errors — show graceful error banner
-        const message = err.response?.data?.message;
-        setError(typeof message === 'string' ? message : 'Failed to load product details.');
+        setError(getErrorMessage(err, 'Failed to load product details. Please try again.'));
       }
     } finally {
       setLoading(false);
@@ -86,11 +85,7 @@ function EditProductPage() {
       await farmerProductsAPI.updateProduct(id, payload);
       navigate('/farmer/products');
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.defaultMessage ||
-        'Failed to update product';
-      setError(typeof message === 'string' ? message : 'Failed to update product');
+      setError(getErrorMessage(err, 'Failed to update the product. Please try again.'));
     } finally {
       setSaving(false);
     }

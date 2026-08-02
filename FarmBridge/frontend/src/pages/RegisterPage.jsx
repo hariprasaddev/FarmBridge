@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, getErrorMessage } from '../services/api';
 
 function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -27,11 +27,7 @@ function RegisterPage() {
       await authAPI.register(formData);
       navigate('/login', { state: { registered: true } });
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data ||
-        'Registration failed';
-      setError(typeof message === 'string' ? message : 'Registration failed');
+      setError(getErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }

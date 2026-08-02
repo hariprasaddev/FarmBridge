@@ -1,0 +1,20 @@
+# ============================================================
+# FarmBridge — root .gitignore
+# The Spring Boot + React project lives in the FarmBridge/
+# subdirectory; this file covers everything at the repo root.
+# ============================================================
+
+# Dependencies
+node_modules/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Build output
+target/
+dist/
+
+# OS / editor cruft
+.DS_Store
+*.log

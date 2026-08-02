@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, getErrorMessage } from '../services/api';
 
 function AdminVerificationPage() {
   const [farmers, setFarmers] = useState([]);
@@ -19,13 +19,17 @@ function AdminVerificationPage() {
       const response = await adminAPI.getUnverifiedFarmers();
       setFarmers(response.data);
     } catch (err) {
-      setError('Failed to load farmers. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load the pending farmers. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerify = async (profileId) => {
+    if (!window.confirm('Verify this farmer profile?')) {
+      return;
+    }
+
     setVerifying(profileId);
     setError('');
     setSuccess('');
@@ -35,11 +39,7 @@ function AdminVerificationPage() {
       setFarmers((prev) => prev.filter((f) => f.profileId !== profileId));
       setSuccess('Farmer profile verified successfully');
     } catch (err) {
-      const message =
-        err.response?.data?.message || 'Failed to verify farmer';
-      setError(
-        typeof message === 'string' ? message : 'Failed to verify farmer'
-      );
+      setError(getErrorMessage(err, 'Failed to verify the farmer. Please try again.'));
     } finally {
       setVerifying(null);
     }

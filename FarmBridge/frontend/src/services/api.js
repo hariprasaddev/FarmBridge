@@ -92,4 +92,55 @@ export const adminAPI = {
   verifyFarmer: (profileId) => api.put(`/admin/farmers/${profileId}/verify`),
 };
 
+// ==========================================
+// ERROR MESSAGE HELPER
+// ==========================================
+
+/**
+ * Extracts a clear, user-friendly message from an API failure.
+ * Priority: server-provided message > validation field error >
+ * connection / server outage > the provided fallback.
+ * The fallback must be a meaningful, context-specific message.
+ */
+export function getErrorMessage(err, fallback) {
+  if (err?.response) {
+    const data = err.response.data;
+
+    // Plain-string error body (some auth endpoints)
+    if (typeof data === 'string' && data.trim()) {
+      return data;
+    }
+
+    // Server-provided message (e.g. "Email already in use")
+    const serverMessage = data?.message;
+    if (typeof serverMessage === 'string' && serverMessage.trim()) {
+      return serverMessage;
+    }
+
+    // Bean-validation field errors — array (Spring default) or map form
+    const errors = data?.errors;
+    if (errors) {
+      if (Array.isArray(errors)) {
+        const first = errors[0]?.defaultMessage;
+        if (typeof first === 'string' && first.trim()) return first;
+      } else if (typeof errors === 'object') {
+        const firstValue = Object.values(errors)[0];
+        if (typeof firstValue === 'string' && firstValue.trim()) {
+          return firstValue;
+        }
+      }
+    }
+
+    // Server-side outage
+    if (err.response.status >= 500) {
+      return 'The server is having trouble right now. Please try again in a few moments.';
+    }
+  } else {
+    // No response at all — network or backend unreachable
+    return 'Unable to reach the server. Please check your connection and try again.';
+  }
+
+  return fallback;
+}
+
 export default api;

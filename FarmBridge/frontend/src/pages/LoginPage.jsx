@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { authAPI } from '../services/api';
+import { authAPI, getErrorMessage } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
@@ -38,11 +38,7 @@ function LoginPage() {
       const data = response.data;
       login(data, rememberMe);
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data ||
-        'Invalid email or password';
-      setError(typeof message === 'string' ? message : 'Login failed');
+      setError(getErrorMessage(err, 'Invalid email or password. Please try again.'));
     } finally {
       setLoading(false);
     }

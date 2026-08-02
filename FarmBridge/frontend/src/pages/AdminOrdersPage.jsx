@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminAPI } from '../services/api';
+import { adminAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 
 const STATUS_FILTERS = ['ALL', 'PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED'];
@@ -21,7 +21,7 @@ function AdminOrdersPage() {
       const response = await adminAPI.getAllOrders();
       setOrders(response.data);
     } catch (err) {
-      setError('Failed to load orders. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load the orders. Please try again.'));
     } finally {
       setLoading(false);
     }

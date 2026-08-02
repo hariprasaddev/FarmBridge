@@ -1071,6 +1071,12 @@
   margin-bottom: 2rem;
 }
 
+/* Stats grid inside a card (e.g. buyer orders page) — match card padding */
+.buyer-stats-grid {
+  padding: 1.25rem 1rem 0;
+  margin-bottom: 1rem;
+}
+
 .admin-stat-card {
   display: flex;
   flex-direction: column;

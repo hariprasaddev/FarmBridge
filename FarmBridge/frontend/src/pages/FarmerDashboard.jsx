@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { farmerProductsAPI, farmerOrdersAPI, farmerProfileAPI } from '../services/api';
+import { farmerProductsAPI, farmerOrdersAPI, farmerProfileAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 
 function FarmerDashboard() {
@@ -29,7 +29,7 @@ function FarmerDashboard() {
       setProducts(productsRes.data);
       setOrders(ordersRes.data);
     } catch (err) {
-      setError('Failed to load dashboard data. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load your dashboard data. Please try again.'));
       setLoading(false);
       return;
     }
@@ -41,7 +41,7 @@ function FarmerDashboard() {
     } catch (err) {
       setProfile(null);
       if (err.response?.status !== 404) {
-        setError('Failed to load profile.');
+        setError(getErrorMessage(err, 'Failed to load your farm profile.'));
       }
     } finally {
       setLoading(false);
@@ -61,11 +61,13 @@ function FarmerDashboard() {
 
   const pendingOrders = orders.filter((o) => o.status === 'PENDING').length;
   const acceptedOrders = orders.filter((o) => o.status === 'ACCEPTED').length;
+  const completedOrders = orders.filter((o) => o.status === 'COMPLETED').length;
+  const rejectedOrders = orders.filter((o) => o.status === 'REJECTED').length;
   const recentOrders = orders.slice(0, 5);
 
   const statCards = [
     {
-      label: 'Products Listed',
+      label: 'Total Products',
       value: products.length,
       icon: '📦',
       to: '/farmer/products',
@@ -80,6 +82,18 @@ function FarmerDashboard() {
       label: 'Accepted Orders',
       value: acceptedOrders,
       icon: '✅',
+      to: '/farmer/orders',
+    },
+    {
+      label: 'Completed Orders',
+      value: completedOrders,
+      icon: '🎉',
+      to: '/farmer/orders',
+    },
+    {
+      label: 'Rejected Orders',
+      value: rejectedOrders,
+      icon: '🚫',
       to: '/farmer/orders',
     },
     {

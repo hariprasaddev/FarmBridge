@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { farmerProductsAPI } from '../services/api';
+import { farmerProductsAPI, getErrorMessage } from '../services/api';
 
 const emptyForm = {
   name: '',
@@ -47,11 +47,7 @@ function AddProductPage() {
       await farmerProductsAPI.createProduct(payload);
       navigate('/farmer/products');
     } catch (err) {
-      const message =
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.defaultMessage ||
-        'Failed to create product';
-      setError(typeof message === 'string' ? message : 'Failed to create product');
+      setError(getErrorMessage(err, 'Failed to create the product. Please try again.'));
     } finally {
       setSaving(false);
     }

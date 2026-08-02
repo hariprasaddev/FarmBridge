@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { buyerOrdersAPI } from '../services/api';
+import { buyerOrdersAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 
 function BuyerOrdersPage() {
@@ -19,7 +19,7 @@ function BuyerOrdersPage() {
       const response = await buyerOrdersAPI.getMyOrders();
       setOrders(response.data);
     } catch (err) {
-      setError('Failed to load orders. Please try again.');
+      setError(getErrorMessage(err, 'Failed to load your orders. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -36,6 +36,35 @@ function BuyerOrdersPage() {
     );
   }
 
+  // Order statistics computed from the already-fetched orders
+  const orderStats = [
+    {
+      label: 'Total Orders',
+      value: orders.length,
+      icon: '📋',
+    },
+    {
+      label: 'Pending Orders',
+      value: orders.filter((o) => o.status === 'PENDING').length,
+      icon: '⏳',
+    },
+    {
+      label: 'Accepted Orders',
+      value: orders.filter((o) => o.status === 'ACCEPTED').length,
+      icon: '✅',
+    },
+    {
+      label: 'Completed Orders',
+      value: orders.filter((o) => o.status === 'COMPLETED').length,
+      icon: '🎉',
+    },
+    {
+      label: 'Rejected Orders',
+      value: orders.filter((o) => o.status === 'REJECTED').length,
+      icon: '🚫',
+    },
+  ];
+
   return (
     <div className="page-container">
       <div className="orders-page">
@@ -49,6 +78,16 @@ function BuyerOrdersPage() {
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
+
+        <div className="admin-stats-grid buyer-stats-grid">
+          {orderStats.map((stat) => (
+            <div key={stat.label} className="admin-stat-card">
+              <div className="admin-stat-icon">{stat.icon}</div>
+              <div className="admin-stat-value">{stat.value}</div>
+              <div className="admin-stat-label">{stat.label}</div>
+            </div>
+          ))}
+        </div>
 
         {orders.length === 0 ? (
           <div className="products-empty">
