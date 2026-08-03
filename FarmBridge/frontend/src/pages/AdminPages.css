@@ -243,6 +243,14 @@
   border-radius: 10px;
 }
 
+.adm-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+
 .adm-entity-name {
   font-weight: 600;
   color: #1f2937;

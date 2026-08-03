@@ -195,14 +195,18 @@
   flex-shrink: 0;
 }
 
-.bp-placeholder {
+.bp-image {
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.25rem;
-  background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 60%, #e0f2e9 100%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+.bp-card:hover .bp-image {
+  transform: scale(1.05);
 }
 
 .bp-stock {

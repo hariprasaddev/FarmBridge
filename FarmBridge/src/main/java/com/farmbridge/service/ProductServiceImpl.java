@@ -7,6 +7,7 @@ import com.farmbridge.entity.User;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -15,13 +16,16 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final FileStorageService fileStorageService;
 
     public ProductServiceImpl(
             ProductRepository productRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            FileStorageService fileStorageService) {
 
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.fileStorageService = fileStorageService;
     }
 
     // ==========================================
@@ -78,7 +82,8 @@ public class ProductServiceImpl implements ProductService {
                 savedProduct.getPrice(),
                 savedProduct.getQuantity(),
                 savedProduct.getCategory(),
-                farmer.getName()
+                farmer.getName(),
+                savedProduct.getImageUrl()
         );
     }
 
@@ -138,7 +143,8 @@ public class ProductServiceImpl implements ProductService {
                 updatedProduct.getPrice(),
                 updatedProduct.getQuantity(),
                 updatedProduct.getCategory(),
-                updatedProduct.getFarmer().getName()
+                updatedProduct.getFarmer().getName(),
+                updatedProduct.getImageUrl()
         );
     }
 
@@ -168,6 +174,104 @@ public class ProductServiceImpl implements ProductService {
 
         // Delete product
         productRepository.delete(product);
+
+        // Delete the stored image file (if any)
+        fileStorageService.deleteImage(
+                product.getImageUrl()
+        );
+    }
+
+    // ==========================================
+    // UPLOAD PRODUCT IMAGE
+    // ==========================================
+
+    @Override
+    public ProductResponse uploadProductImage(
+            Long id,
+            MultipartFile file,
+            String email) {
+
+        // Find the product
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found")
+                );
+
+        // Check if this product belongs to logged-in farmer
+        if (!product.getFarmer().getEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "You are not allowed to update this product"
+            );
+        }
+
+        // Store the new image
+        String imageUrl =
+                fileStorageService.storeImage(file);
+
+        // Remember the old image for cleanup after save
+        String oldImageUrl = product.getImageUrl();
+
+        // Attach the new image to the product
+        product.setImageUrl(imageUrl);
+
+        Product savedProduct;
+
+        try {
+            savedProduct = productRepository.save(product);
+        } catch (RuntimeException e) {
+            // Clean up the just-stored file if the save fails
+            fileStorageService.deleteImage(imageUrl);
+            throw e;
+        }
+
+        // Remove the old image file only after a successful save
+        if (oldImageUrl != null) {
+            fileStorageService.deleteImage(oldImageUrl);
+        }
+
+        return toProductResponse(savedProduct);
+    }
+
+    // ==========================================
+    // DELETE PRODUCT IMAGE
+    // ==========================================
+
+    @Override
+    public ProductResponse deleteProductImage(
+            Long id,
+            String email) {
+
+        // Find the product
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found")
+                );
+
+        // Check if this product belongs to logged-in farmer
+        if (!product.getFarmer().getEmail().equals(email)) {
+
+            throw new RuntimeException(
+                    "You are not allowed to update this product"
+            );
+        }
+
+        // Remove the image reference from the product
+        String imageUrl = product.getImageUrl();
+
+        product.setImageUrl(null);
+
+        Product savedProduct =
+                productRepository.save(product);
+
+        // Delete the image file after a successful save
+        if (imageUrl != null) {
+            fileStorageService.deleteImage(imageUrl);
+        }
+
+        return toProductResponse(savedProduct);
     }
 
     // ==========================================
@@ -263,7 +367,8 @@ public class ProductServiceImpl implements ProductService {
                 product.getPrice(),
                 product.getQuantity(),
                 product.getCategory(),
-                product.getFarmer().getName()
+                product.getFarmer().getName(),
+                product.getImageUrl()
         );
     }
 }

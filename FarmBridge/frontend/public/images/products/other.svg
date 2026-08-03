@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Other produce">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2f6ec"/>
+      <stop offset="1" stop-color="#dfe9d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <!-- Handle -->
+  <path d="M150 108 a50 50 0 0 1 100 0" stroke="#8d6e63" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <!-- Basket -->
+  <path d="M128 104 h144 l-16 116 q-2 16-20 16 h-72 q-18 0-20-16z" fill="#b98a63"/>
+  <path d="M130 160 h140 l-3 26 h-134z" fill="#a3754f"/>
+  <!-- Produce -->
+  <circle cx="168" cy="132" r="20" fill="#e53935"/>
+  <circle cx="206" cy="126" r="22" fill="#f5c531"/>
+  <circle cx="242" cy="134" r="20" fill="#66bb6a"/>
+  <circle cx="186" cy="120" r="12" fill="#fb8c00"/>
+  <path d="M206 104 q-2-16 14-20 q0 14-14 20z" fill="#43a047"/>
+</svg>

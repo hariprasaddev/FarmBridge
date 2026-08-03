@@ -1,5 +1,6 @@
 package com.farmbridge.exception;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -7,12 +8,17 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @Value("${spring.http.multipart.max-file-size:5MB}")
+    private String maxUploadFileSize;
+
 
     // ==========================================
     // HANDLE @Valid VALIDATION FAILURES
@@ -73,6 +79,26 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(response);
+    }
+
+    // ==========================================
+    // HANDLE OVERSIZED FILE UPLOADS
+    // HTTP 413 — Payload Too Large
+    // ==========================================
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxUploadSizeExceeded(
+            MaxUploadSizeExceededException ex) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                "Uploaded file is too large. Maximum allowed size is "
+                        + maxUploadFileSize + "."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(response);
     }
 
     // ==========================================

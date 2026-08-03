@@ -9,6 +9,7 @@ public class ProductResponse {
     private Integer quantity;
     private String category;
     private String farmerName;
+    private String imageUrl;
 
     public ProductResponse() {
     }
@@ -20,7 +21,8 @@ public class ProductResponse {
             Double price,
             Integer quantity,
             String category,
-            String farmerName) {
+            String farmerName,
+            String imageUrl) {
 
         this.id = id;
         this.name = name;
@@ -29,6 +31,7 @@ public class ProductResponse {
         this.quantity = quantity;
         this.category = category;
         this.farmerName = farmerName;
+        this.imageUrl = imageUrl;
     }
 
     public Long getId() {
@@ -85,5 +88,13 @@ public class ProductResponse {
 
     public void setFarmerName(String farmerName) {
         this.farmerName = farmerName;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 }

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Grains">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fdf8e7"/>
+      <stop offset="1" stop-color="#f7ecc6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <g stroke="#d4a017" stroke-width="6" stroke-linecap="round" fill="none">
+    <path d="M170 230 q-6-60 8-116"/>
+    <path d="M230 230 q-6-60 8-116"/>
+  </g>
+  <g fill="#eeb422">
+    <!-- left stalk seeds -->
+    <ellipse cx="152" cy="150" rx="9" ry="15" transform="rotate(-38 152 150)"/>
+    <ellipse cx="176" cy="142" rx="9" ry="15" transform="rotate(38 176 142)"/>
+    <ellipse cx="158" cy="120" rx="9" ry="15" transform="rotate(-38 158 120)"/>
+    <ellipse cx="182" cy="114" rx="9" ry="15" transform="rotate(38 182 114)"/>
+    <ellipse cx="166" cy="92" rx="9" ry="15" transform="rotate(-30 166 92)"/>
+    <ellipse cx="188" cy="88" rx="9" ry="15" transform="rotate(30 188 88)"/>
+    <!-- right stalk seeds -->
+    <ellipse cx="212" cy="150" rx="9" ry="15" transform="rotate(-38 212 150)"/>
+    <ellipse cx="236" cy="142" rx="9" ry="15" transform="rotate(38 236 142)"/>
+    <ellipse cx="218" cy="120" rx="9" ry="15" transform="rotate(-38 218 120)"/>
+    <ellipse cx="242" cy="114" rx="9" ry="15" transform="rotate(38 242 114)"/>
+    <ellipse cx="226" cy="92" rx="9" ry="15" transform="rotate(-30 226 92)"/>
+    <ellipse cx="248" cy="88" rx="9" ry="15" transform="rotate(30 248 88)"/>
+  </g>
+  <!-- leaf -->
+  <path d="M178 214 q-30-6-44 12 q34 14 44-12z" fill="#8d9b2e"/>
+  <path d="M222 214 q30-6 44 12 q-34 14-44-12z" fill="#8d9b2e"/>
+</svg>

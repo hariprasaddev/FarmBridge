@@ -36,7 +36,8 @@ public class BuyerProductController {
                                         product.getPrice(),
                                         product.getQuantity(),
                                         product.getCategory(),
-                                        product.getFarmer().getName()
+                                        product.getFarmer().getName(),
+                                        product.getImageUrl()
                                 )
                         )
                         .toList();

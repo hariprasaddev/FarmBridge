@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Vegetables">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ecf7ee"/>
+      <stop offset="1" stop-color="#d9f0e2"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <!-- Carrot -->
+  <g transform="translate(232 108)">
+    <path d="M34 148 L12 34 q36 12 46 30 q10-30 40-34 q-6 44-16 62 q-8 30-16 56 z" fill="#fb8c00"/>
+    <path d="M62 30 q-4-30 6-38 q14 18 8 40 z" fill="#4caf50"/>
+    <path d="M56 28 q-24-14-34-4 q10 26 30 16 z" fill="#66bb6a"/>
+    <path d="M36 70 q14 6 26 4" stroke="#e65100" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.35"/>
+  </g>
+  <!-- Broccoli -->
+  <g transform="translate(120 96)">
+    <path d="M48 144 v-26 a40 40 0 0 1 80 0 v26 z" fill="#2e7d32"/>
+    <circle cx="46" cy="110" r="24" fill="#43a047"/>
+    <circle cx="86" cy="92" r="28" fill="#66bb6a"/>
+    <circle cx="126" cy="110" r="24" fill="#43a047"/>
+    <circle cx="66" cy="88" r="17" fill="#81c784"/>
+    <circle cx="106" cy="86" r="17" fill="#81c784"/>
+    <path d="M76 144 h24 l5 40 h-34 z" fill="#1b5e20"/>
+  </g>
+</svg>

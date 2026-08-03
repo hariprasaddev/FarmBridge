@@ -60,6 +60,20 @@ export const farmerProductsAPI = {
   getProductById: (id) => api.get(`/farmer/products/${id}`),
   updateProduct: (id, data) => api.put(`/farmer/products/${id}`, data),
   deleteProduct: (id) => api.delete(`/farmer/products/${id}`),
+
+  // Upload (or replace) the image of an existing product.
+  // Sends multipart/form-data. The Content-Type is overridden to
+  // multipart/form-data because this axios instance defaults to
+  // application/json, which would make axios's transformRequest
+  // JSON-stringify the FormData instead of uploading it as a file
+  // (the browser appends the boundary automatically).
+  uploadProductImage: (id, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post(`/farmer/products/${id}/image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };
 
 // Buyer Products API

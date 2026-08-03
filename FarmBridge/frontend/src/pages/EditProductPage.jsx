@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { farmerProductsAPI, getErrorMessage } from '../services/api';
+import { getCategoryDefaultImage } from '../utils/productImages';
+import ProductImage from '../components/ProductImage';
+import { useToast } from '../components/Toast';
 
 const categoryOptions = [
   'Vegetables',
@@ -14,9 +17,14 @@ const categoryOptions = [
   'Other',
 ];
 
+// Matches the backend upload limit (spring.http.multipart.max-file-size = 5MB)
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 function EditProductPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const [form, setForm] = useState({
     name: '',
@@ -29,6 +37,18 @@ function EditProductPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notFound, setNotFound] = useState(false);
+
+  // Image state: existing backend image + newly selected file/preview
+  const [existingImage, setExistingImage] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+
+  // Revoke the object URL when it is replaced or on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   useEffect(() => {
     loadProduct();
@@ -53,6 +73,7 @@ function EditProductPage() {
         quantity: product.quantity?.toString() || '',
         category: product.category || '',
       });
+      setExistingImage(product.imageUrl || '');
     } catch (err) {
       // Product missing — show not-found state
       if (err.response?.status === 404) {
@@ -70,6 +91,37 @@ function EditProductPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      showToast('Please choose a JPG, PNG, WEBP or GIF image.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      showToast('Image is too large. Maximum size is 5 MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveNewImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview('');
+  };
+
+  // What the preview shows: the newly picked file, else the existing image,
+  // else the category default illustration.
+  const previewSource = imagePreview || existingImage || getCategoryDefaultImage(form.category);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -82,7 +134,24 @@ function EditProductPage() {
         quantity: parseInt(form.quantity, 10),
       };
 
+      // 1. Update the product details (existing API)
       await farmerProductsAPI.updateProduct(id, payload);
+
+      // 2. If a new image was picked, replace the old one via the upload API
+      if (imageFile) {
+        try {
+          await farmerProductsAPI.uploadProductImage(id, imageFile);
+          showToast('Product updated and image replaced successfully');
+        } catch (uploadErr) {
+          showToast(
+            getErrorMessage(uploadErr, 'Product updated, but the image upload failed.'),
+            'error'
+          );
+        }
+      } else {
+        showToast('Product updated successfully');
+      }
+
       navigate('/farmer/products');
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to update the product. Please try again.'));
@@ -234,6 +303,46 @@ function EditProductPage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+          </div>
+
+          {/* ============ Product Image (replace) ============ */}
+          <div className="form-group">
+            <label>Product Image</label>
+            <div className="product-image-field">
+              <div className="product-image-preview">
+                <ProductImage
+                  product={{ imageUrl: previewSource, category: form.category }}
+                  alt="Product image preview"
+                />
+              </div>
+
+              <div className="product-image-actions">
+                <label className="btn btn-outline product-image-btn">
+                  <input
+                    type="file"
+                    className="product-image-input"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleImageChange}
+                  />
+                  {imageFile ? 'Replace Image' : 'Choose Image'}
+                </label>
+                {imageFile && (
+                  <button
+                    type="button"
+                    className="btn btn-outline product-image-btn product-image-btn-remove"
+                    onClick={handleRemoveNewImage}
+                  >
+                    Keep Current
+                  </button>
+                )}
+              </div>
+
+              <p className="product-image-hint">
+                {existingImage
+                  ? 'Choose a new image to replace the current one.'
+                  : 'Optional — JPG, PNG, WEBP or GIF, up to 5 MB.'}
+              </p>
             </div>
           </div>
 

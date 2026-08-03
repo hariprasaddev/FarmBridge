@@ -2,21 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { buyerProductsAPI, buyerOrdersAPI, getErrorMessage } from '../services/api';
 import Icon from '../components/Icon';
+import ProductImage from '../components/ProductImage';
 import './BuyerProductsPage.css';
-
-// Decorative category placeholder emoji (presentation only — products
-// have no image field, so a category-tinted placeholder is shown).
-const CATEGORY_EMOJI = {
-  Vegetables: '🥦',
-  Fruits: '🍎',
-  Grains: '🌾',
-  Dairy: '🥛',
-  Poultry: '🍗',
-  Spices: '🌶️',
-  Pulses: '🫘',
-  Oilseeds: '🌻',
-  Other: '🧺',
-};
 
 // Availability derived from the existing product.quantity value.
 const getStock = (qty) => {
@@ -124,14 +111,11 @@ function BuyerProductsPage() {
 
   const renderCard = (product) => {
     const stock = getStock(product.quantity);
-    const emoji = CATEGORY_EMOJI[product.category] || CATEGORY_EMOJI.Other;
 
     return (
       <div key={product.id} className="bp-card">
         <div className="bp-card-media">
-          <span className="bp-placeholder" role="img" aria-label={product.category}>
-            {emoji}
-          </span>
+          <ProductImage product={product} className="bp-image" />
           <span className={`bp-stock bp-stock-${stock.tone}`}>{stock.label}</span>
         </div>
 

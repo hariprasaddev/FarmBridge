@@ -20,6 +20,8 @@ public class Product {
 
     private String category;
 
+    private String imageUrl;
+
     // Many products can belong to one farmer
     @ManyToOne
     @JoinColumn(name = "farmer_id")
@@ -77,6 +79,14 @@ public class Product {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public User getFarmer() {

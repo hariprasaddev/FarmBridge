@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminAPI, getErrorMessage } from '../services/api';
 import Icon from '../components/Icon';
+import ProductImage from '../components/ProductImage';
 import AdminLayout from '../components/AdminLayout';
 import AdminPagination from '../components/AdminPagination';
 import './AdminPages.css';
@@ -166,7 +167,10 @@ function AdminProductsPage() {
                       <td>
                         <div className="adm-entity-cell">
                           <span className="adm-avatar adm-avatar-square">
-                            <Icon name="package" size={16} />
+                            <ProductImage
+                              product={product}
+                              className="adm-avatar-img"
+                            />
                           </span>
                           <div className="adm-entity-name--block">
                             <span className="adm-entity-name adm-entity-name--block">

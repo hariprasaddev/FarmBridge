@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { farmerProductsAPI, getErrorMessage } from '../services/api';
+import { useToast } from '../components/Toast';
 
 const emptyForm = {
   name: '',
@@ -22,14 +23,55 @@ const categoryOptions = [
   'Other',
 ];
 
+// Matches the backend upload limit (spring.http.multipart.max-file-size = 5MB)
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+
 function AddProductPage() {
   const [form, setForm] = useState({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const { showToast } = useToast();
   const navigate = useNavigate();
+
+  // Revoke the object URL when it is replaced or on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      showToast('Please choose a JPG, PNG, WEBP or GIF image.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      showToast('Image is too large. Maximum size is 5 MB.', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
+
+  const handleRemoveImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(null);
+    setImagePreview('');
   };
 
   const handleSubmit = async (e) => {
@@ -44,7 +86,26 @@ function AddProductPage() {
         quantity: parseInt(form.quantity, 10),
       };
 
-      await farmerProductsAPI.createProduct(payload);
+      // 1. Create the product first using the existing Product API
+      const response = await farmerProductsAPI.createProduct(payload);
+      const product = response.data;
+
+      // 2. Automatically upload the selected image (if any)
+      if (imageFile) {
+        try {
+          await farmerProductsAPI.uploadProductImage(product.id, imageFile);
+          showToast('Product created and image uploaded successfully');
+        } catch (uploadErr) {
+          // The product was still created — surface the upload problem only
+          showToast(
+            getErrorMessage(uploadErr, 'Product created, but the image upload failed.'),
+            'error'
+          );
+        }
+      } else {
+        showToast('Product created successfully');
+      }
+
       navigate('/farmer/products');
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to create the product. Please try again.'));
@@ -150,6 +211,49 @@ function AddProductPage() {
                 onChange={handleChange}
                 required
               />
+            </div>
+          </div>
+
+          {/* ============ Product Image (optional) ============ */}
+          <div className="form-group">
+            <label>Product Image</label>
+            <div className="product-image-field">
+              <div
+                className={`product-image-preview${
+                  imagePreview ? '' : ' product-image-preview-empty'
+                }`}
+              >
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Product image preview" />
+                ) : (
+                  <span className="product-image-placeholder">No image selected</span>
+                )}
+              </div>
+
+              <div className="product-image-actions">
+                <label className="btn btn-outline product-image-btn">
+                  <input
+                    type="file"
+                    className="product-image-input"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleImageChange}
+                  />
+                  Choose Image
+                </label>
+                {imagePreview && (
+                  <button
+                    type="button"
+                    className="btn btn-outline product-image-btn product-image-btn-remove"
+                    onClick={handleRemoveImage}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+
+              <p className="product-image-hint">
+                Optional — JPG, PNG, WEBP or GIF, up to 5 MB.
+              </p>
             </div>
           </div>
 

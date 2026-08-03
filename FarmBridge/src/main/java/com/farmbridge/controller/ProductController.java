@@ -8,9 +8,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -130,5 +132,62 @@ public class ProductController {
         return ResponseEntity.ok(
                 "Product deleted successfully"
         );
+    }
+
+    // ==========================================
+    // UPLOAD PRODUCT IMAGE
+    // ==========================================
+
+    @PostMapping(
+            value = "/{id}/image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @Operation(
+            summary = "Upload a product image",
+            description = "Farmer uploads or replaces the image of one of their own products. Only the owner can upload."
+    )
+    public ResponseEntity<ProductResponse> uploadProductImage(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
+
+        // Get logged-in farmer email from JWT
+        String email = authentication.getName();
+
+        // Upload the image
+        ProductResponse response =
+                productService.uploadProductImage(
+                        id,
+                        file,
+                        email
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // DELETE PRODUCT IMAGE
+    // ==========================================
+
+    @DeleteMapping("/{id}/image")
+    @Operation(
+            summary = "Delete a product image",
+            description = "Farmer removes the image of one of their own products. Only the owner can delete."
+    )
+    public ResponseEntity<ProductResponse> deleteProductImage(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        // Get logged-in farmer email from JWT
+        String email = authentication.getName();
+
+        // Delete the image
+        ProductResponse response =
+                productService.deleteProductImage(
+                        id,
+                        email
+                );
+
+        return ResponseEntity.ok(response);
     }
 }

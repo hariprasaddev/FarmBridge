@@ -1,18 +1,5 @@
 import Icon from './Icon';
-
-// Decorative category placeholder emoji (presentation only — products
-// have no image field, so a category-tinted placeholder is shown).
-const CATEGORY_EMOJI = {
-  Vegetables: '🥦',
-  Fruits: '🍎',
-  Grains: '🌾',
-  Dairy: '🥛',
-  Poultry: '🍗',
-  Spices: '🌶️',
-  Pulses: '🫘',
-  Oilseeds: '🌻',
-  Other: '🧺',
-};
+import ProductImage from './ProductImage';
 
 // Availability derived from the existing product.quantity value.
 export function getStock(qty) {
@@ -30,14 +17,11 @@ export function getStock(qty) {
  */
 function ProductCard({ product, deleting = false, onEdit, onDelete }) {
   const stock = getStock(product.quantity);
-  const emoji = CATEGORY_EMOJI[product.category] || CATEGORY_EMOJI.Other;
 
   return (
     <div className="mp-card">
       <div className="mp-card-media">
-        <span className="mp-placeholder" role="img" aria-label={product.category}>
-          {emoji}
-        </span>
+        <ProductImage product={product} className="mp-image" />
         <span className={`mp-stock mp-stock-${stock.tone}`}>{stock.label}</span>
       </div>
 
