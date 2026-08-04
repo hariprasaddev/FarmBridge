@@ -216,3 +216,62 @@ Interactive API documentation is available through Swagger UI
 Mukkera Hariprasad
 
 GitHub: [https://github.com/hariprasaddev](https://github.com/hariprasaddev)
+
+---
+
+## API Documentation
+
+### Project Overview
+
+FarmBridge exposes a REST API secured with **JWT Bearer tokens**. The API
+covers Authentication, Admin, Farmer, Buyer, Reviews, Wishlist, Notifications,
+and Forgot/Reset Password modules. Full interactive documentation is available
+through Swagger UI.
+
+### Technologies
+
+- **Backend:** Java, Spring Boot, Spring Security, Spring Data JPA, Hibernate,
+  MySQL, Spring Mail, JWT (jjwt), Springdoc OpenAPI (Swagger)
+- **Frontend:** React, JavaScript, CSS, Vite
+
+### Swagger UI
+
+- **Swagger UI:** http://localhost:8080/swagger-ui/index.html
+- **OpenAPI JSON:** http://localhost:8080/v3/api-docs
+- **API documentation:** [`docs/API_DOCUMENTATION.md`](docs/API_DOCUMENTATION.md)
+
+### Postman Collection
+
+A complete Postman collection with every endpoint is provided:
+
+- **Collection:** [`docs/FarmBridge_API.postman_collection.json`](docs/FarmBridge_API.postman_collection.json)
+- **Environment:** [`docs/FarmBridge_Environment.postman_environment.json`](docs/FarmBridge_Environment.postman_environment.json)
+
+Import both into Postman, run **Login** (Authentication folder) to auto-capture
+the JWT into the `token` environment variable, then call any protected endpoint.
+
+### Environment Variables
+
+The backend reads configuration from environment variables. Create a `.env`
+or export them in your shell before starting the application:
+
+| Variable | Purpose |
+|---|---|
+| `DB_URL` | MySQL JDBC URL (e.g. `jdbc:mysql://localhost:3306/farmbridge`) |
+| `DB_USERNAME` | MySQL username |
+| `DB_PASSWORD` | MySQL password |
+| `JWT_SECRET` | HMAC key used to sign JWTs (≥ 32 characters) |
+| `MAIL_HOST` | SMTP host (e.g. `smtp.gmail.com`) |
+| `MAIL_PORT` | SMTP port (e.g. `587`) |
+| `MAIL_USERNAME` | SMTP username (e.g. Gmail address) |
+| `MAIL_PASSWORD` | SMTP password / Google App Password |
+| `APP_RESET_PASSWORD_URL` | Frontend reset-page URL used in reset emails |
+
+Example:
+
+```bash
+export DB_URL=jdbc:mysql://localhost:3306/farmbridge
+export DB_USERNAME=root
+export DB_PASSWORD=your_password
+export JWT_SECRET=ChangeMeToALongRandomSecretForProduction
+```
