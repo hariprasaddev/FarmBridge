@@ -54,6 +54,12 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!-- Spring Mail (password reset emails) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- MySQL -->
 		<dependency>
 			<groupId>com.mysql</groupId>

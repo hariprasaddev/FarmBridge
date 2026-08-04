@@ -1,0 +1,337 @@
+/* ============================================================
+   NOTIFICATION BELL — navbar dropdown
+   Scoped with the `nbell-` prefix.
+   ============================================================ */
+
+.nbell {
+  position: relative;
+}
+
+.nbell-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.nbell-btn:hover {
+  background: var(--green-50);
+  color: var(--green-700);
+}
+
+.nbell-btn:active {
+  transform: scale(0.94);
+}
+
+.nbell-badge {
+  position: absolute;
+  top: 2px;
+  right: 1px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #dc2626;
+  border: 2px solid #ffffff;
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ------------------------------------------------------------
+   DROPDOWN
+   ------------------------------------------------------------ */
+
+.nbell-dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  background: #ffffff;
+  border: 1px solid var(--gray-200);
+  border-radius: 14px;
+  box-shadow: 0 18px 44px -14px rgba(16, 24, 40, 0.28);
+  overflow: hidden;
+  z-index: 1000;
+  animation: nbellPop 160ms ease;
+}
+
+@keyframes nbellPop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nbell-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--gray-200);
+  background: linear-gradient(135deg, var(--green-50), #f8fafc);
+}
+
+.nbell-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.nbell-markall {
+  border: none;
+  background: none;
+  padding: 0.25rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--green-700);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.nbell-markall:hover {
+  background: var(--green-100);
+}
+
+.nbell-list {
+  max-height: 380px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* -- Item card -- */
+
+.nbell-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.1rem;
+  border: none;
+  border-bottom: 1px solid var(--gray-100);
+  background: #ffffff;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.nbell-item:last-child {
+  border-bottom: none;
+}
+
+.nbell-item:hover {
+  background: var(--gray-50);
+}
+
+.nbell-item-unread {
+  background: #f0fdf4;
+}
+
+.nbell-item-unread:hover {
+  background: #e7f7ea;
+}
+
+.nbell-item-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  margin-top: 1px;
+}
+
+.nbell-icon-new_order {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.nbell-icon-order_accepted {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.nbell-icon-order_rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.nbell-icon-order_completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.nbell-icon-admin_message {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.nbell-item-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.nbell-item-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--gray-800);
+}
+
+.nbell-item-msg {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--gray-500);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nbell-item-meta {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  margin-top: 2px;
+}
+
+.nbell-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+.nbell-time {
+  font-size: 0.7rem;
+  color: var(--gray-400);
+  white-space: nowrap;
+}
+
+/* -- Loading skeletons -- */
+
+.nbell-skeleton {
+  height: 60px;
+  margin: 0.5rem 1.1rem;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: nbellShimmer 1.4s ease infinite;
+}
+
+@keyframes nbellShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* -- Empty state -- */
+
+.nbell-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.2rem 1.25rem;
+}
+
+.nbell-empty-icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+
+.nbell-empty-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gray-700);
+}
+
+.nbell-empty-sub {
+  font-size: 0.78rem;
+  color: var(--gray-500);
+  margin-top: 0.2rem;
+}
+
+/* -- Footer -- */
+
+.nbell-foot {
+  padding: 0.65rem 1.1rem;
+  border-top: 1px solid var(--gray-200);
+  background: #fafbfc;
+}
+
+.nbell-viewall {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--green-700);
+}
+
+.nbell-viewall:hover {
+  color: var(--green-800);
+}
+
+/* -- Focus states -- */
+
+.nbell-btn:focus-visible,
+.nbell-markall:focus-visible,
+.nbell-item:focus-visible,
+.nbell-viewall:focus-visible {
+  outline: 2px solid var(--green-500);
+  outline-offset: -2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 768px) {
+  .nbell-dropdown {
+    width: 360px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Anchor to the viewport so the dropdown can never overflow on
+     narrow screens (the bell sits among centered navbar items). */
+  .nbell-dropdown {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    top: 70px;
+    width: auto;
+    max-width: none;
+  }
+
+  .nbell-list {
+    max-height: 320px;
+  }
+}

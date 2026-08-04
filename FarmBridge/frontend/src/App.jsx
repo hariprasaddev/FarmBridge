@@ -4,13 +4,18 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import FarmerDashboard from './pages/FarmerDashboard';
 import FarmerProfilePage from './pages/FarmerProfilePage';
 import ProductsPage from './pages/ProductsPage';
 import AddProductPage from './pages/AddProductPage';
 import EditProductPage from './pages/EditProductPage';
 import BuyerProductsPage from './pages/BuyerProductsPage';
+import ProductDetailsPage from './pages/ProductDetailsPage';
+import BuyerWishlistPage from './pages/BuyerWishlistPage';
 import BuyerOrdersPage from './pages/BuyerOrdersPage';
+import NotificationsPage from './pages/NotificationsPage';
 import FarmerOrdersPage from './pages/FarmerOrdersPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminUsersPage from './pages/AdminUsersPage';
@@ -35,6 +40,18 @@ function App() {
           <Route
             path="/register"
             element={token ? <Navigate to={getDefaultRoute()} /> : <RegisterPage />}
+          />
+          <Route
+            path="/forgot-password"
+            element={
+              token ? <Navigate to={getDefaultRoute()} /> : <ForgotPasswordPage />
+            }
+          />
+          <Route
+            path="/reset-password"
+            element={
+              token ? <Navigate to={getDefaultRoute()} /> : <ResetPasswordPage />
+            }
           />
 
           {/* Farmer routes */}
@@ -97,10 +114,34 @@ function App() {
             }
           />
           <Route
+            path="/buyer/products/:id"
+            element={
+              <ProtectedRoute role="BUYER">
+                <ProductDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/buyer/wishlist"
+            element={
+              <ProtectedRoute role="BUYER">
+                <BuyerWishlistPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/buyer/orders"
             element={
               <ProtectedRoute role="BUYER">
                 <BuyerOrdersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationsPage />
               </ProtectedRoute>
             }
           />

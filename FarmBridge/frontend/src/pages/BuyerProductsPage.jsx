@@ -1,25 +1,25 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { buyerProductsAPI, buyerOrdersAPI, getErrorMessage } from '../services/api';
 import Icon from '../components/Icon';
 import ProductImage from '../components/ProductImage';
+import WishlistButton from '../components/WishlistButton';
+import { getStock } from '../utils/stock';
 import './BuyerProductsPage.css';
-
-// Availability derived from the existing product.quantity value.
-const getStock = (qty) => {
-  if (qty <= 0) return { label: 'Out of Stock', tone: 'out' };
-  if (qty <= 20) return { label: 'Low Stock', tone: 'low' };
-  return { label: 'In Stock', tone: 'in' };
-};
 
 function BuyerProductsPage() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Search & category filter state
+  // Search & category filter state.
+  // The category can be pre-selected from the URL (?category=...),
+  // e.g. the "View all" link on the product details page.
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('ALL');
+  const [category, setCategory] = useState(
+    () => searchParams.get('category') || 'ALL'
+  );
 
   // Place-order modal state
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -113,9 +113,23 @@ function BuyerProductsPage() {
     const stock = getStock(product.quantity);
 
     return (
-      <div key={product.id} className="bp-card">
+      <div
+        key={product.id}
+        className="bp-card"
+        role="button"
+        tabIndex={0}
+        aria-label={`View details for ${product.name}`}
+        onClick={() => navigate(`/buyer/products/${product.id}`)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigate(`/buyer/products/${product.id}`);
+          }
+        }}
+      >
         <div className="bp-card-media">
           <ProductImage product={product} className="bp-image" />
+          <WishlistButton product={product} />
           <span className={`bp-stock bp-stock-${stock.tone}`}>{stock.label}</span>
         </div>
 
@@ -135,7 +149,10 @@ function BuyerProductsPage() {
         <div className="bp-card-actions">
           <button
             className="bp-add-btn"
-            onClick={() => openOrderModal(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              openOrderModal(product);
+            }}
             disabled={product.quantity <= 0}
           >
             <Icon name="cart" size={16} />

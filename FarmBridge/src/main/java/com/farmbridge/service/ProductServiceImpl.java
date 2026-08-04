@@ -2,14 +2,22 @@ package com.farmbridge.service;
 
 import com.farmbridge.dto.ProductRequest;
 import com.farmbridge.dto.ProductResponse;
+import com.farmbridge.dto.RatingStats;
+import com.farmbridge.entity.FarmerProfile;
 import com.farmbridge.entity.Product;
 import com.farmbridge.entity.User;
+import com.farmbridge.repository.FarmerProfileRepository;
 import com.farmbridge.repository.ProductRepository;
+import com.farmbridge.repository.ReviewRepository;
 import com.farmbridge.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImpl implements ProductService {
@@ -17,15 +25,21 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final FileStorageService fileStorageService;
+    private final FarmerProfileRepository farmerProfileRepository;
+    private final ReviewRepository reviewRepository;
 
     public ProductServiceImpl(
             ProductRepository productRepository,
             UserRepository userRepository,
-            FileStorageService fileStorageService) {
+            FileStorageService fileStorageService,
+            FarmerProfileRepository farmerProfileRepository,
+            ReviewRepository reviewRepository) {
 
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.fileStorageService = fileStorageService;
+        this.farmerProfileRepository = farmerProfileRepository;
+        this.reviewRepository = reviewRepository;
     }
 
     // ==========================================
@@ -75,16 +89,7 @@ public class ProductServiceImpl implements ProductService {
                 productRepository.save(product);
 
         // Return response
-        return new ProductResponse(
-                savedProduct.getId(),
-                savedProduct.getName(),
-                savedProduct.getDescription(),
-                savedProduct.getPrice(),
-                savedProduct.getQuantity(),
-                savedProduct.getCategory(),
-                farmer.getName(),
-                savedProduct.getImageUrl()
-        );
+        return toProductResponse(savedProduct);
     }
 
     // ==========================================
@@ -136,16 +141,7 @@ public class ProductServiceImpl implements ProductService {
                 productRepository.save(product);
 
         // Return response
-        return new ProductResponse(
-                updatedProduct.getId(),
-                updatedProduct.getName(),
-                updatedProduct.getDescription(),
-                updatedProduct.getPrice(),
-                updatedProduct.getQuantity(),
-                updatedProduct.getCategory(),
-                updatedProduct.getFarmer().getName(),
-                updatedProduct.getImageUrl()
-        );
+        return toProductResponse(updatedProduct);
     }
 
     // ==========================================
@@ -300,8 +296,22 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products =
                 productRepository.findAll();
 
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
         return products.stream()
-                .map(this::toProductResponse)
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
                 .toList();
     }
 
@@ -315,8 +325,22 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products =
                 productRepository.findByFarmerEmail(email);
 
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
         return products.stream()
-                .map(this::toProductResponse)
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
                 .toList();
     }
 
@@ -332,8 +356,22 @@ public class ProductServiceImpl implements ProductService {
                 productRepository
                         .findByCategoryIgnoreCase(category);
 
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
         return products.stream()
-                .map(this::toProductResponse)
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
                 .toList();
     }
 
@@ -349,8 +387,54 @@ public class ProductServiceImpl implements ProductService {
                 productRepository
                         .findByNameContainingIgnoreCase(name);
 
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
         return products.stream()
-                .map(this::toProductResponse)
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
+                .toList();
+    }
+
+    // ==========================================
+    // GET PRODUCTS BY IDS
+    // ==========================================
+
+    @Override
+    public List<ProductResponse> getProductsByIds(
+            Collection<Long> ids) {
+
+        // Skip the query entirely when there are no ids
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+
+        List<Product> products =
+                productRepository.findAllById(ids);
+
+        // Load rating stats for all requested products in one query
+        Map<Long, RatingStats> stats =
+                loadRatingStats(ids);
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
+        return products.stream()
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
                 .toList();
     }
 
@@ -360,6 +444,130 @@ public class ProductServiceImpl implements ProductService {
 
     private ProductResponse toProductResponse(Product product) {
 
+        Map<Long, RatingStats> stats =
+                loadRatingStats(List.of(product.getId()));
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(List.of(product))
+                );
+
+        return toProductResponse(product, stats, profiles);
+    }
+
+    // ==========================================
+    // HELPER — Load rating stats in a single query
+    // ==========================================
+
+    private Map<Long, RatingStats> loadRatingStats(
+            Collection<Long> productIds) {
+
+        // Skip the query entirely when there are no products
+        if (productIds.isEmpty()) {
+            return Map.of();
+        }
+
+        return reviewRepository
+                .findRatingStatsForProducts(productIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        RatingStats::getProductId,
+                        stats -> stats
+                ));
+    }
+
+    // ==========================================
+    // HELPER — Load farmer profiles in a single query
+    // ==========================================
+
+    private Map<String, FarmerProfile> loadFarmerProfiles(
+            Collection<String> emails) {
+
+        // Skip the query entirely when there are no farmers
+        if (emails.isEmpty()) {
+            return Map.of();
+        }
+
+        return farmerProfileRepository
+                .findByUserEmailIn(emails)
+                .stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getEmail(),
+                        Function.identity()
+                ));
+    }
+
+    // ==========================================
+    // HELPER — Distinct farmer emails of a product list
+    // ==========================================
+
+    private List<String> farmerEmailsOf(List<Product> products) {
+
+        return products.stream()
+                .map(Product::getFarmer)
+                .filter(java.util.Objects::nonNull)
+                .map(User::getEmail)
+                .distinct()
+                .toList();
+    }
+
+    // ==========================================
+    // HELPER — Map entity to response DTO
+    // ==========================================
+
+    private ProductResponse toProductResponse(
+            Product product,
+            Map<Long, RatingStats> statsMap,
+            Map<String, FarmerProfile> profileMap) {
+
+        User farmer = product.getFarmer();
+
+        String farmName = null;
+        String location = null;
+        Boolean farmerVerified = false;
+
+        if (farmer != null) {
+
+            FarmerProfile profile =
+                    profileMap.get(farmer.getEmail());
+
+            if (profile != null) {
+                farmName = profile.getFarmName();
+                location = profile.getLocation();
+                farmerVerified =
+                        Boolean.TRUE.equals(profile.getVerified());
+            }
+        }
+
+        // Rating summary. Products without reviews keep a null average
+        // and zero counts (they simply are not part of the grouped query).
+        RatingStats stats = statsMap.get(product.getId());
+
+        Double averageRating = null;
+        Long reviewCount = 0L;
+        Long fiveStarCount = 0L;
+        Long fourStarCount = 0L;
+        Long threeStarCount = 0L;
+        Long twoStarCount = 0L;
+        Long oneStarCount = 0L;
+
+        if (stats != null && stats.getReviewCount() != null) {
+
+            reviewCount = stats.getReviewCount();
+            fiveStarCount = orZero(stats.getFiveStarCount());
+            fourStarCount = orZero(stats.getFourStarCount());
+            threeStarCount = orZero(stats.getThreeStarCount());
+            twoStarCount = orZero(stats.getTwoStarCount());
+            oneStarCount = orZero(stats.getOneStarCount());
+
+            if (reviewCount > 0 && stats.getAverageRating() != null) {
+                // Round the average to one decimal place
+                averageRating = Math.round(
+                        stats.getAverageRating() * 10.0
+                ) / 10.0;
+            }
+        }
+
         return new ProductResponse(
                 product.getId(),
                 product.getName(),
@@ -367,8 +575,22 @@ public class ProductServiceImpl implements ProductService {
                 product.getPrice(),
                 product.getQuantity(),
                 product.getCategory(),
-                product.getFarmer().getName(),
-                product.getImageUrl()
+                farmer != null ? farmer.getName() : null,
+                product.getImageUrl(),
+                farmName,
+                location,
+                farmerVerified,
+                averageRating,
+                reviewCount,
+                fiveStarCount,
+                fourStarCount,
+                threeStarCount,
+                twoStarCount,
+                oneStarCount
         );
+    }
+
+    private Long orZero(Long value) {
+        return value != null ? value : 0L;
     }
 }

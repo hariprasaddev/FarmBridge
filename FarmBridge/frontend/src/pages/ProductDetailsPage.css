@@ -1,0 +1,1226 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   PRODUCT DETAILS — Premium buyer product details page
+   All selectors are scoped with the `pd-` prefix so no other
+   page or shared component is affected.
+   ============================================================ */
+
+.pd-root {
+  --pd-primary: #2e7d32;
+  --pd-primary-dark: #256b29;
+  --pd-primary-soft: #66bb6a;
+  --pd-bg: #f8fafc;
+  --pd-card: #ffffff;
+  --pd-border: #e5e7eb;
+  --pd-text: #1f2937;
+  --pd-muted: #6b7280;
+  --pd-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--pd-text);
+  background: var(--pd-bg);
+  margin-top: -1rem; /* cancel .main-content top padding */
+  min-height: calc(100vh - var(--pd-navbar-h));
+}
+
+.pd-inner {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   BACK LINK
+   ------------------------------------------------------------ */
+
+.pd-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--pd-muted);
+  padding: 0.45rem 0.9rem 0.45rem 0.6rem;
+  border-radius: 999px;
+  margin-bottom: 1.25rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pd-back:hover {
+  background: #e8f5e9;
+  color: var(--pd-primary);
+}
+
+/* ------------------------------------------------------------
+   HERO — gallery + info
+   ------------------------------------------------------------ */
+
+.pd-main {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+/* -- Gallery -- */
+
+.pd-gallery {
+  position: relative;
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  box-shadow: 0 12px 30px -18px rgba(16, 24, 40, 0.35);
+}
+
+.pd-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.pd-stock {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: #fff;
+  box-shadow: 0 2px 10px -2px rgba(16, 24, 40, 0.25);
+}
+
+.pd-stock-in { color: #166534; background: #dcfce7; }
+.pd-stock-low { color: #b45309; background: #fef3c7; }
+.pd-stock-out { color: #b91c1c; background: #fee2e2; }
+
+/* -- Info -- */
+
+.pd-info {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.75rem 1.75rem 1.9rem;
+  box-shadow: 0 12px 30px -18px rgba(16, 24, 40, 0.3);
+}
+
+.pd-category {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--pd-primary);
+  background: #e8f5e9;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 0.9rem;
+}
+
+.pd-name {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--pd-text);
+  margin-bottom: 1rem;
+}
+
+.pd-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.4rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--pd-border);
+}
+
+.pd-price {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--pd-primary);
+}
+
+.pd-availability {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--pd-muted);
+}
+
+.pd-desc h2 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pd-muted);
+  margin-bottom: 0.5rem;
+}
+
+.pd-desc p {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+/* ------------------------------------------------------------
+   FARMER CARD + ORDER CARD
+   ------------------------------------------------------------ */
+
+.pd-actions-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+/* -- Farmer card -- */
+
+.pd-farmer {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem;
+  box-shadow: 0 10px 26px -18px rgba(16, 24, 40, 0.3);
+}
+
+.pd-farmer-avatar {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #e8f5e9, #dcfce7);
+  color: var(--pd-primary);
+  border-radius: 12px;
+}
+
+.pd-farmer-body {
+  min-width: 0;
+}
+
+.pd-farmer-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.2rem;
+}
+
+.pd-farmer-name-row h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pd-text);
+}
+
+.pd-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #166534;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  padding: 0.18rem 0.6rem;
+  border-radius: 999px;
+}
+
+.pd-farm-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.pd-farm-location {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.84rem;
+  color: var(--pd-muted);
+}
+
+.pd-farm-location svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.pd-farm-muted {
+  font-size: 0.84rem;
+  color: #9ca3af;
+}
+
+/* -- Order card -- */
+
+.pd-order {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.35rem 1.5rem;
+  box-shadow: 0 10px 26px -18px rgba(16, 24, 40, 0.3);
+}
+
+.pd-qty-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.pd-qty-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.pd-stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+.pd-step-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: #fff;
+  color: var(--pd-primary);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pd-step-btn:hover:not(:disabled) {
+  background: #e8f5e9;
+}
+
+.pd-step-btn:disabled {
+  color: #c1c9d2;
+  cursor: not-allowed;
+}
+
+.pd-step-value {
+  min-width: 44px;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pd-text);
+}
+
+.pd-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 12px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1.1rem;
+}
+
+.pd-total-amount {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--pd-primary);
+}
+
+.pd-place-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  height: 52px;
+  border: none;
+  border-radius: 12px;
+  background: var(--pd-primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 10px 22px -10px rgba(46, 125, 50, 0.55);
+}
+
+.pd-place-btn:hover:not(:disabled) {
+  background: var(--pd-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px -10px rgba(46, 125, 50, 0.6);
+}
+
+.pd-place-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.pd-place-btn:disabled {
+  background: #e5e7eb;
+  color: #6b7280;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.pd-out-hint {
+  margin-top: 0.7rem;
+  text-align: center;
+  font-size: 0.82rem;
+  color: #b91c1c;
+}
+
+/* ------------------------------------------------------------
+   RELATED PRODUCTS
+   ------------------------------------------------------------ */
+
+.pd-related {
+  margin-top: 2.25rem;
+}
+
+.pd-related-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.pd-related-head h2 {
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pd-text);
+}
+
+.pd-related-more {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pd-primary);
+}
+
+.pd-related-more:hover {
+  color: var(--pd-primary-dark);
+}
+
+.pd-related-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.pd-rel-card {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.pd-rel-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 28px -14px rgba(16, 24, 40, 0.22);
+  border-color: var(--pd-primary);
+}
+
+.pd-rel-media {
+  height: 130px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pd-rel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.25s ease;
+}
+
+.pd-rel-card:hover .pd-rel-image {
+  transform: scale(1.05);
+}
+
+.pd-rel-body {
+  padding: 0.8rem 0.9rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.pd-rel-body h4 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--pd-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pd-rel-body p {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  color: var(--pd-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pd-rel-body p svg {
+  flex-shrink: 0;
+  color: #9ca3af;
+}
+
+.pd-rel-price {
+  margin-top: auto;
+  padding-top: 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--pd-primary);
+}
+
+/* ------------------------------------------------------------
+   SKELETON LOADING
+   ------------------------------------------------------------ */
+
+.pd-skeleton {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: pdShimmer 1.4s ease infinite;
+  border-radius: 12px;
+}
+
+@keyframes pdShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.pd-skeleton-back {
+  width: 130px;
+  height: 30px;
+  margin-bottom: 1.25rem;
+}
+
+.pd-skeleton-gallery {
+  aspect-ratio: 4 / 3;
+}
+
+.pd-skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.75rem;
+  background: #fff;
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+}
+
+.pd-skeleton-line {
+  height: 14px;
+  width: 100%;
+}
+
+.pd-skeleton-line-lg { height: 26px; width: 60%; }
+.pd-skeleton-line-price { height: 30px; width: 40%; }
+.pd-skeleton-line-md { height: 13px; }
+.pd-skeleton-line-sm { height: 13px; width: 70%; }
+
+.pd-skeleton-related {
+  height: 190px;
+  margin-top: 2.25rem;
+}
+
+/* ------------------------------------------------------------
+   ERROR STATE
+   ------------------------------------------------------------ */
+
+.pd-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 5rem 1.5rem;
+  color: var(--pd-muted);
+}
+
+.pd-error-icon {
+  width: 76px;
+  height: 76px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid var(--pd-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+
+.pd-error h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--pd-text);
+  margin-bottom: 0.35rem;
+}
+
+.pd-error p {
+  font-size: 0.9rem;
+  margin-bottom: 1.4rem;
+}
+
+.pd-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.3rem;
+  border-radius: 10px;
+  background: var(--pd-primary);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.pd-back-btn:hover {
+  background: var(--pd-primary-dark);
+  color: #fff;
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.pd-back:focus-visible,
+.pd-step-btn:focus-visible,
+.pd-place-btn:focus-visible,
+.pd-rel-card:focus-visible,
+.pd-back-btn:focus-visible {
+  outline: 2px solid var(--pd-primary-soft);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 1023px) {
+  .pd-inner {
+    padding: 20px;
+  }
+
+  .pd-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .pd-inner {
+    padding: 16px;
+  }
+
+  .pd-name {
+    font-size: 1.4rem;
+  }
+
+  .pd-actions-row {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-related-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  .pd-rel-media {
+    height: 110px;
+  }
+}
+
+/* ------------------------------------------------------------
+   REVIEWS & RATINGS
+   Scoped with the pd- prefix to match this page's design system.
+   ------------------------------------------------------------ */
+
+.pd-reviews {
+  margin-top: 2.25rem;
+}
+
+.pd-reviews-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.1rem;
+}
+
+.pd-reviews-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--pd-text);
+}
+
+.pd-reviews-head h2 svg {
+  color: #f59e0b;
+}
+
+.pd-reviews-count {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--pd-muted);
+  background: #fff;
+  border: 1px solid var(--pd-border);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+}
+
+/* -- Rating summary -- */
+
+.pd-rating-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) 1fr;
+  gap: 2rem;
+  align-items: center;
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 10px 26px -18px rgba(16, 24, 40, 0.3);
+  margin-bottom: 1.25rem;
+}
+
+.pd-rating-big {
+  text-align: center;
+  border-right: 1px solid var(--pd-border);
+  padding-right: 2rem;
+}
+
+.pd-rating-num {
+  display: block;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--pd-text);
+}
+
+.pd-rating-stars {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin: 0.5rem 0 0.35rem;
+}
+
+.pd-rating-count {
+  font-size: 0.82rem;
+  color: var(--pd-muted);
+}
+
+.pd-rating-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pd-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.82rem;
+  color: var(--pd-muted);
+}
+
+.pd-bar-level {
+  min-width: 12px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--pd-text);
+}
+
+.pd-bar-row svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.pd-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #eef2f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.pd-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.pd-bar-count {
+  min-width: 24px;
+  font-weight: 600;
+  color: var(--pd-text);
+}
+
+.pd-rating-none {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.1rem 1.5rem;
+  font-size: 0.92rem;
+  color: var(--pd-muted);
+  margin-bottom: 1.25rem;
+}
+
+/* -- Stars -- */
+
+.pd-star {
+  display: inline-flex;
+  color: #d1d5db;
+}
+
+.pd-star-filled {
+  color: #f59e0b;
+}
+
+.pd-star-filled svg {
+  fill: #f59e0b;
+}
+
+/* -- Buyer's review form -- */
+
+.pd-my-review {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 16px;
+  padding: 1.4rem 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 10px 26px -18px rgba(16, 24, 40, 0.3);
+}
+
+.pd-my-review h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--pd-text);
+  margin-bottom: 1rem;
+}
+
+/* -- Review eligibility notice (shown to buyers who have not purchased) -- */
+
+.pd-not-eligible {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 8px 22px -18px rgba(16, 24, 40, 0.28);
+}
+
+.pd-not-eligible-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #e8f5e9;
+  color: var(--pd-primary);
+}
+
+.pd-not-eligible p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--pd-muted);
+}
+
+.pd-rating-picker {
+  display: flex;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.pd-star-btn {
+  border: none;
+  background: none;
+  padding: 0.2rem;
+  cursor: pointer;
+  color: #d1d5db;
+  border-radius: 8px;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.pd-star-btn svg {
+  transition: fill 0.15s ease, transform 0.15s ease;
+}
+
+.pd-star-btn:hover,
+.pd-star-btn:focus-visible {
+  outline: none;
+  transform: translateY(-2px) scale(1.08);
+}
+
+.pd-star-btn-active {
+  color: #f59e0b;
+}
+
+.pd-star-btn-active svg {
+  fill: #f59e0b;
+}
+
+.pd-review-field {
+  position: relative;
+  margin-bottom: 0.9rem;
+}
+
+.pd-review-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 0.4rem;
+}
+
+.pd-review-field textarea {
+  width: 100%;
+  border: 1px solid var(--pd-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem 1.9rem;
+  font-family: inherit;
+  font-size: 0.92rem;
+  color: var(--pd-text);
+  background: #fafbfc;
+  resize: vertical;
+  min-height: 96px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.pd-review-field textarea:focus {
+  outline: none;
+  border-color: var(--pd-primary-soft);
+  box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.18);
+  background: #fff;
+}
+
+.pd-review-counter {
+  position: absolute;
+  right: 0.8rem;
+  bottom: 0.55rem;
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.pd-review-error {
+  margin-bottom: 0.9rem;
+}
+
+.pd-review-actions {
+  margin-top: 0;
+}
+
+/* -- Existing review card -- */
+
+.pd-my-review-card {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  border-radius: 12px;
+  padding: 1rem 1.15rem;
+}
+
+.pd-my-review-stars {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 0.55rem;
+}
+
+.pd-my-review-comment {
+  font-size: 0.92rem;
+  color: #374151;
+  line-height: 1.6;
+  margin-bottom: 0.8rem;
+}
+
+.pd-my-review-muted {
+  font-size: 0.85rem;
+  color: #9ca3af;
+  font-style: italic;
+  margin-bottom: 0.8rem;
+}
+
+.pd-my-review-actions {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.pd-del-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: var(--red-600);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pd-del-btn:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+/* -- Reviews list -- */
+
+.pd-reviews-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.pd-review-card {
+  background: var(--pd-card);
+  border: 1px solid var(--pd-border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: 0 8px 22px -18px rgba(16, 24, 40, 0.28);
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.pd-review-card:hover {
+  border-color: var(--pd-primary-soft);
+  transform: translateY(-1px);
+}
+
+.pd-review-top {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.55rem;
+}
+
+.pd-review-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8f5e9, #dcfce7);
+  color: var(--pd-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.pd-review-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pd-review-name {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--pd-text);
+}
+
+.pd-review-date {
+  font-size: 0.76rem;
+  color: #9ca3af;
+}
+
+.pd-review-stars {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.pd-review-comment {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #4b5563;
+}
+
+/* -- Empty + error states -- */
+
+.pd-reviews-empty {
+  text-align: center;
+  padding: 2.2rem 1rem;
+  background: var(--pd-card);
+  border: 1px dashed var(--pd-border);
+  border-radius: 14px;
+  color: var(--pd-muted);
+}
+
+.pd-reviews-empty-icon {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: #fefce8;
+  color: #f59e0b;
+  margin-bottom: 0.7rem;
+}
+
+.pd-reviews-empty p {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--pd-text);
+}
+
+.pd-reviews-empty-sub {
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  color: var(--pd-muted) !important;
+  margin-top: 0.2rem;
+}
+
+.pd-reviews-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pd-retry-btn {
+  border: 1px solid var(--pd-border);
+  background: #fff;
+  color: var(--pd-text);
+  padding: 0.4rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pd-retry-btn:hover {
+  background: #f9fafb;
+}
+
+/* -- Delete confirmation dialog -- */
+
+.pd-confirm-text {
+  font-size: 0.92rem;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 1.2rem;
+}
+
+.pd-del-confirm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--red-600);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.pd-del-confirm-btn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.pd-del-confirm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* -- Reviews skeleton -- */
+
+.pd-skeleton-reviews {
+  height: 240px;
+  margin-top: 2.25rem;
+}
+
+.pd-reviews-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pd-rev-skel-summary {
+  height: 120px;
+}
+
+.pd-rev-skel-card {
+  height: 96px;
+}
+
+/* -- Focus states -- */
+
+.pd-star-btn:focus-visible,
+.pd-del-btn:focus-visible,
+.pd-retry-btn:focus-visible,
+.pd-del-confirm-btn:focus-visible {
+  outline: 2px solid var(--pd-primary-soft);
+  outline-offset: 2px;
+}
+
+/* -- Reviews responsive -- */
+
+@media (max-width: 720px) {
+  .pd-rating-summary {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .pd-rating-big {
+    border-right: none;
+    border-bottom: 1px solid var(--pd-border);
+    padding-right: 0;
+    padding-bottom: 1.25rem;
+  }
+
+  .pd-review-top {
+    flex-wrap: wrap;
+  }
+
+  .pd-review-stars {
+    margin-left: 0;
+    width: 100%;
+  }
+}

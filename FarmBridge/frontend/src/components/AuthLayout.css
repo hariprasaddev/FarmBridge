@@ -185,6 +185,18 @@
   cursor: pointer;
 }
 
+.auth-forgot {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--auth-primary);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-forgot:hover {
+  color: #1b5e20;
+}
+
 .auth-btn {
   width: 100%;
   height: 48px;

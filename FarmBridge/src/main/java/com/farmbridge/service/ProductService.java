@@ -4,6 +4,7 @@ import com.farmbridge.dto.ProductRequest;
 import com.farmbridge.dto.ProductResponse;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ProductService {
@@ -23,6 +24,8 @@ public interface ProductService {
     List<ProductResponse> getProductsByCategory(String category);
 
     List<ProductResponse> searchProductsByName(String name);
+
+    List<ProductResponse> getProductsByIds(Collection<Long> ids);
 
     ProductResponse uploadProductImage(
             Long id, MultipartFile file, String email);

@@ -7,13 +7,13 @@ import { getProductImage, getCategoryDefaultImage } from '../utils/productImages
  * - Falls back to the category default if the stored image fails
  *   to load (e.g. file missing on disk) — with a loop guard.
  */
-function ProductImage({ product, className = '', alt }) {
+function ProductImage({ product, className = '', alt, eager = false }) {
   return (
     <img
       className={className}
       src={getProductImage(product)}
       alt={alt || product?.name || ''}
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
       onError={(e) => {
         if (e.currentTarget.dataset.fallback === 'true') return;
         e.currentTarget.dataset.fallback = 'true';

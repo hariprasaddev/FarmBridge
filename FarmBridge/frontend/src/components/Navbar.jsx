@@ -1,8 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useWishlist } from '../context/WishlistContext';
+import NotificationBell from './NotificationBell';
 
 function Navbar() {
   const { email, role, logout } = useAuth();
+  const { count: wishlistCount } = useWishlist();
   const location = useLocation();
 
   const isActive = (path) => location.pathname === path;
@@ -57,6 +60,17 @@ function Navbar() {
               Browse Products
             </Link>
             <Link
+              to="/buyer/wishlist"
+              className={`nav-link ${isActive('/buyer/wishlist') ? 'active' : ''}`}
+            >
+              Wishlist
+              {wishlistCount > 0 && (
+                <span className="nav-badge" aria-label={`${wishlistCount} items in wishlist`}>
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+            <Link
               to="/buyer/orders"
               className={`nav-link ${isActive('/buyer/orders') ? 'active' : ''}`}
             >
@@ -102,6 +116,7 @@ function Navbar() {
       </div>
 
       <div className="navbar-user">
+        <NotificationBell />
         <span className="navbar-email">{email}</span>
         <span className={`role-badge role-${role?.toLowerCase()}`}>{role}</span>
         <button className="btn-logout" onClick={logout}>

@@ -25,4 +25,13 @@ public interface OrderRepository
             String email,
             OrderStatus status
     );
+
+    // Does this buyer have a fulfilled order for this product?
+    // Buyers may review a product once an order for it reaches
+    // ACCEPTED or COMPLETED (not COMPLETED only).
+    boolean existsByBuyerEmailAndProductIdAndStatusIn(
+            String email,
+            Long productId,
+            List<OrderStatus> statuses
+    );
 }

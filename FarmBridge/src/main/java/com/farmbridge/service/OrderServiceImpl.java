@@ -3,6 +3,7 @@ package com.farmbridge.service;
 import com.farmbridge.dto.OrderRequest;
 import com.farmbridge.dto.OrderResponse;
 import com.farmbridge.dto.OrderStatusRequest;
+import com.farmbridge.entity.NotificationType;
 import com.farmbridge.entity.Order;
 import com.farmbridge.entity.OrderStatus;
 import com.farmbridge.entity.Product;
@@ -11,6 +12,8 @@ import com.farmbridge.repository.OrderRepository;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.UserRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,18 +22,24 @@ import java.util.List;
 @Service
 public class OrderServiceImpl implements OrderService {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(OrderServiceImpl.class);
+
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             ProductRepository productRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            NotificationService notificationService) {
 
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     // ==========================================
@@ -97,6 +106,15 @@ public class OrderServiceImpl implements OrderService {
         Order savedOrder =
                 orderRepository.save(order);
 
+        // Notify the farmer about the new order
+        notifyUser(
+                farmer.getEmail(),
+                "New Order",
+                "New order placed for " + product.getName(),
+                NotificationType.NEW_ORDER,
+                savedOrder.getId()
+        );
+
         // Reduce product quantity
         product.setQuantity(
                 product.getQuantity()
@@ -107,6 +125,36 @@ public class OrderServiceImpl implements OrderService {
 
         // Return response
         return convertToResponse(savedOrder);
+    }
+
+    // ==========================================
+    // NOTIFICATION HELPER
+    // A notification failure must never break the
+    // order flow, so every creation is guarded.
+    // ==========================================
+
+    private void notifyUser(
+            String recipientEmail,
+            String title,
+            String message,
+            NotificationType type,
+            Long referenceId) {
+
+        try {
+            notificationService.createNotification(
+                    recipientEmail,
+                    title,
+                    message,
+                    type,
+                    referenceId
+            );
+        } catch (Exception ex) {
+            logger.warn(
+                    "Failed to create notification for {}: {}",
+                    recipientEmail,
+                    ex.getMessage()
+            );
+        }
     }
 
     // ==========================================
@@ -256,6 +304,39 @@ public class OrderServiceImpl implements OrderService {
         // Save order
         Order updatedOrder =
                 orderRepository.save(order);
+
+        // Notify the buyer about the outcome of their order
+        if (newStatus == OrderStatus.ACCEPTED) {
+
+            notifyUser(
+                    order.getBuyer().getEmail(),
+                    "Order Accepted",
+                    "Your order for " + order.getProduct().getName()
+                            + " was accepted.",
+                    NotificationType.ORDER_ACCEPTED,
+                    order.getId()
+            );
+        } else if (newStatus == OrderStatus.REJECTED) {
+
+            notifyUser(
+                    order.getBuyer().getEmail(),
+                    "Order Rejected",
+                    "Your order for " + order.getProduct().getName()
+                            + " was rejected.",
+                    NotificationType.ORDER_REJECTED,
+                    order.getId()
+            );
+        } else if (newStatus == OrderStatus.COMPLETED) {
+
+            notifyUser(
+                    order.getBuyer().getEmail(),
+                    "Order Completed",
+                    "Your order for " + order.getProduct().getName()
+                            + " has been completed.",
+                    NotificationType.ORDER_COMPLETED,
+                    order.getId()
+            );
+        }
 
         // Return response
         return convertToResponse(updatedOrder);

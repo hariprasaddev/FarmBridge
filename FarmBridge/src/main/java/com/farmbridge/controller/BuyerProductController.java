@@ -1,8 +1,8 @@
 package com.farmbridge.controller;
 
 import com.farmbridge.dto.ProductResponse;
-import com.farmbridge.entity.Product;
-import com.farmbridge.repository.ProductRepository;
+import com.farmbridge.service.ProductService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,35 +12,57 @@ import java.util.List;
 @RequestMapping("/api/buyer/products")
 public class BuyerProductController {
 
-    private final ProductRepository productRepository;
+    private final ProductService productService;
 
-    public BuyerProductController(
-            ProductRepository productRepository) {
-
-        this.productRepository = productRepository;
+    public BuyerProductController(ProductService productService) {
+        this.productService = productService;
     }
+
+    // ==========================================
+    // GET ALL PRODUCTS (BUYER BROWSE)
+    // ==========================================
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
 
-        List<Product> products =
-                productRepository.findAll();
+        List<ProductResponse> response =
+                productService.getAllProducts();
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // GET PRODUCT BY ID (PRODUCT DETAILS)
+    // ==========================================
+
+    @GetMapping("/{id}")
+    @Operation(
+            summary = "Get a product by ID",
+            description = "Buyer fetches full details of a single product, including the seller's farm information."
+    )
+    public ResponseEntity<ProductResponse> getProductById(
+            @PathVariable Long id) {
+
+        ProductResponse response =
+                productService.getProductById(id);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // GET PRODUCTS BY CATEGORY (RELATED PRODUCTS)
+    // ==========================================
+
+    @GetMapping("/category/{category}")
+    @Operation(
+            summary = "Get products by category",
+            description = "Buyer fetches all products in a category (case-insensitive), useful for related products."
+    )
+    public ResponseEntity<List<ProductResponse>> getProductsByCategory(
+            @PathVariable String category) {
 
         List<ProductResponse> response =
-                products.stream()
-                        .map(product ->
-                                new ProductResponse(
-                                        product.getId(),
-                                        product.getName(),
-                                        product.getDescription(),
-                                        product.getPrice(),
-                                        product.getQuantity(),
-                                        product.getCategory(),
-                                        product.getFarmer().getName(),
-                                        product.getImageUrl()
-                                )
-                        )
-                        .toList();
+                productService.getProductsByCategory(category);
 
         return ResponseEntity.ok(response);
     }

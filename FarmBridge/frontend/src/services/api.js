@@ -44,6 +44,8 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
 };
 
 // Farmer Profile API
@@ -79,6 +81,42 @@ export const farmerProductsAPI = {
 // Buyer Products API
 export const buyerProductsAPI = {
   getAllProducts: () => api.get('/buyer/products'),
+  getProductById: (id) => api.get(`/buyer/products/${id}`),
+  getProductsByCategory: (category) =>
+    api.get(`/buyer/products/category/${encodeURIComponent(category)}`),
+};
+
+// Buyer Reviews API
+export const buyerReviewsAPI = {
+  getReviews: (productId) =>
+    api.get(`/buyer/products/${productId}/reviews`),
+  getMyReview: (productId) =>
+    api.get(`/buyer/products/${productId}/reviews/mine`),
+  createReview: (productId, data) =>
+    api.post(`/buyer/products/${productId}/reviews`, data),
+  updateReview: (reviewId, data) =>
+    api.put(`/buyer/reviews/${reviewId}`, data),
+  deleteReview: (reviewId) =>
+    api.delete(`/buyer/reviews/${reviewId}`),
+};
+
+// Buyer Wishlist API
+export const buyerWishlistAPI = {
+  getWishlist: () => api.get('/buyer/wishlist'),
+  add: (productId) => api.post(`/buyer/wishlist/${productId}`),
+  remove: (productId) => api.delete(`/buyer/wishlist/${productId}`),
+  check: (productId) => api.get(`/buyer/wishlist/check/${productId}`),
+};
+
+// Notifications API
+export const notificationAPI = {
+  getNotifications: () => api.get('/notifications'),
+  getUnread: () => api.get('/notifications/unread'),
+  getUnreadCount: () => api.get('/notifications/unread/count'),
+  markRead: (id) => api.put(`/notifications/${id}/read`),
+  markAllRead: () => api.put('/notifications/read-all'),
+  delete: (id) => api.delete(`/notifications/${id}`),
+  clearAll: () => api.delete('/notifications'),
 };
 
 // Buyer Orders API

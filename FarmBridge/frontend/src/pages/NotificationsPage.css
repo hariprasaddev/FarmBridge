@@ -1,0 +1,361 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* ============================================================
+   NOTIFICATIONS PAGE — /notifications
+   Scoped with the `npage-` prefix.
+   ============================================================ */
+
+.npage-root {
+  --npage-primary: #2e7d32;
+  --npage-primary-dark: #256b29;
+  --npage-primary-soft: #66bb6a;
+  --npage-bg: #f8fafc;
+  --npage-card: #ffffff;
+  --npage-border: #e5e7eb;
+  --npage-text: #1f2937;
+  --npage-muted: #6b7280;
+  --npage-navbar-h: 61px;
+
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: var(--npage-text);
+  background: var(--npage-bg);
+  margin-top: -1rem;
+  min-height: calc(100vh - var(--npage-navbar-h));
+}
+
+.npage-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* ------------------------------------------------------------
+   HEADER
+   ------------------------------------------------------------ */
+
+.npage-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.npage-title h1 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--npage-text);
+  line-height: 1.2;
+}
+
+.npage-sub {
+  font-size: 0.85rem;
+  color: var(--npage-muted);
+  margin-top: 0.15rem;
+}
+
+.npage-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.npage-clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.5rem;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid #fecaca;
+  background: #fff;
+  color: #dc2626;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.npage-clear-btn:hover:not(:disabled) {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.npage-clear-btn:disabled,
+.npage-actions .btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ------------------------------------------------------------
+   LIST / CARDS
+   ------------------------------------------------------------ */
+
+.npage-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.npage-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--npage-card);
+  border: 1px solid var(--npage-border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 22px -18px rgba(16, 24, 40, 0.28);
+  transition: border-color 0.15s ease, transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.npage-card:hover {
+  border-color: var(--npage-primary-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 26px -18px rgba(16, 24, 40, 0.32);
+}
+
+.npage-card-unread {
+  border-color: #bbf7d0;
+  background: #f5fdf7;
+}
+
+.npage-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 1rem 0.4rem 1rem 1.1rem;
+  border: none;
+  background: none;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.npage-card-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.npage-icon-new_order {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.npage-icon-order_accepted {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.npage-icon-order_rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.npage-icon-order_completed {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.npage-icon-admin_message {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.npage-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.npage-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.npage-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--npage-text);
+}
+
+.npage-new-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+}
+
+.npage-card-msg {
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: #4b5563;
+}
+
+.npage-card-time {
+  font-size: 0.74rem;
+  color: #9ca3af;
+}
+
+.npage-del-btn {
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #c3cbd4;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.npage-del-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ------------------------------------------------------------
+   LOADING SKELETONS
+   ------------------------------------------------------------ */
+
+.npage-skeleton-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  background: #fff;
+  border: 1px solid var(--npage-border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+}
+
+.npage-skeleton {
+  background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+  background-size: 200% 100%;
+  animation: npageShimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+.npage-skel-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.npage-skeleton-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.npage-skel-line {
+  height: 11px;
+}
+
+.npage-skel-line-lg {
+  width: 35%;
+  height: 14px;
+}
+
+.npage-skel-line-md {
+  width: 80%;
+}
+
+.npage-skel-line-sm {
+  width: 25%;
+}
+
+@keyframes npageShimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ------------------------------------------------------------
+   EMPTY STATE
+   ------------------------------------------------------------ */
+
+.npage-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4.5rem 1.5rem;
+  background: var(--npage-card);
+  border: 1px dashed var(--npage-border);
+  border-radius: 16px;
+  color: var(--npage-muted);
+}
+
+.npage-empty-icon {
+  font-size: 2.6rem;
+  margin-bottom: 0.9rem;
+}
+
+.npage-empty h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--npage-text);
+  margin-bottom: 0.35rem;
+}
+
+.npage-empty p {
+  font-size: 0.9rem;
+}
+
+/* ------------------------------------------------------------
+   FOCUS STATES
+   ------------------------------------------------------------ */
+
+.npage-card-main:focus-visible,
+.npage-del-btn:focus-visible,
+.npage-clear-btn:focus-visible {
+  outline: 2px solid var(--npage-primary-soft);
+  outline-offset: -2px;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .npage-inner {
+    padding: 16px;
+  }
+
+  .npage-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .npage-actions {
+    width: 100%;
+  }
+
+  .npage-actions .btn,
+  .npage-clear-btn {
+    flex: 1;
+  }
+}

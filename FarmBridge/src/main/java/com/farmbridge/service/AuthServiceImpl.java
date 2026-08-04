@@ -3,6 +3,7 @@ package com.farmbridge.service;
 import com.farmbridge.dto.LoginRequest;
 import com.farmbridge.dto.LoginResponse;
 import com.farmbridge.dto.RegisterRequest;
+import com.farmbridge.entity.Role;
 import com.farmbridge.entity.User;
 import com.farmbridge.repository.UserRepository;
 import com.farmbridge.security.JwtUtil;
@@ -30,8 +31,20 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public String register(RegisterRequest request) {
 
+        // Duplicate email → 409 Conflict (matches the API-wide message mapping)
         if (userRepository.existsByEmail(request.getEmail())) {
-            return "Email already exists";
+            throw new RuntimeException("Email already exists");
+        }
+
+        // SECURITY: only FARMER and BUYER accounts can self-register.
+        // Accepting the role from the request body without restriction
+        // would let anyone create an ADMIN account (privilege escalation).
+        Role role = request.getRole();
+
+        if (role == null || role == Role.ADMIN) {
+            throw new RuntimeException(
+                    "Only FARMER and BUYER accounts can be created through registration"
+            );
         }
 
         User user = new User();
@@ -44,7 +57,7 @@ public class AuthServiceImpl implements AuthService {
                 passwordEncoder.encode(request.getPassword())
         );
 
-        user.setRole(request.getRole());
+        user.setRole(role);
 
         userRepository.save(user);
 
