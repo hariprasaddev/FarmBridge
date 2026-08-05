@@ -3,6 +3,7 @@ import { adminAPI, getErrorMessage } from '../services/api';
 import Icon from '../components/Icon';
 import AdminLayout from '../components/AdminLayout';
 import AdminPagination from '../components/AdminPagination';
+import { Modal, ConfirmDialog, Badge } from '../components/ui';
 import './AdminPages.css';
 
 const ROLE_FILTERS = [
@@ -33,6 +34,7 @@ function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [deleting, setDeleting] = useState(null);
+  const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
 
   // Edit modal state
   const [editingUser, setEditingUser] = useState(null);
@@ -110,10 +112,7 @@ function AdminUsersPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
-      return;
-    }
-
+    setConfirmDeleteUser(null);
     setDeleting(id);
     setError('');
     setSuccess('');
@@ -229,9 +228,14 @@ function AdminUsersPage() {
                     </td>
                     <td>{user.email}</td>
                     <td>
-                      <span className={`adm-badge adm-badge-${user.role.toLowerCase()}`}>
+                      <Badge
+                        variant={
+                          user.role === 'ADMIN' ? 'warning' : user.role === 'FARMER' ? 'primary' : 'info'
+                        }
+                        className={`adm-badge adm-badge-${user.role.toLowerCase()}`}
+                      >
                         {user.role}
-                      </span>
+                      </Badge>
                     </td>
                     <td>
                       <div className="adm-actions">
@@ -244,7 +248,7 @@ function AdminUsersPage() {
                         </button>
                         <button
                           className="adm-action-btn adm-action-btn-danger"
-                          onClick={() => handleDelete(user.id)}
+                          onClick={() => setConfirmDeleteUser(user)}
                           disabled={deleting === user.id}
                         >
                           <Icon name="trash" size={14} />
@@ -269,91 +273,89 @@ function AdminUsersPage() {
       )}
 
       {/* ==========================================
-          EDIT USER MODAL
+          EDIT USER MODAL (design system)
           ========================================== */}
-      {editingUser && (
-        <div className="modal-overlay" onClick={closeEdit}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Edit User</h3>
-              <button
-                className="modal-close"
-                onClick={closeEdit}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
+      <Modal
+        open={!!editingUser}
+        onClose={closeEdit}
+        title="Edit User"
+        subtitle={editingUser ? `User #${editingUser.id}` : ''}
+        icon={<Icon name="profile" size={18} />}
+        size="sm"
+        footer={
+          <>
+            <button type="button" className="btn btn-outline" onClick={closeEdit}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="adm-edit-form"
+              className="btn btn-primary"
+              disabled={saving}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </>
+        }
+      >
+        {formError && <div className="alert alert-error">{formError}</div>}
 
-            <div className="modal-body">
-              {formError && (
-                <div className="alert alert-error">{formError}</div>
-              )}
-
-              <form onSubmit={handleUpdate} className="order-form">
-                <div className="form-group">
-                  <label htmlFor="edit-name">Name</label>
-                  <input
-                    id="edit-name"
-                    type="text"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm({ ...form, name: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="edit-email">Email</label>
-                  <input
-                    id="edit-email"
-                    type="email"
-                    value={form.email}
-                    onChange={(e) =>
-                      setForm({ ...form, email: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="edit-role">Role</label>
-                  <select
-                    id="edit-role"
-                    className="form-select"
-                    value={form.role}
-                    onChange={(e) =>
-                      setForm({ ...form, role: e.target.value })
-                    }
-                  >
-                    <option value="ADMIN">ADMIN</option>
-                    <option value="FARMER">FARMER</option>
-                    <option value="BUYER">BUYER</option>
-                  </select>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={closeEdit}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </form>
-            </div>
+        <form id="adm-edit-form" onSubmit={handleUpdate} className="order-form">
+          <div className="form-group">
+            <label htmlFor="edit-name">Name</label>
+            <input
+              id="edit-name"
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              required
+            />
           </div>
-        </div>
-      )}
+
+          <div className="form-group">
+            <label htmlFor="edit-email">Email</label>
+            <input
+              id="edit-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="edit-role">Role</label>
+            <select
+              id="edit-role"
+              className="form-select"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="ADMIN">ADMIN</option>
+              <option value="FARMER">FARMER</option>
+              <option value="BUYER">BUYER</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ==========================================
+          DELETE USER CONFIRMATION (design system)
+          ========================================== */}
+      <ConfirmDialog
+        open={!!confirmDeleteUser}
+        onCancel={() => setConfirmDeleteUser(null)}
+        onConfirm={() => handleDelete(confirmDeleteUser.id)}
+        title="Delete user?"
+        message={
+          confirmDeleteUser
+            ? `This will permanently delete ${confirmDeleteUser.name || 'this user'} (${confirmDeleteUser.email}) and all of their data. This action cannot be undone.`
+            : ''
+        }
+        confirmLabel="Delete User"
+        variant="danger"
+        loading={deleting === confirmDeleteUser?.id}
+      />
     </AdminLayout>
   );
 }

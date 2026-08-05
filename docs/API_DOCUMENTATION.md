@@ -253,6 +253,78 @@ Users only ever see their own notifications (404 unknown id, 403 another user's 
 
 ---
 
+# 7. Analytics Dashboards — *(Bearer, role-scoped)*
+
+Single-payload dashboard endpoints — each dashboard loads everything it needs
+with **one** request (no fan-out of 20 calls). Revenue is defined as the value
+of **COMPLETED** orders only; order *counts* include every status.
+
+## Admin — `/api/admin/analytics` *(role ADMIN)*
+
+| Endpoint | Response |
+|---|---|
+| `GET /api/admin/analytics` | `AdminAnalyticsResponse` — full dashboard payload |
+| `GET /api/admin/analytics/revenue` | `List<MonthlyMetric>` — revenue per month (line chart) |
+| `GET /api/admin/analytics/orders` | `List<MonthlyMetric>` — orders per month (bar chart) |
+| `GET /api/admin/top-products` | `List<ProductMetric>` — top sellers (value + qty + count) |
+| `GET /api/admin/top-farmers` | `List<UserMetric>` — top farmers by revenue |
+| `GET /api/admin/top-buyers` | `List<UserMetric>` — top buyers by spend |
+
+`AdminAnalyticsResponse` fields:
+
+| Field | Meaning |
+|---|---|
+| `totalUsers`, `totalFarmers`, `verifiedFarmers`, `pendingVerification`, `totalBuyers` | account counts |
+| `totalProducts`, `totalOrders`, `monthlyOrders` | catalogue & order counts (monthly = current month) |
+| `platformRevenue`, `monthlyRevenue` | revenue (COMPLETED orders) |
+| `completedOrders`, `cancelledOrders`, `activeFarmers` | status & activity counts |
+| `revenuePerMonth`, `ordersPerMonth`, `farmerRegistrations` | chart series (`MonthlyMetric`) |
+| `productCategories` | pie chart (`CategoryMetric`) |
+| `orderStatus` | donut chart (`StatusMetric`) |
+| `topSellingCategories` | horizontal bar (`CategoryMetric` by revenue) |
+| `latestOrders` | `List<OrderMetric>` |
+| `latestFarmers` | `List<UserResponse>` |
+| `pendingVerificationList` | `List<FarmerVerificationResponse>` |
+| `topBuyers`, `topFarmers`, `topProducts` | `List<UserMetric>` / `List<ProductMetric>` |
+| `lowStockProducts` | `List<LowStockProduct>` (≤ 10 units) |
+| `latestReviews` | `List<ReviewMetric>` |
+
+## Farmer — `/api/farmer/analytics` *(role FARMER)*
+
+| Endpoint | Response |
+|---|---|
+| `GET /api/farmer/analytics` | `FarmerAnalyticsResponse` — full dashboard payload |
+| `GET /api/farmer/analytics/sales` | `List<ProductMetric>` — sales per product |
+
+`FarmerAnalyticsResponse` fields: `todayOrders`, `pendingOrders`, `acceptedOrders`,
+`completedOrders`, `rejectedOrders`, `monthlyRevenue`, `totalRevenue`, `products`,
+`averageRating`, `reviews`, `customers`, `revenueTrend`, `ordersTrend`,
+`salesPerProduct`, `salesPerMonth`, `ratingTrend`, `categorySales`,
+`bestSellingProduct`, `lowStockProducts`, `recentReviews`, `recentOrders`,
+`topCustomers`, `verified` (bool).
+
+## Buyer — `/api/buyer/analytics` *(role BUYER)*
+
+| Endpoint | Response |
+|---|---|
+| `GET /api/buyer/analytics` | `BuyerAnalyticsResponse` — full dashboard payload |
+| `GET /api/buyer/analytics/spending` | `List<MonthlyMetric>` — monthly spend series |
+
+`BuyerAnalyticsResponse` fields: `orders`, `wishlist`, `reviews`, `moneySpent`,
+`favoriteCategory`, `purchasedProducts`, `pendingOrders`, `completedOrders`,
+`monthlySpending`, `purchasesByCategory`, `ordersTimeline`,
+`recentlyViewed`, `recommendedProducts`, `latestOrders`, `favoriteFarmers`.
+
+**Authorization matrix** (all verified by integration tests):
+
+| Endpoint | ADMIN | FARMER | BUYER |
+|---|---|---|---|
+| `/api/admin/analytics*`, `/api/admin/top-*` | ✅ | 403 | 403 |
+| `/api/farmer/analytics*` | 403 | ✅ | 403 |
+| `/api/buyer/analytics*` | 403 | 403 | ✅ |
+
+---
+
 ## Environment Variables
 
 | Variable | Purpose |

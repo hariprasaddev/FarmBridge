@@ -55,6 +55,16 @@ export const farmerProfileAPI = {
   updateProfile: (data) => api.put('/farmer/profile', data),
 };
 
+// Farmer Verification API
+// The verification form posts multipart/form-data (fields + documents).
+export const farmerVerificationAPI = {
+  getVerification: () => api.get('/farmer/profile/verification'),
+  submitVerification: (formData) =>
+    api.post('/farmer/profile/verification', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+};
+
 // Farmer Products API
 export const farmerProductsAPI = {
   createProduct: (data) => api.post('/farmer/products', data),
@@ -132,6 +142,25 @@ export const farmerOrdersAPI = {
     api.put(`/farmer/orders/${orderId}/status`, { status }),
 };
 
+// Analytics API
+// Each dashboard fetches its full payload from a single endpoint;
+// the dedicated series endpoints support drill-down.
+export const analyticsAPI = {
+  // Admin
+  adminAnalytics: () => api.get('/admin/analytics'),
+  adminRevenue: () => api.get('/admin/analytics/revenue'),
+  adminOrders: () => api.get('/admin/analytics/orders'),
+  topProducts: () => api.get('/admin/top-products'),
+  topFarmers: () => api.get('/admin/top-farmers'),
+  topBuyers: () => api.get('/admin/top-buyers'),
+  // Farmer
+  farmerAnalytics: () => api.get('/farmer/analytics'),
+  farmerSales: () => api.get('/farmer/analytics/sales'),
+  // Buyer
+  buyerAnalytics: () => api.get('/buyer/analytics'),
+  buyerSpending: () => api.get('/buyer/analytics/spending'),
+};
+
 // Admin API
 export const adminAPI = {
   getStats: () => api.get('/admin/stats'),
@@ -142,6 +171,8 @@ export const adminAPI = {
   getAllOrders: () => api.get('/admin/orders'),
   getUnverifiedFarmers: () => api.get('/admin/farmers/unverified'),
   verifyFarmer: (profileId) => api.put(`/admin/farmers/${profileId}/verify`),
+  rejectFarmer: (profileId, reason) =>
+    api.put(`/admin/farmers/${profileId}/reject`, { reason }),
 };
 
 // ==========================================

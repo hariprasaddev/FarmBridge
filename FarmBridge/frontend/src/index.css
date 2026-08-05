@@ -142,3 +142,143 @@ a:hover {
   color: var(--green-700);
   border: 1px solid var(--green-200);
 }
+
+.alert-warning {
+  background: #fffbeb;
+  color: var(--earth-700);
+  border: 1px solid #fde68a;
+}
+
+/* ============================================================
+   ENTERPRISE THEME TOKENS (Phase 1 Design System)
+   Additive — every variable above stays untouched. The new UI
+   components in src/components/ui/* read only these tokens.
+   ============================================================ */
+
+:root {
+  /* --- Brand (primary green scale) --- */
+  --fb-primary-50: #f0fdf4;
+  --fb-primary-100: #dcfce7;
+  --fb-primary-200: #bbf7d0;
+  --fb-primary-300: #86efac;
+  --fb-primary-400: #4ade80;
+  --fb-primary-500: #22c55e;
+  --fb-primary-600: #16a34a;
+  --fb-primary-700: #15803d;
+  --fb-primary-800: #166534;
+  --fb-primary-900: #14532d;
+  --fb-brand: #16a34a;
+  --fb-brand-dark: #14532d;
+  --fb-brand-light: #bbf7d0;
+
+  /* --- Semantic --- */
+  --fb-success: #16a34a;
+  --fb-success-bg: #f0fdf4;
+  --fb-success-border: #bbf7d0;
+  --fb-warning: #d97706;
+  --fb-warning-bg: #fffbeb;
+  --fb-warning-border: #fde68a;
+  --fb-danger: #dc2626;
+  --fb-danger-bg: #fef2f2;
+  --fb-danger-border: #fecaca;
+  --fb-info: #2563eb;
+  --fb-info-bg: #eff6ff;
+  --fb-info-border: #bfdbfe;
+  --fb-neutral: #6b7280;
+
+  /* --- Gray scale (neutral) --- */
+  --fb-gray-50: #f9fafb;
+  --fb-gray-100: #f3f4f6;
+  --fb-gray-200: #e5e7eb;
+  --fb-gray-300: #d1d5db;
+  --fb-gray-400: #9ca3af;
+  --fb-gray-500: #6b7280;
+  --fb-gray-600: #4b5563;
+  --fb-gray-700: #374151;
+  --fb-gray-800: #1f2937;
+  --fb-gray-900: #111827;
+
+  /* --- Sidebar / surface --- */
+  --fb-surface: #ffffff;
+  --fb-surface-alt: #f8fafc;
+  --fb-border: #e5e7eb;
+  --fb-sidebar-bg: #0f2e1d;      /* deep green sidebar */
+  --fb-sidebar-bg-hover: rgba(255, 255, 255, 0.06);
+  --fb-sidebar-text: rgba(255, 255, 255, 0.72);
+  --fb-sidebar-text-active: #ffffff;
+  --fb-sidebar-accent: #4ade80;
+
+  /* --- Typography --- */
+  --fb-font: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont,
+    'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  --fb-text-xs: 0.75rem;
+  --fb-text-sm: 0.875rem;
+  --fb-text-md: 0.95rem;
+  --fb-text-lg: 1.125rem;
+  --fb-text-xl: 1.4rem;
+  --fb-text-2xl: 1.75rem;
+  --fb-heading-1: 1.5rem;
+  --fb-heading-2: 1.25rem;
+  --fb-heading-3: 1.05rem;
+
+  /* --- Spacing scale --- */
+  --fb-space-1: 0.25rem;
+  --fb-space-2: 0.5rem;
+  --fb-space-3: 0.75rem;
+  --fb-space-4: 1rem;
+  --fb-space-5: 1.25rem;
+  --fb-space-6: 1.5rem;
+  --fb-space-8: 2rem;
+  --fb-space-10: 2.5rem;
+  --fb-space-12: 3rem;
+
+  /* --- Radius --- */
+  --fb-radius-sm: 6px;
+  --fb-radius-md: 10px;
+  --fb-radius-lg: 14px;
+  --fb-radius-xl: 18px;
+  --fb-radius-pill: 999px;
+
+  /* --- Shadows --- */
+  --fb-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --fb-shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08);
+  --fb-shadow-md: 0 4px 10px -2px rgba(16, 24, 40, 0.1);
+  --fb-shadow-lg: 0 12px 24px -8px rgba(16, 24, 40, 0.14);
+  --fb-shadow-xl: 0 24px 48px -12px rgba(16, 24, 40, 0.2);
+  --fb-shadow-glow: 0 0 0 3px rgba(34, 197, 94, 0.18);
+
+  /* --- Layout metrics --- */
+  --fb-sidebar-w: 248px;
+  --fb-sidebar-w-collapsed: 76px;
+  --fb-topbar-h: 62px;
+  --fb-content-max: 1200px;
+
+  /* --- Z-index scale --- */
+  --fb-z-sidebar: 100;
+  --fb-z-topbar: 120;
+  --fb-z-backdrop: 250;
+  --fb-z-drawer: 300;
+  --fb-z-modal: 500;
+  --fb-z-toast: 700;
+
+  /* --- Motion --- */
+  --fb-transition-fast: 0.15s ease;
+  --fb-transition: 0.2s ease;
+  --fb-transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Shared focus ring for accessibility across the design system */
+[class^="fb-"]:focus-visible {
+  outline: 2px solid var(--fb-primary-500);
+  outline-offset: 2px;
+}
+
+/* Reduced motion — respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

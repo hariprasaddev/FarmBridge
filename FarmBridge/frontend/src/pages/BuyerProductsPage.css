@@ -510,3 +510,25 @@
     transform: none;
   }
 }
+
+/* Verified Farmer badge on buyer product cards */
+.bp-card-farmer {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.bp-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.08rem 0.5rem;
+  border-radius: 999px;
+  background: #e8f5e9;
+  color: #1b5e20;
+  border: 1px solid #c8e6c9;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+}

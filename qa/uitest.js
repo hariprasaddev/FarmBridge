@@ -86,10 +86,33 @@ async function login(page, email, password) {
 }
 
 async function logout(page) {
+  // 1) New enterprise shell: logout lives in the profile dropdown.
+  //    Use DOM-level clicks so transient overlays (e.g. toasts) never
+  //    intercept the pointer and stall the test.
+  const pdTrigger = await page.$('.fb-pd-trigger');
+  if (pdTrigger) {
+    await page.evaluate(() => {
+      const el = document.querySelector('.fb-pd-trigger');
+      if (el) el.click();
+    });
+    await sleep(400);
+    const pdLogout = await page.$('.fb-pd-menu .btn-logout');
+    if (pdLogout) {
+      await page.evaluate(() => {
+        const el = document.querySelector('.fb-pd-menu .btn-logout');
+        if (el) el.click();
+      });
+      await sleep(700);
+      return;
+    }
+  }
+  // 2) Legacy shells (kept for older pages)
   const onNav = await page.$('.btn-logout');
   if (onNav) { await onNav.click(); await sleep(600); return; }
   const onFd = await page.$('.fd-logout');
-  if (onFd) { await onFd.click(); await sleep(600); }
+  if (onFd) { await onFd.click(); await sleep(600); return; }
+  const onAd = await page.$('.ad-logout');
+  if (onAd) { await onAd.click(); await sleep(600); }
 }
 
 (async () => {
@@ -112,6 +135,58 @@ async function logout(page) {
   page.on('response', (res) => {
     if (res.status() >= 400) netErrors.push(`HTTP${res.status()}: ${res.url()}`);
   });
+  // Auto-accept any residual window.confirm dialogs (approve/reject now
+  // use the design-system ConfirmDialog, which the suite clicks through
+  // explicitly — this handler is kept as a safety net for stray dialogs).
+  page.on('dialog', (d) => d.accept().catch(() => {}));
+
+  // Ensure a tiny valid PNG exists for document uploads
+  const testPng = path.join(__dirname, 'test.png');
+  if (!fs.existsSync(testPng)) {
+    fs.writeFileSync(testPng, Buffer.from(
+      '89504e470d0a1a0a0000000d494844520000000100000001080200000090775368' +
+      '0000000c49444154789c6360f8cf000000010100018f0ee8f30000000049454e44ae426082',
+      'hex'
+    ));
+  }
+
+  // Upload the verification documents (4 file inputs in order)
+  async function uploadVerificationDocs(page) {
+    const inputs = await page.$$('.fv-doc-btn input[type=file]');
+    if (inputs.length < 3) throw new Error('expected >=3 document inputs, got ' + inputs.length);
+    for (let i = 0; i < 3; i++) await inputs[i].uploadFile(testPng);
+  }
+
+  // Fill the verification form (fields must exist; documents uploaded separately)
+  async function fillVerificationForm(page, farmName, name) {
+    await typeText(page, '#fullName', name);
+    await typeText(page, '#mobileNumber', '9876543210');
+    await typeText(page, '#village', 'Test Village');
+    await typeText(page, '#mandal', 'Test Mandal');
+    await typeText(page, '#district', 'Test District');
+    await typeText(page, '#state', 'Telangana');
+    await typeText(page, '#farmName', farmName);
+    await typeText(page, '#farmAddress', 'Survey 45, Test Village');
+    await typeText(page, '#farmSize', '6.5');
+    await typeText(page, '#mainCrops', 'Rice, Cotton');
+    await typeText(page, '#farmingExperience', '8 years');
+    await setSelect(page, '#cultivationMethod', 'ORGANIC');
+  }
+
+  // Find the admin verification card for a specific email and act on it
+  async function adminCardAction(page, email, buttonSelector) {
+    const cards = await page.$$('.av-card');
+    for (const card of cards) {
+      const text = await card.evaluate((el) => el.innerText);
+      if (text.includes(email)) {
+        const btn = await card.$(buttonSelector);
+        if (!btn) return false;
+        await btn.click();
+        return true;
+      }
+    }
+    return false;
+  }
 
   try {
     // ============================================================
@@ -146,16 +221,18 @@ async function logout(page) {
       ? ok('login with wrong password shows error alert')
       : bad('login error alert', 'no .alert-error visible');
 
-    // 4. Correct login lands on buyer products
+    // 4. Correct login lands on the buyer analytics dashboard
     await typeText(page, '#password', PW);
     await clickByText(page, 'Log In');
-    await waitForUrl(page, '/buyer/products');
-    (await hasText(page, 'Browse Products'))
-      ? ok('login lands on buyer products page')
-      : bad('login redirect', 'not on buyer products page');
+    await waitForUrl(page, '/buyer/dashboard');
+    (await hasText(page, 'My Dashboard'))
+      ? ok('login lands on buyer dashboard')
+      : bad('login redirect', 'not on buyer dashboard');
 
     // ============================================================
     console.log('\n===== BUYER FLOWS =====');
+    // Navigate to the marketplace (login lands on the buyer dashboard)
+    await page.goto(BASE + '/buyer/products', { waitUntil: 'networkidle2' });
     // 5. Product cards render
     await page.waitForSelector('.bp-card', { timeout: 15000 });
     let cardCount = await page.$$eval('.bp-card', (els) => els.length);
@@ -251,11 +328,11 @@ async function logout(page) {
       : bad('farmer login', 'not on dashboard');
 
     // Dashboard stat cards (wait for data to finish loading first)
-    await page.waitForSelector('.fd-stat-card', { timeout: 15000 }).catch(() => {});
-    const statCards = await page.$$eval('.fd-stat-card', (els) => els.length);
-    statCards >= 5
-      ? ok(`farmer dashboard renders ${statCards} stat cards`)
-      : bad('farmer dashboard', 'expected >=5 stat cards, got ' + statCards);
+    await page.waitForSelector('.fa-card', { timeout: 15000 }).catch(() => {});
+    const statCards = await page.$$eval('.fa-card', (els) => els.length);
+    statCards >= 10
+      ? ok(`farmer dashboard renders ${statCards} analytics stat cards`)
+      : bad('farmer dashboard', 'expected >=10 stat cards, got ' + statCards);
     await page.screenshot({ path: path.join(SHOT_DIR, 'farmer-dashboard.png') }).catch(() => {});
 
     // Add a product via the UI
@@ -320,6 +397,289 @@ async function logout(page) {
     await logout(page);
     await waitForUrl(page, '/login');
     ok('admin logout');
+
+    // ============================================================
+    console.log('\n===== FARMER VERIFICATION UI FLOWS =====');
+    const verifFarmer = `uifarmer_${TS}@test.com`;
+    const verifFarmer2 = `uifarmer2_${TS}@test.com`;
+    const verifFarm = `UI Verified Farm ${TS}`;
+    const verifFarm2 = `UI Rejected Farm ${TS}`;
+
+    // --- register a fresh farmer via the UI ---
+    await page.goto(BASE + '/register', { waitUntil: 'networkidle2' });
+    await typeText(page, '#name', 'UI Verification Farmer');
+    await typeText(page, '#reg-email', verifFarmer);
+    await typeText(page, '#reg-password', PW);
+    await page.$eval('input[name="role"][value="FARMER"]', (el) => el.click());
+    await sleep(200);
+    await clickByText(page, 'Create Account');
+    await waitForUrl(page, '/login');
+    await sleep(600);
+
+    // --- login and land on the dashboard: verification-pending banner ---
+    await login(page, verifFarmer, PW);
+    await waitForUrl(page, '/farmer/dashboard');
+    await page.waitForSelector('.fd-stat-card', { timeout: 15000 }).catch(() => {});
+    await sleep(1200);
+    (await hasText(page, 'Complete your farmer verification to start selling'))
+      ? ok('new farmer dashboard shows verification-pending banner')
+      : bad('verif banner', 'no pending-verification banner on dashboard');
+    (await hasText(page, 'Available after your account is verified'))
+      ? ok('Add Product quick action is locked for unverified farmer')
+      : bad('verif locked action', 'Add Product action not locked');
+
+    // --- submit the verification form with documents ---
+    await page.goto(BASE + '/farmer/verification', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('#fullName', { timeout: 15000 });
+    await fillVerificationForm(page, verifFarm, 'UI Verification Farmer');
+    await uploadVerificationDocs(page);
+    await clickByText(page, 'Submit Verification');
+    await page.waitForFunction(
+      () => document.body.innerText.includes('under review'),
+      { timeout: 20000 }
+    );
+    (await hasText(page, 'Your verification request is under review'))
+      ? ok('verification submitted -> PENDING screen shown')
+      : bad('verif pending screen', 'PENDING screen not shown after submit');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'farmer-verification-pending.png') }).catch(() => {});
+
+    // --- register + submit a SECOND farmer (for the reject flow) ---
+    await logout(page);
+    await waitForUrl(page, '/login');
+    await page.goto(BASE + '/register', { waitUntil: 'networkidle2' });
+    await typeText(page, '#name', 'UI Second Farmer');
+    await typeText(page, '#reg-email', verifFarmer2);
+    await typeText(page, '#reg-password', PW);
+    await page.$eval('input[name="role"][value="FARMER"]', (el) => el.click());
+    await sleep(200);
+    await clickByText(page, 'Create Account');
+    await waitForUrl(page, '/login');
+    await sleep(600);
+    await login(page, verifFarmer2, PW);
+    await waitForUrl(page, '/farmer/dashboard');
+    await page.goto(BASE + '/farmer/verification', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('#fullName', { timeout: 15000 });
+    await fillVerificationForm(page, verifFarm2, 'UI Second Farmer');
+    await uploadVerificationDocs(page);
+    await clickByText(page, 'Submit Verification');
+    await page.waitForFunction(
+      () => document.body.innerText.includes('under review'),
+      { timeout: 20000 }
+    );
+    (await hasText(page, 'under review'))
+      ? ok('second farmer verification submitted -> PENDING')
+      : bad('verif2 submit', 'second farmer PENDING screen not shown');
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- admin: reject the second farmer with a reason, approve the first ---
+    await login(page, adminEmail, adminPass);
+    await waitForUrl(page, '/admin/dashboard');
+    await page.goto(BASE + '/admin/verification', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('.av-card', { timeout: 20000 }).catch(() => {});
+    const rejected = await adminCardAction(page, verifFarmer2, '.av-reject');
+    rejected
+      ? ok('admin finds second farmer in pending verification list')
+      : bad('admin reject card', 'could not find card for ' + verifFarmer2);
+    if (rejected) {
+      await page.waitForSelector('#reject-reason', { timeout: 10000 });
+      await typeText(page, '#reject-reason', 'Land certificate unclear — please re-upload');
+      await clickByText(page, 'Confirm Rejection');
+      await page.waitForSelector('.alert-success', { timeout: 15000 }).catch(() => {});
+      (await page.$('.alert-success'))
+        ? ok('admin rejects second farmer with reason')
+        : bad('admin reject', 'no success alert after rejection');
+    }
+
+    const approved = await adminCardAction(page, verifFarmer, '.av-approve');
+    approved
+      ? ok('admin finds first farmer in pending verification list')
+      : bad('admin approve card', 'could not find card for ' + verifFarmer);
+    if (approved) {
+      // The approve button now opens the design-system ConfirmDialog —
+      // click its primary (confirm) button to finish the approval.
+      await page
+        .waitForSelector('.fb-modal-footer .fb-btn-primary', { timeout: 8000 })
+        .catch(() => {});
+      const confirmApproveBtn = await page.$('.fb-modal-footer .fb-btn-primary');
+      if (confirmApproveBtn) {
+        await confirmApproveBtn.click();
+      }
+      await page.waitForSelector('.alert-success', { timeout: 15000 }).catch(() => {});
+      (await page.$('.alert-success'))
+        ? ok('admin approves first farmer')
+        : bad('admin approve', 'no success alert after approval');
+    }
+    await page.screenshot({ path: path.join(SHOT_DIR, 'admin-verification-actions.png') }).catch(() => {});
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- rejected farmer sees the reason + can resubmit ---
+    await login(page, verifFarmer2, PW);
+    await waitForUrl(page, '/farmer/dashboard');
+    await page.goto(BASE + '/farmer/verification', { waitUntil: 'networkidle2' });
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Verification rejected'),
+      { timeout: 15000 }
+    );
+    (await hasText(page, 'Land certificate unclear'))
+      ? ok('rejected farmer sees the stored rejection reason')
+      : bad('reject reason', 'rejection reason not displayed');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'farmer-verification-rejected.png') }).catch(() => {});
+    await clickByText(page, 'Update & Resubmit');
+    await page.waitForSelector('#fullName', { timeout: 10000 });
+    await clickByText(page, 'Submit Verification');
+    await page.waitForFunction(
+      () => document.body.innerText.includes('under review'),
+      { timeout: 20000 }
+    );
+    (await hasText(page, 'under review'))
+      ? ok('rejected farmer resubmits -> PENDING again')
+      : bad('resubmit', 'PENDING screen not shown after resubmit');
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- approved farmer: APPROVED screen + can create products ---
+    await login(page, verifFarmer, PW);
+    await waitForUrl(page, '/farmer/dashboard');
+    await page.goto(BASE + '/farmer/verification', { waitUntil: 'networkidle2' });
+    await page.waitForFunction(
+      () => document.body.innerText.includes('Verified Farmer'),
+      { timeout: 15000 }
+    );
+    (await hasText(page, 'Verified Farmer'))
+      ? ok('approved farmer sees Verified Farmer screen')
+      : bad('approved screen', 'Verified Farmer screen not shown');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'farmer-verification-approved.png') }).catch(() => {});
+
+    await page.goto(BASE + '/farmer/products/add', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('#name', { timeout: 15000 });
+    const verifProduct = `UI Verified Crop ${TS}`;
+    await typeText(page, '#name', verifProduct);
+    await setSelect(page, '#category', 'Grains');
+    await typeText(page, '#description', 'Created by the verification UI test');
+    await typeText(page, '#price', '55');
+    await typeText(page, '#quantity', '30');
+    await clickByText(page, 'Create Product');
+    await waitForUrl(page, '/farmer/products', 20000);
+    await sleep(1200);
+    (await hasText(page, verifProduct))
+      ? ok('approved farmer creates product through the UI')
+      : bad('approved create product', 'product not visible after create');
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- buyer sees the Verified Farmer badge on the new product card ---
+    // (buyers now land on their analytics dashboard after login)
+    await login(page, buyerEmail, PW);
+    await waitForUrl(page, '/buyer/dashboard');
+    await page.goto(BASE + '/buyer/products', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('.bp-card', { timeout: 15000 });
+    const badgeShown = await page.evaluate((productName) => {
+      const cards = Array.from(document.querySelectorAll('.bp-card'));
+      const card = cards.find((c) => c.innerText.includes(productName));
+      return card ? Boolean(card.querySelector('.bp-verified')) : false;
+    }, verifProduct);
+    badgeShown
+      ? ok('buyer sees Verified Farmer badge on the approved farmer\'s product card')
+      : bad('buyer badge', 'no .bp-verified badge on the new product card');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'buyer-verified-badge.png') }).catch(() => {});
+    await logout(page);
+    await waitForUrl(page, '/login');
+    ok('verification flow logout');
+
+    // ============================================================
+    console.log('\n===== ANALYTICS DASHBOARDS =====');
+
+    // --- Admin analytics dashboard ---
+    await login(page, adminEmail, adminPass);
+    await waitForUrl(page, '/admin/dashboard');
+    await page.waitForSelector('.an-stats-grid', { timeout: 20000 });
+    await sleep(2500); // let the charts + animated counters settle
+    const adminDash = await bodyText(page);
+    adminDash.includes('Analytics Dashboard') &&
+      adminDash.includes('Total Users') &&
+      adminDash.includes('Platform Revenue')
+      ? ok('admin analytics dashboard renders stat cards')
+      : bad('admin dashboard', 'missing cards/title');
+    adminDash.includes('Revenue Per Month') &&
+      adminDash.includes('Top Selling Categories')
+      ? ok('admin analytics dashboard renders charts')
+      : bad('admin charts', 'missing chart panels');
+    adminDash.includes('Latest Orders') &&
+      adminDash.includes('Low Stock Products') &&
+      adminDash.includes('Latest Reviews')
+      ? ok('admin analytics dashboard renders tables')
+      : bad('admin tables', 'missing table panels');
+    const adminCharts = await page.$$('.recharts-responsive-container');
+    adminCharts.length >= 6
+      ? ok('admin dashboard renders 6+ real recharts charts (' + adminCharts.length + ')')
+      : bad('admin charts count', 'found ' + adminCharts.length);
+    await page.screenshot({ path: path.join(SHOT_DIR, 'admin-analytics.png') }).catch(() => {});
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- Farmer analytics dashboard ---
+    await login(page, farmerEmail, farmerPass);
+    await waitForUrl(page, '/farmer/dashboard');
+    await page.waitForSelector('.fa-cards', { timeout: 20000 });
+    await sleep(2500);
+    const farmDash = await bodyText(page);
+    farmDash.includes('Business Overview') &&
+      farmDash.includes('Today\'s Orders') &&
+      farmDash.includes('Total Revenue')
+      ? ok('farmer analytics dashboard renders stat cards')
+      : bad('farmer dashboard', 'missing cards');
+    farmDash.includes('Performance Charts') &&
+      farmDash.includes('Revenue Trend') &&
+      farmDash.includes('Rating Trend')
+      ? ok('farmer analytics dashboard renders charts')
+      : bad('farmer charts', 'missing chart panels');
+    farmDash.includes('Recent Orders') &&
+      farmDash.includes('Top Customers')
+      ? ok('farmer analytics dashboard renders sections')
+      : bad('farmer sections', 'missing sections');
+    // All six chart panels render; empty-state panels (no data yet) show
+    // the real "No data" placeholder instead of a chart.
+    const farmPanels = await page.$$('.fa-charts .fa-panel');
+    const farmCharts = await page.$$('.recharts-responsive-container');
+    farmPanels.length >= 6 && farmCharts.length >= 1
+      ? ok('farmer dashboard renders all 6 chart panels (' + farmPanels.length + ' panels, ' + farmCharts.length + ' live charts)')
+      : bad('farmer charts count', 'panels=' + farmPanels.length + ' charts=' + farmCharts.length);
+    await page.screenshot({ path: path.join(SHOT_DIR, 'farmer-analytics.png') }).catch(() => {});
+    await logout(page);
+    await waitForUrl(page, '/login');
+
+    // --- Buyer analytics dashboard (fresh buyer lands here by default) ---
+    await login(page, buyerEmail, PW);
+    await waitForUrl(page, '/buyer/dashboard');
+    await page.waitForSelector('.bd-cards', { timeout: 20000 });
+    await sleep(2500);
+    const buyerDash = await bodyText(page);
+    buyerDash.includes('My Dashboard') &&
+      buyerDash.includes('Money Spent') &&
+      buyerDash.includes('Favorite Category')
+      ? ok('buyer analytics dashboard renders stat cards')
+      : bad('buyer dashboard', 'missing cards');
+    buyerDash.includes('Monthly Spending') &&
+      buyerDash.includes('Orders Timeline')
+      ? ok('buyer analytics dashboard renders charts')
+      : bad('buyer charts', 'missing chart panels');
+    buyerDash.includes('Recently Viewed') &&
+      buyerDash.includes('Recommended For You')
+      ? ok('buyer analytics dashboard renders sections')
+      : bad('buyer sections', 'missing sections');
+    // All three chart panels render; the spending panel shows a real
+    // empty state until the buyer has completed orders.
+    const buyerPanels = await page.$$('.bd-charts .bd-panel');
+    const buyerCharts = await page.$$('.recharts-responsive-container');
+    buyerPanels.length >= 3 && buyerCharts.length >= 1
+      ? ok('buyer dashboard renders all 3 chart panels (' + buyerPanels.length + ' panels, ' + buyerCharts.length + ' live charts)')
+      : bad('buyer charts count', 'panels=' + buyerPanels.length + ' charts=' + buyerCharts.length);
+    await page.screenshot({ path: path.join(SHOT_DIR, 'buyer-analytics.png') }).catch(() => {});
+    await logout(page);
+    await waitForUrl(page, '/login');
+    ok('analytics dashboards logout');
 
     // ============================================================
     console.log('\n===== PROTECTED ROUTES =====');

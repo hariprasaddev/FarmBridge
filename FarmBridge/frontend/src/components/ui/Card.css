@@ -1,0 +1,54 @@
+.fb-card {
+  background: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  border-radius: var(--fb-radius-lg);
+  box-shadow: var(--fb-shadow-sm);
+  overflow: hidden;
+}
+
+.fb-card-hover {
+  transition: box-shadow var(--fb-transition), transform var(--fb-transition);
+}
+.fb-card-hover:hover {
+  box-shadow: var(--fb-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.fb-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--fb-border);
+}
+
+.fb-card-header-title {
+  font-size: var(--fb-text-md);
+  font-weight: 700;
+  color: var(--fb-gray-800);
+}
+
+.fb-card-header-subtitle {
+  font-size: var(--fb-text-xs);
+  color: var(--fb-gray-500);
+  margin-top: 0.15rem;
+}
+
+.fb-card-body {
+  padding: 1.25rem;
+}
+
+.fb-card-body-flush {
+  padding: 0;
+}
+
+.fb-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 0.9rem 1.25rem;
+  border-top: 1px solid var(--fb-border);
+  background: var(--fb-surface-alt);
+}

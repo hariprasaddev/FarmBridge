@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { farmerOrdersAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 import Icon from '../components/Icon';
+import { ConfirmDialog } from '../components/ui';
 import './FarmerOrdersPage.css';
 
 const STATUS_PILLS = [
@@ -34,6 +35,7 @@ function FarmerOrdersPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [updating, setUpdating] = useState(null);
+  const [rejectOrder, setRejectOrder] = useState(null);
 
   // Presentation-level filters (client-side, on the already-fetched orders)
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -57,11 +59,7 @@ function FarmerOrdersPage() {
   };
 
   const handleStatusChange = async (orderId, status) => {
-    // Rejecting an order is irreversible — confirm before proceeding.
-    if (status === 'REJECTED' && !window.confirm('Reject this order?')) {
-      return;
-    }
-
+    setRejectOrder(null);
     setUpdating(orderId);
     setError('');
     setSuccess('');
@@ -163,7 +161,7 @@ function FarmerOrdersPage() {
           <button
             type="button"
             className="fo-btn fo-btn-reject"
-            onClick={() => handleStatusChange(order.id, 'REJECTED')}
+            onClick={() => setRejectOrder(order)}
             disabled={isUpdating}
           >
             {isUpdating ? 'Processing…' : '✕ Reject'}
@@ -307,6 +305,24 @@ function FarmerOrdersPage() {
           </>
         )}
       </div>
+
+      {/* ==========================================
+          REJECT ORDER CONFIRMATION (design system)
+          ========================================== */}
+      <ConfirmDialog
+        open={!!rejectOrder}
+        onCancel={() => setRejectOrder(null)}
+        onConfirm={() => handleStatusChange(rejectOrder?.id, 'REJECTED')}
+        title="Reject this order?"
+        message={
+          rejectOrder
+            ? `Order #${rejectOrder.id} — ${rejectOrder.productName} by ${rejectOrder.buyerName} will be rejected. This is irreversible and the buyer will be notified.`
+            : ''
+        }
+        confirmLabel="Reject Order"
+        variant="danger"
+        loading={updating === rejectOrder?.id}
+      />
     </div>
   );
 }

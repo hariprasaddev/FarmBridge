@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useNotification } from '../context/NotificationContext';
 import Icon from '../components/Icon';
 import { getNotificationIcon } from '../utils/notifications';
 import { formatRelativeTime } from '../utils/relativeTime';
+import { ConfirmDialog } from '../components/ui';
 import './NotificationsPage.css';
 
 function NotificationsPage() {
@@ -29,6 +31,13 @@ function NotificationsPage() {
 
   const allRead = notifications.every((n) => n.isRead);
 
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  const handleClearAll = () => {
+    setConfirmClear(false);
+    clearAll();
+  };
+
   return (
     <div className="npage-root">
       <div className="npage-inner">
@@ -51,7 +60,7 @@ function NotificationsPage() {
             <button
               type="button"
               className="npage-clear-btn"
-              onClick={clearAll}
+              onClick={() => setConfirmClear(true)}
               disabled={busy || notifications.length === 0}
             >
               <Icon name="trash" size={16} />
@@ -124,6 +133,17 @@ function NotificationsPage() {
           </ul>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmClear}
+        onCancel={() => setConfirmClear(false)}
+        onConfirm={handleClearAll}
+        title="Clear all notifications?"
+        message="This will permanently delete all of your notifications. This action cannot be undone."
+        confirmLabel="Clear All"
+        variant="danger"
+        loading={busy}
+      />
     </div>
   );
 }

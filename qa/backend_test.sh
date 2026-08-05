@@ -69,6 +69,18 @@ print(json.dumps(json.load(sys.stdin)))"; }
 
 section() { echo; echo "======== $1 ========"; }
 
+# Submit a verification request (multipart form fields + optional files).
+# Usage: verify_post <token> [extra -F args...]
+verify_post() {
+  local token="$1"; shift
+  curl -sS -X POST "$BASE/api/farmer/profile/verification" -H "Authorization: Bearer $token" \
+    -F "fullName=QA Farmer One" -F "mobileNumber=9876543210" -F "village=TestVillage" \
+    -F "mandal=TestMandal" -F "district=TestDistrict" -F "state=Telangana" \
+    -F "farmName=QA Green Valley" -F "farmAddress=Survey 45, TestVillage" -F "farmSize=15.5" \
+    -F "cultivationMethod=ORGANIC" -F "mainCrops=Rice, Wheat" -F "farmingExperience=10 years" \
+    "$@" -o "$TMP" -w '%{http_code}'
+}
+
 # ============================================================
 section "AUTHENTICATION"
 # ============================================================
@@ -141,6 +153,19 @@ check "BUYER on /api/admin/** -> 403" 403
 call GET /api/test "" "$B1_TOKEN"
 check "authenticated /api/test (any role)" 200 "JWT Authentication is working!"
 
+# ---------- seed admin early (needed by the verification workflow) ----------
+if [ -n "$MYSQL_JAR" ] && [ -n "$CRYPTO_JAR" ]; then
+  ADMIN_HASH=$(java -cp "$(cygpath -w "$QA_DIR/classes");$(cygpath -w "$CRYPTO_JAR");$(cygpath -w "$CL_JAR")" HashTool "AdminPass123!" 2>/dev/null | tr -d '\r\n ')
+  java -cp "$(cygpath -w "$QA_DIR/classes");$(cygpath -w "$MYSQL_JAR")" DbTool insert-admin "$ADM" "QA Admin" "$ADMIN_HASH" > /dev/null 2>&1
+  echo "note: admin account seeded ($ADM)"
+else
+  echo "note: jars missing — cannot seed admin"; ADM=""
+fi
+
+call POST /api/auth/login "{\"email\":\"$ADM\",\"password\":\"AdminPass123!\"}"
+check "admin login" 200 "Login successful"
+ADM_TOKEN=$(jf token)
+
 # ============================================================
 section "FARMER PROFILE"
 # ============================================================
@@ -162,6 +187,148 @@ check "update my profile" 200 "QA Green Valley Updated"
 
 call GET /api/farmer/profile "" "$F2_TOKEN"
 check "farmer without profile -> 404" 404 "Farmer profile not found"
+
+# ============================================================
+section "FARMER VERIFICATION"
+# ============================================================
+
+# Generate a tiny valid PNG used for document uploads (also reused by
+# the product-image tests later).
+python - "$QA_DIR/test.png" <<'PYEOF'
+import struct, zlib, sys
+def chunk(t, d):
+    c = t + d
+    return struct.pack('>I', len(d)) + c + struct.pack('>I', zlib.crc32(c))
+sig = b'\x89PNG\r\n\x1a\n'
+ihdr = chunk(b'IHDR', struct.pack('>IIBBBBB', 1, 1, 8, 2, 0, 0, 0))
+idat = chunk(b'IDAT', zlib.compress(b'\x00\xff\x00\x00'))
+iend = chunk(b'IEND', b'')
+open(sys.argv[1], 'wb').write(sig + ihdr + idat + iend)
+PYEOF
+echo "note: wrote test image"
+
+echo "not an image" > "$QA_DIR/not_image.txt"
+
+# --- F1 submits a valid verification request ---
+VERIFY_OUT=$(verify_post "$F1_TOKEN" -F "farmerPhoto=@$(cygpath -w "$QA_DIR/test.png")" -F "landCertificate=@$(cygpath -w "$QA_DIR/test.png")" -F "farmPhoto=@$(cygpath -w "$QA_DIR/test.png")")
+VERIFY_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$VERIFY_OUT" == "200" ] && echo "$VERIFY_BODY" | grep -q '"PENDING"'; then
+  echo "PASS farmer submits verification -> PENDING"; PASS=$((PASS+1))
+else
+  echo "FAIL farmer submits verification (code=$VERIFY_OUT body=$(echo "$VERIFY_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("submit verification"); fi
+
+call GET /api/farmer/profile/verification "" "$F1_TOKEN"
+check "farmer sees own verification status" 200 "PENDING"
+
+# --- PENDING farmer cannot create products (403) ---
+call POST /api/farmer/products "{\"name\":\"QA Blocked $TS\",\"price\":10,\"quantity\":5,\"category\":\"Grains\"}" "$F1_TOKEN"
+check "unverified farmer create product -> 403" 403 "not been verified"
+
+call PUT /api/farmer/products/1 "{\"name\":\"QA Blocked Update\",\"price\":10,\"quantity\":5,\"category\":\"Grains\"}" "$F1_TOKEN"
+check "unverified farmer update product -> 403" 403 "not been verified"
+
+# --- security: BUYER / anonymous cannot touch verification endpoints ---
+call GET /api/farmer/profile/verification "" "$B1_TOKEN"
+check "BUYER on farmer verification -> 403" 403
+
+call GET /api/farmer/profile/verification
+check "verification requires auth -> 403" 403
+
+# --- farmer without submission -> 404 ---
+call GET /api/farmer/profile/verification "" "$F2_TOKEN"
+check "verification status without submission -> 404" 404 "Farmer profile not found"
+
+# --- missing documents -> 400 ---
+MISS_OUT=$(verify_post "$F2_TOKEN")
+MISS_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$MISS_OUT" == "400" ] && echo "$MISS_BODY" | grep -q "Farmer photo is required"; then
+  echo "PASS missing documents rejected (400)"; PASS=$((PASS+1))
+else
+  echo "FAIL missing documents (code=$MISS_OUT body=$(echo "$MISS_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("missing documents"); fi
+
+# --- invalid (non-image) upload -> 400 ---
+INV_OUT=$(verify_post "$F2_TOKEN" -F "farmerPhoto=@$(cygpath -w "$QA_DIR/not_image.txt")" -F "landCertificate=@$(cygpath -w "$QA_DIR/test.png")" -F "farmPhoto=@$(cygpath -w "$QA_DIR/test.png")")
+INV_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$INV_OUT" == "400" ] && echo "$INV_BODY" | grep -q "Only image files"; then
+  echo "PASS invalid upload rejected (400)"; PASS=$((PASS+1))
+else
+  echo "FAIL invalid upload (code=$INV_OUT body=$(echo "$INV_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("invalid upload"); fi
+
+# --- bean validation: bad mobile number -> 400 ---
+BAD_MOB_OUT=$(curl -sS -X POST "$BASE/api/farmer/profile/verification" -H "Authorization: Bearer $F2_TOKEN" \
+  -F "fullName=QA Farmer Two" -F "mobileNumber=123" -F "village=V" -F "mandal=M" -F "district=D" -F "state=S" \
+  -F "farmName=F2 Farm" -F "farmAddress=A" -F "farmSize=5" -F "cultivationMethod=NATURAL" \
+  -F "mainCrops=Crops" -F "farmingExperience=2 years" \
+  -F "farmerPhoto=@$(cygpath -w "$QA_DIR/test.png")" -F "landCertificate=@$(cygpath -w "$QA_DIR/test.png")" -F "farmPhoto=@$(cygpath -w "$QA_DIR/test.png")" \
+  -o "$TMP" -w '%{http_code}')
+BAD_MOB_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$BAD_MOB_OUT" == "400" ] && echo "$BAD_MOB_BODY" | grep -q "Validation failed"; then
+  echo "PASS invalid mobile number rejected (400)"; PASS=$((PASS+1))
+else
+  echo "FAIL invalid mobile (code=$BAD_MOB_OUT body=$(echo "$BAD_MOB_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("invalid mobile"); fi
+
+# --- F2 submits a valid verification request ---
+VERIFY2_OUT=$(verify_post "$F2_TOKEN" -F "farmerPhoto=@$(cygpath -w "$QA_DIR/test.png")" -F "landCertificate=@$(cygpath -w "$QA_DIR/test.png")" -F "farmPhoto=@$(cygpath -w "$QA_DIR/test.png")")
+VERIFY2_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$VERIFY2_OUT" == "200" ] && echo "$VERIFY2_BODY" | grep -q '"PENDING"'; then
+  echo "PASS farmer2 submits verification -> PENDING"; PASS=$((PASS+1))
+else
+  echo "FAIL farmer2 submits verification (code=$VERIFY2_OUT body=$(echo "$VERIFY2_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("submit verification 2"); fi
+
+# --- admin sees both pending requests ---
+call GET /api/admin/farmers/unverified "" "$ADM_TOKEN"
+check "admin lists pending verifications" 200
+if echo "$RESP_BODY" | grep -q "$F1"; then echo "PASS F1 in pending list"; PASS=$((PASS+1)); else echo "FAIL F1 missing from pending list"; FAIL=$((FAIL+1)); FAILED+=("F1 in pending list"); fi
+if echo "$RESP_BODY" | grep -q "$F2"; then echo "PASS F2 in pending list"; PASS=$((PASS+1)); else echo "FAIL F2 missing from pending list"; FAIL=$((FAIL+1)); FAILED+=("F2 in pending list"); fi
+
+F1_PROFILE_ID=$(printf '%s' "$RESP_BODY" | python -c "
+import sys,json
+d=json.load(sys.stdin)
+for p in d:
+    if p.get('email')=='$F1': print(p.get('profileId')); break")
+F2_PROFILE_ID=$(printf '%s' "$RESP_BODY" | python -c "
+import sys,json
+d=json.load(sys.stdin)
+for p in d:
+    if p.get('email')=='$F2': print(p.get('profileId')); break")
+
+# --- admin approves F1 ---
+call PUT /api/admin/farmers/$F1_PROFILE_ID/verify "" "$ADM_TOKEN"
+check "admin approves F1" 200 "APPROVED"
+
+# --- admin rejects F2 with a reason ---
+call PUT /api/admin/farmers/$F2_PROFILE_ID/reject "{\"reason\":\"Land certificate is illegible, please re-upload\"}" "$ADM_TOKEN"
+check "admin rejects F2 with reason" 200 "REJECTED"
+
+call PUT /api/admin/farmers/$F2_PROFILE_ID/reject "{\"reason\":\"\"}" "$ADM_TOKEN"
+check "reject without reason -> 400" 400 "Validation failed"
+
+# --- farmer sees the stored rejection reason ---
+call GET /api/farmer/profile/verification "" "$F2_TOKEN"
+check "F2 sees rejection reason" 200 "Land certificate is illegible"
+
+# --- rejected farmer is still blocked ---
+call POST /api/farmer/products "{\"name\":\"QA Blocked2 $TS\",\"price\":10,\"quantity\":5,\"category\":\"Grains\"}" "$F2_TOKEN"
+check "rejected farmer create product -> 403" 403 "not been verified"
+
+# --- F2 resubmits (keeps documents) -> PENDING again ---
+RESUB_OUT=$(verify_post "$F2_TOKEN")
+RESUB_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$RESUB_OUT" == "200" ] && echo "$RESUB_BODY" | grep -q '"PENDING"'; then
+  echo "PASS F2 resubmits without documents -> PENDING"; PASS=$((PASS+1))
+else
+  echo "FAIL F2 resubmit (code=$RESUB_OUT body=$(echo "$RESUB_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("resubmit"); fi
+
+# --- admin approves F2 after resubmit ---
+call PUT /api/admin/farmers/$F2_PROFILE_ID/verify "" "$ADM_TOKEN"
+check "admin approves F2 after resubmit" 200 "APPROVED"
+
+# --- approved farmer can now create + delete products ---
+call POST /api/farmer/products "{\"name\":\"QA After Approval $TS\",\"price\":10,\"quantity\":5,\"category\":\"Grains\"}" "$F1_TOKEN"
+check "approved farmer creates product" 201 "QA After Approval"
+AFTER_PROD=$(jf id)
+call DELETE /api/farmer/products/$AFTER_PROD "" "$F1_TOKEN"
+check "approved farmer deletes product" 200 "deleted successfully"
 
 # ============================================================
 section "PRODUCTS"
@@ -366,9 +533,13 @@ check "farmer accepts order3 (for reviews)" 200 "ACCEPTED"
 
 call GET /api/buyer/orders "" "$B2_TOKEN"
 check "buyer2 sees only own orders" 200 "QA Organic Rice"
-# ensure ORDER1 (buyer1's) is not in buyer2's list
-if echo "$RESP_BODY" | grep -qv "$ORDER1"; then :; fi
-if printf '%s' "$RESP_BODY" | grep -q "$ORDER1"; then
+# ensure ORDER1 (buyer1's) is not in buyer2's list — exact id match
+# (a plain substring grep is wrong once ids share digits, e.g. 66 vs 661)
+if printf '%s' "$RESP_BODY" | python -c "
+import sys,json
+d=json.load(sys.stdin)
+ids=[o.get('id') for o in d]
+print('yes' if $ORDER1 in ids else 'no')" | grep -q 'yes'; then
   echo "FAIL order isolation: buyer2 list contains buyer1's order $ORDER1"; FAIL=$((FAIL+1)); FAILED+=("order isolation")
 else
   echo "PASS order isolation (buyer2 does not see buyer1's orders)"; PASS=$((PASS+1))
@@ -615,18 +786,6 @@ fi
 section "ADMIN"
 # ============================================================
 
-if [ -n "$MYSQL_JAR" ] && [ -n "$CRYPTO_JAR" ]; then
-  ADMIN_HASH=$(java -cp "$(cygpath -w "$QA_DIR/classes");$(cygpath -w "$CRYPTO_JAR");$(cygpath -w "$CL_JAR")" HashTool "AdminPass123!" 2>/dev/null | tr -d '\r\n ')
-  java -cp "$(cygpath -w "$QA_DIR/classes");$(cygpath -w "$MYSQL_JAR")" DbTool insert-admin "$ADM" "QA Admin" "$ADMIN_HASH" > /dev/null 2>&1
-  echo "note: admin account seeded ($ADM)"
-else
-  echo "note: jars missing — cannot seed admin"; ADM=""
-fi
-
-call POST /api/auth/login "{\"email\":\"$ADM\",\"password\":\"AdminPass123!\"}"
-check "admin login" 200 "Login successful"
-ADM_TOKEN=$(jf token)
-
 call GET /api/admin/stats "" "$ADM_TOKEN"
 check "admin dashboard stats" 200
 T_USERS=$(jf totalUsers)
@@ -693,29 +852,168 @@ N_ADM_ORDERS=$(ja)
 [ "$N_ADM_ORDERS" == "$T_ORDERS" ] && { echo "PASS stats orders == admin orders ($N_ADM_ORDERS)"; PASS=$((PASS+1)); } \
   || { echo "note: stats orders ($T_ORDERS) != admin orders ($N_ADM_ORDERS)"; }
 
+# A fresh farmer (F3) drives the admin-section verification flow
+F3="qa_farmer3_${TS}@test.com"
+call POST /api/auth/register "{\"name\":\"QA Farmer Three\",\"email\":\"$F3\",\"password\":\"$PW\",\"role\":\"FARMER\"}"
+check "register FARMER #3" 200 "User Registered Successfully"
+
+call POST /api/auth/login "{\"email\":\"$F3\",\"password\":\"$PW\"}"
+F3_TOKEN=$(jf token)
+
+VERIFY3_OUT=$(verify_post "$F3_TOKEN" -F "farmerPhoto=@$(cygpath -w "$QA_DIR/test.png")" -F "landCertificate=@$(cygpath -w "$QA_DIR/test.png")" -F "farmPhoto=@$(cygpath -w "$QA_DIR/test.png")")
+VERIFY3_BODY=$(cat "$TMP" | tr -d '\r')
+if [ "$VERIFY3_OUT" == "200" ] && echo "$VERIFY3_BODY" | grep -q '"PENDING"'; then
+  echo "PASS F3 submits verification -> PENDING"; PASS=$((PASS+1))
+else
+  echo "FAIL F3 submits verification (code=$VERIFY3_OUT body=$(echo "$VERIFY3_BODY" | head -c 200))"; FAIL=$((FAIL+1)); FAILED+=("F3 submit verification"); fi
+
 call GET /api/admin/farmers/unverified "" "$ADM_TOKEN"
 check "admin lists unverified farmers" 200
-F1_PROFILE_ID=$(printf '%s' "$RESP_BODY" | python -c "
+F3_PROFILE_ID=$(printf '%s' "$RESP_BODY" | python -c "
 import sys,json
 d=json.load(sys.stdin)
 for p in d:
-    if p.get('email')=='$F1': print(p.get('profileId')); break")
+    if p.get('email')=='$F3': print(p.get('profileId')); break")
 
-call PUT /api/admin/farmers/$F1_PROFILE_ID/verify "" "$ADM_TOKEN"
-check "admin verifies farmer" 200 "true"
+call PUT /api/admin/farmers/$F3_PROFILE_ID/verify "" "$ADM_TOKEN"
+check "admin approves F3" 200 "APPROVED"
 
 call PUT /api/admin/farmers/999999999/verify "" "$ADM_TOKEN"
 check "verify non-existent profile -> 404" 404 "Farmer profile not found"
 
 call GET /api/admin/farmers/unverified "" "$ADM_TOKEN"
-if printf '%s' "$RESP_BODY" | grep -q "$F1"; then
-  echo "FAIL verified farmer still in unverified list"; FAIL=$((FAIL+1)); FAILED+=("verified farmer in unverified list")
+if printf '%s' "$RESP_BODY" | grep -q "$F3"; then
+  echo "FAIL approved farmer still in pending list"; FAIL=$((FAIL+1)); FAILED+=("approved farmer in pending list")
 else
-  echo "PASS verified farmer removed from unverified list"; PASS=$((PASS+1))
+  echo "PASS approved farmer removed from pending list"; PASS=$((PASS+1))
 fi
 
 call GET /api/buyer/products/$PROD1 "" "$B1_TOKEN"
 check "product reflects farmer verified flag" 200 "true"
+
+# ============================================================
+section "ANALYTICS — AUTHORIZATION"
+# ============================================================
+
+# Admin analytics: only ADMIN may read it
+call GET /api/admin/analytics "" "$B1_TOKEN"
+check "admin analytics blocked for buyer" 403
+
+call GET /api/admin/analytics "" "$F1_TOKEN"
+check "admin analytics blocked for farmer" 403
+
+call GET /api/admin/analytics ""
+check "admin analytics blocked unauthenticated" 403
+
+call GET /api/admin/analytics/revenue "" "$B1_TOKEN"
+check "admin revenue blocked for buyer" 403
+
+call GET /api/admin/top-buyers "" "$F1_TOKEN"
+check "admin top-buyers blocked for farmer" 403
+
+# Farmer analytics: only FARMER may read it
+call GET /api/farmer/analytics "" "$ADM_TOKEN"
+check "farmer analytics blocked for admin" 403
+
+call GET /api/farmer/analytics "" "$B1_TOKEN"
+check "farmer analytics blocked for buyer" 403
+
+call GET /api/farmer/analytics ""
+check "farmer analytics blocked unauthenticated" 403
+
+# Buyer analytics: only BUYER may read it
+call GET /api/buyer/analytics "" "$F1_TOKEN"
+check "buyer analytics blocked for farmer" 403
+
+call GET /api/buyer/analytics "" "$ADM_TOKEN"
+check "buyer analytics blocked for admin" 403
+
+call GET /api/buyer/analytics ""
+check "buyer analytics blocked unauthenticated" 403
+
+# ============================================================
+section "ANALYTICS — ADMIN DASHBOARD"
+# ============================================================
+
+call GET /api/admin/analytics "" "$ADM_TOKEN"
+check "admin analytics dashboard" 200 "platformRevenue"
+
+if echo "$RESP_BODY" | python -c "
+import sys, json
+d = json.load(sys.stdin)
+status_sum = sum(s['count'] for s in d.get('orderStatus', []))
+ok = (d.get('orders', -1) == status_sum
+      and len(d.get('productCategories', [])) > 0
+      and len(d.get('latestOrders', [])) > 0
+      and d.get('totalUsers', 0) > 0
+      and d.get('totalFarmers', 0) > 0)
+sys.exit(0 if ok else 1)"; then
+  echo "PASS admin analytics internal consistency (status sum == orders, tables populated)"; PASS=$((PASS+1))
+else
+  echo "FAIL admin analytics internal consistency"; FAIL=$((FAIL+1)); FAILED+=("admin analytics internal consistency")
+fi
+
+call GET /api/admin/analytics/revenue "" "$ADM_TOKEN"
+check "admin revenue per month" 200 "value"
+
+call GET /api/admin/analytics/orders "" "$ADM_TOKEN"
+check "admin orders per month" 200 "count"
+
+call GET /api/admin/top-products "" "$ADM_TOKEN"
+check "admin top products" 200 "productName"
+
+call GET /api/admin/top-farmers "" "$ADM_TOKEN"
+check "admin top farmers" 200 "email"
+
+call GET /api/admin/top-buyers "" "$ADM_TOKEN"
+check "admin top buyers" 200 "email"
+
+# ============================================================
+section "ANALYTICS — FARMER DASHBOARD"
+# ============================================================
+
+call GET /api/farmer/analytics "" "$F1_TOKEN"
+check "farmer analytics dashboard" 200 "completedOrders"
+
+if echo "$RESP_BODY" | python -c "
+import sys, json
+d = json.load(sys.stdin)
+ok = (d.get('products', -1) >= 1
+      and d.get('totalRevenue', -1) >= 0
+      and d.get('customers', -1) >= 1
+      and len(d.get('recentOrders', [])) > 0
+      and len(d.get('salesPerProduct', [])) > 0)
+sys.exit(0 if ok else 1)"; then
+  echo "PASS farmer analytics reflects F1's real orders/products"; PASS=$((PASS+1))
+else
+  echo "FAIL farmer analytics reflects F1's real data"; FAIL=$((FAIL+1)); FAILED+=("farmer analytics reflects F1 data")
+fi
+
+call GET /api/farmer/analytics/sales "" "$F1_TOKEN"
+check "farmer sales per product" 200 "productName"
+
+# ============================================================
+section "ANALYTICS — BUYER DASHBOARD"
+# ============================================================
+
+call GET /api/buyer/analytics "" "$B1_TOKEN"
+check "buyer analytics dashboard" 200 "favoriteCategory"
+
+if echo "$RESP_BODY" | python -c "
+import sys, json
+d = json.load(sys.stdin)
+ok = (d.get('orders', 0) >= 1
+      and d.get('favoriteCategory') is not None
+      and len(d.get('latestOrders', [])) > 0
+      and len(d.get('favoriteFarmers', [])) > 0)
+sys.exit(0 if ok else 1)"; then
+  echo "PASS buyer analytics reflects B1's real orders"; PASS=$((PASS+1))
+else
+  echo "FAIL buyer analytics reflects B1's real data"; FAIL=$((FAIL+1)); FAILED+=("buyer analytics reflects B1 data")
+fi
+
+call GET /api/buyer/analytics/spending "" "$B1_TOKEN"
+check "buyer monthly spending" 200 "value"
 
 # ============================================================
 section "SUMMARY"

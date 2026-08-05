@@ -26,7 +26,7 @@ public class OpenApiConfig {
                                 "that connects farmers with buyers, reducing the need for " +
                                 "unnecessary intermediaries."
                         )
-                        .version("1.0.0")
+                        .version("1.2.0")
                         .contact(new Contact()
                                 .name("FarmBridge Team")
                                 .email("support@farmbridge.com")

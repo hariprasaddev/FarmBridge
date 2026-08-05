@@ -1,0 +1,209 @@
+
+======== AUTHENTICATION ========
+PASS register BUYER
+PASS register FARMER
+PASS register FARMER #2
+PASS register BUYER #2
+PASS duplicate registration
+PASS self-register ADMIN blocked (privilege escalation)
+PASS register without role blocked
+PASS register invalid email
+PASS register blank name
+PASS login buyer
+PASS login farmer
+PASS login wrong password
+PASS login unknown email
+PASS login missing password
+PASS no token on protected endpoint
+PASS invalid JWT rejected
+PASS BUYER on /api/farmer/** -> 403
+PASS FARMER on /api/buyer/** -> 403
+PASS BUYER on /api/admin/** -> 403
+PASS authenticated /api/test (any role)
+note: admin account seeded (qa_admin_1785933694@test.com)
+PASS admin login
+
+======== FARMER PROFILE ========
+PASS farmer creates profile
+PASS duplicate profile blocked
+PASS profile validation blank farmName
+PASS get my profile
+PASS update my profile
+PASS farmer without profile -> 404
+
+======== FARMER VERIFICATION ========
+note: wrote test image
+PASS farmer submits verification -> PENDING
+PASS farmer sees own verification status
+PASS unverified farmer create product -> 403
+PASS unverified farmer update product -> 403
+PASS BUYER on farmer verification -> 403
+PASS verification requires auth -> 403
+PASS verification status without submission -> 404
+PASS missing documents rejected (400)
+PASS invalid upload rejected (400)
+PASS invalid mobile number rejected (400)
+PASS farmer2 submits verification -> PENDING
+PASS admin lists pending verifications
+PASS F1 in pending list
+PASS F2 in pending list
+PASS admin approves F1
+PASS admin rejects F2 with reason
+PASS reject without reason -> 400
+PASS F2 sees rejection reason
+PASS rejected farmer create product -> 403
+PASS F2 resubmits without documents -> PENDING
+PASS admin approves F2 after resubmit
+PASS approved farmer creates product
+PASS approved farmer deletes product
+
+======== PRODUCTS ========
+PASS farmer creates product (201 Created)
+PASS create product price<1 -> 400
+PASS create product qty<1 -> 400
+PASS create product blank name -> 400
+PASS farmer2 creates product (201 Created)
+PASS farmer2 creates 2nd product (201 Created)
+PASS farmer updates own product
+PASS farmer2 updates farmer1 product -> 400
+PASS farmer gets my products
+PASS buyer browses all products
+PASS buyer gets product details
+PASS product details has rating fields
+PASS product details not found -> 404
+PASS category filter (Grains)
+PASS category filter returns >=2 items (14)
+PASS category filter case-insensitive
+PASS unknown category returns empty list
+note: wrote test image
+PASS farmer uploads product image
+PASS uploaded image served publicly (200)
+PASS non-owner image upload blocked
+PASS non-image upload rejected
+PASS farmer deletes own product
+PASS farmer2 deletes farmer1 product -> 400
+PASS delete non-existent product -> 404
+
+======== ORDERS ========
+PASS buyer places order
+PASS order total price = 120*5 = 600 (600.0)
+PASS stock deducted 45-5=40
+PASS order exceeding stock -> 400
+PASS order non-existent product -> 404
+PASS order qty 0 -> 400
+PASS buyer2 places order
+PASS buyer2 places 2nd order
+PASS farmer sees received orders
+PASS farmer2 updates farmer1 order -> 400
+PASS update non-existent order -> 404
+PASS farmer accepts order
+PASS ACCEPTED->REJECTED invalid transition
+PASS farmer completes order
+PASS COMPLETED locked (cannot change)
+PASS buyer sees own orders
+PASS farmer rejects order
+PASS stock restored after rejection (35 -> 38)
+PASS REJECTED locked (cannot change)
+PASS farmer accepts order3 (for reviews)
+PASS buyer2 sees only own orders
+PASS order isolation (buyer2 does not see buyer1's orders)
+
+======== REVIEWS ========
+PASS purchased buyer reviews product
+PASS duplicate review blocked
+PASS non-purchased buyer blocked
+PASS rating out of range -> 400
+PASS second purchased buyer reviews
+PASS rating aggregation avg=3.5 count=2
+PASS get product reviews
+PASS reviews list has 2 entries
+PASS get my review
+PASS update own review
+PASS update other buyer's review -> 400
+PASS farmer views reviews of own product
+PASS farmer views reviews of other's product -> 400
+PASS delete other buyer's review -> 400
+PASS delete own review
+PASS delete deleted review -> 404
+PASS review count back to 1 after delete
+
+======== WISHLIST ========
+PASS add to wishlist
+PASS duplicate wishlist add -> 409
+PASS wishlist non-existent product -> 404
+PASS list wishlist
+PASS wishlist check true
+PASS wishlist check false
+PASS wishlist isolation (buyer2 empty)
+PASS remove from wishlist
+PASS wishlist check false after remove
+PASS remove not-wishlisted (idempotent)
+PASS FARMER on wishlist -> 403
+
+======== NOTIFICATIONS ========
+PASS farmer gets notifications
+PASS buyer gets notifications
+PASS buyer notified on order completed
+PASS buyer2 notified of reject + accept
+PASS buyer2 got accepted notification
+PASS get unread notifications
+PASS mark one notification read
+PASS unread count decreased after marking one read (3 -> 2)
+PASS mark other user's notification read -> 403
+PASS delete other user's notification -> 403
+PASS delete non-existent notification -> 404
+PASS mark all read
+PASS unread count 0 after mark-all-read
+PASS delete own notification
+PASS clear all notifications
+PASS notifications empty after clear
+PASS notifications require auth -> 403
+
+======== FORGOT / RESET PASSWORD ========
+PASS register pwd-reset user
+PASS forgot-password known email -> generic response
+PASS forgot-password unknown email -> generic response
+PASS no account enumeration (identical responses)
+PASS forgot-password invalid email -> 400
+PASS reset with invalid token -> 400
+PASS reset with short password -> 400
+PASS forgot-password again creates token
+note: reset token read from DB (36 chars)
+PASS successful password reset
+PASS login with new password
+PASS login with old password rejected
+PASS used token cannot be reused
+PASS forgot-password (expiry test)
+PASS expired token rejected
+
+======== ADMIN ========
+PASS admin dashboard stats
+note: stats -> users=88 farmers=36 buyers=43 products=45 orders=65 pending=3
+PASS stats users >= 5 (88)
+PASS admin lists users
+PASS stats users == users list length (88)
+PASS admin get user by id
+PASS admin get user 404
+PASS admin updates user
+PASS admin update email conflict -> 409
+PASS admin update missing role -> 400
+PASS admin deletes user without relations
+PASS admin delete user with relations blocked
+PASS admin lists farmers
+PASS admin lists buyers
+PASS admin lists products
+PASS stats products == admin products (45)
+PASS admin lists orders
+PASS stats orders == admin orders (65)
+PASS register FARMER #3
+PASS F3 submits verification -> PENDING
+PASS admin lists unverified farmers
+PASS admin approves F3
+PASS verify non-existent profile -> 404
+PASS approved farmer removed from pending list
+PASS product reflects farmer verified flag
+
+======== SUMMARY ========
+
+TOTAL PASS: 179
+TOTAL FAIL: 0

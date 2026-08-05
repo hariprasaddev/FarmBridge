@@ -58,6 +58,10 @@ public class FarmerVerificationRequest {
     // ==========================================
 
     @NotBlank(message = "Cultivation method is required")
+    @Pattern(
+            regexp = "^(ORGANIC|NATURAL|CHEMICAL|MIXED)$",
+            message = "Cultivation method must be one of ORGANIC, NATURAL, CHEMICAL or MIXED"
+    )
     private String cultivationMethod;
 
     @NotBlank(message = "Main crops are required")

@@ -1,8 +1,11 @@
 package com.farmbridge.repository;
 
 import com.farmbridge.dto.RatingStats;
+import com.farmbridge.dto.ReviewMetric;
+import com.farmbridge.dto.MonthlyMetric;
 import com.farmbridge.entity.Review;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -53,4 +56,58 @@ public interface ReviewRepository
     List<RatingStats> findRatingStatsForProducts(
             @Param("productIds") Collection<Long> productIds
     );
+
+    // ==========================================
+    // ANALYTICS — REVIEW AGGREGATIONS
+    // ==========================================
+
+    long countByBuyerEmail(String email);
+
+    long countByProductFarmerEmail(String email);
+
+    // Average rating of a farmer's products (farmer dashboard card)
+    @Query("""
+            SELECT COALESCE(AVG(r.rating), 0)
+            FROM Review r
+            WHERE r.product.farmer.email = :email
+            """)
+    double averageRatingForFarmer(@Param("email") String email);
+
+    // Average rating per month over a farmer's products (rating-trend chart)
+    @Query("""
+            SELECT NEW com.farmbridge.dto.MonthlyMetric(
+                   YEAR(r.createdAt), MONTH(r.createdAt),
+                   AVG(r.rating), COUNT(r))
+            FROM Review r
+            WHERE r.product.farmer.email = :email
+              AND r.createdAt IS NOT NULL
+            GROUP BY YEAR(r.createdAt), MONTH(r.createdAt)
+            """)
+    List<MonthlyMetric> findFarmerRatingTrend(
+            @Param("email") String email
+    );
+
+    // A farmer's latest reviews, with product and buyer names joined
+    @Query("""
+            SELECT NEW com.farmbridge.dto.ReviewMetric(
+                   r.id, r.product.name, r.buyer.name,
+                   r.rating, r.comment, r.createdAt)
+            FROM Review r
+            WHERE r.product.farmer.email = :email
+            ORDER BY r.createdAt DESC
+            """)
+    List<ReviewMetric> findFarmerRecentReviews(
+            @Param("email") String email,
+            Pageable pageable
+    );
+
+    // Platform-wide latest reviews (admin dashboard table)
+    @Query("""
+            SELECT NEW com.farmbridge.dto.ReviewMetric(
+                   r.id, r.product.name, r.buyer.name,
+                   r.rating, r.comment, r.createdAt)
+            FROM Review r
+            ORDER BY r.createdAt DESC
+            """)
+    List<ReviewMetric> findLatestReviews(Pageable pageable);
 }

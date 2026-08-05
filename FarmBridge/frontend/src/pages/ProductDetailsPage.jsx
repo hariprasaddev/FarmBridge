@@ -10,7 +10,9 @@ import Icon from '../components/Icon';
 import ProductImage from '../components/ProductImage';
 import WishlistButton from '../components/WishlistButton';
 import { useToast } from '../components/Toast';
+import { ConfirmDialog } from '../components/ui';
 import { getStock } from '../utils/stock';
+import { recordRecentlyViewed } from '../utils/recentlyViewed';
 import './ProductDetailsPage.css';
 
 // Mirrors the backend review-eligibility rule (ReviewServiceImpl): a
@@ -76,6 +78,9 @@ function ProductDetailsPage() {
       if (!mountedRef.current) return;
       const data = response.data;
       setProduct(data);
+
+      // Record the view for the buyer dashboard's "Recently Viewed"
+      recordRecentlyViewed(data);
 
       // Related products — same category, current product excluded.
       try {
@@ -797,60 +802,18 @@ function ProductDetailsPage() {
       </div>
 
       {/* ==========================================
-          DELETE REVIEW CONFIRMATION DIALOG
-          (reuses the shared modal styles from App.css)
+          DELETE REVIEW CONFIRMATION (design system)
           ========================================== */}
-      {confirmDelete && (
-        <div
-          className="modal-overlay"
-          onClick={() => !deleting && setConfirmDelete(false)}
-        >
-          <div
-            className="modal"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-review-title"
-          >
-            <div className="modal-header">
-              <h3 id="delete-review-title">Delete Review</h3>
-              <button
-                className="modal-close"
-                onClick={() => setConfirmDelete(false)}
-                disabled={deleting}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
-            <div className="modal-body">
-              <p className="pd-confirm-text">
-                Are you sure you want to delete your review? This action
-                cannot be undone.
-              </p>
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={deleting}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="pd-del-confirm-btn"
-                  onClick={handleDeleteReview}
-                  disabled={deleting}
-                >
-                  <Icon name="trash" size={15} />
-                  {deleting ? 'Deleting…' : 'Delete Review'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmDelete}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={handleDeleteReview}
+        title="Delete Review"
+        message="Are you sure you want to delete your review? This action cannot be undone."
+        confirmLabel="Delete Review"
+        variant="danger"
+        loading={deleting}
+      />
     </div>
   );
 }

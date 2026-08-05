@@ -122,7 +122,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public List<ProductResponse> getAllProducts() {
 
-        return productService.getAllProducts();
+        // Unfiltered — admin oversight sees every product, including
+        // those of farmers who are not yet verified.
+        return productService.getAllProductsForAdmin();
     }
 
     // ==========================================
@@ -180,6 +182,13 @@ public class AdminServiceImpl implements AdminService {
                 .orElseThrow(() ->
                         new RuntimeException("Farmer profile not found")
                 );
+
+        // Rejection only applies to requests that are still pending
+        if (profile.isApproved()) {
+            throw new RuntimeException(
+                    "Only pending verification requests can be rejected"
+            );
+        }
 
         profile.setVerified(false);
         profile.setVerificationStatus(VerificationStatus.REJECTED);

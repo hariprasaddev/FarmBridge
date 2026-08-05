@@ -29,24 +29,6 @@ public class FarmerProfileResponse {
             Double landSize,
             String cultivationMethod,
             String cropsCultivated,
-            String farmingType) {
-
-        this.id = id;
-        this.farmName = farmName;
-        this.location = location;
-        this.landSize = landSize;
-        this.cultivationMethod = cultivationMethod;
-        this.cropsCultivated = cropsCultivated;
-        this.farmingType = farmingType;
-    }
-
-    public FarmerProfileResponse(
-            Long id,
-            String farmName,
-            String location,
-            Double landSize,
-            String cultivationMethod,
-            String cropsCultivated,
             String farmingType,
             Boolean verified,
             String verificationStatus,

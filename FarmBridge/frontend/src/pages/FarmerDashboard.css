@@ -634,6 +634,43 @@
   border-color: #d1d5db;
 }
 
+/* Verification-locked action card (no link, muted) */
+.fd-action-card-locked {
+  opacity: 0.85;
+  border-style: dashed;
+  cursor: default;
+}
+
+.fd-action-card-locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #e5e7eb;
+}
+
+.fd-locked-link {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Verification status banner */
+.fd-verif-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.fd-banner-link {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fd-verif-banner svg {
+  flex-shrink: 0;
+}
+
 .fd-action-icon {
   width: 52px;
   height: 52px;

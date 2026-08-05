@@ -47,7 +47,7 @@ export function AuthProvider({ children }) {
     if (tokenData.role === 'FARMER') {
       navigate('/farmer/dashboard');
     } else if (tokenData.role === 'BUYER') {
-      navigate('/buyer/products');
+      navigate('/buyer/dashboard');
     } else if (tokenData.role === 'ADMIN') {
       navigate('/admin/dashboard');
     }

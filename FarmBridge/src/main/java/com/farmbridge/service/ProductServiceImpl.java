@@ -363,6 +363,37 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ==========================================
+    // GET ALL PRODUCTS (ADMIN OVERSIGHT)
+    // Unfiltered — includes products of unverified farmers so admins
+    // retain full visibility over the platform.
+    // ==========================================
+
+    @Override
+    public List<ProductResponse> getAllProductsForAdmin() {
+
+        List<Product> products =
+                productRepository.findAll();
+
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
+        return products.stream()
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
+                .toList();
+    }
+
+    // ==========================================
     // GET PRODUCTS OF LOGGED-IN FARMER
     // ==========================================
 

@@ -54,6 +54,12 @@ function Navbar() {
         {role === 'BUYER' && (
           <>
             <Link
+              to="/buyer/dashboard"
+              className={`nav-link ${isActive('/buyer/dashboard') ? 'active' : ''}`}
+            >
+              Dashboard
+            </Link>
+            <Link
               to="/buyer/products"
               className={`nav-link ${isBuyerProductActive ? 'active' : ''}`}
             >

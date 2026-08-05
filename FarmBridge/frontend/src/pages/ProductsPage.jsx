@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { farmerProductsAPI, getErrorMessage } from '../services/api';
+import { farmerProductsAPI, farmerVerificationAPI, getErrorMessage } from '../services/api';
 import ProductCard, { getStock } from '../components/ProductCard';
 import Icon from '../components/Icon';
+import { ConfirmDialog, EmptyState } from '../components/ui';
+import { FaBoxOpen, FaSearch } from 'react-icons/fa';
 import './ProductsPage.css';
 
 const STOCK_PILLS = [
@@ -18,6 +20,10 @@ function ProductsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [deleting, setDeleting] = useState(null);
+  const [confirmDeleteProduct, setConfirmDeleteProduct] = useState(null);
+
+  // Verification status — gates Create/Update/Delete actions until APPROVED
+  const [verified, setVerified] = useState(null);
 
   // Presentation-level filters (client-side, on the already-fetched products)
   const [search, setSearch] = useState('');
@@ -27,7 +33,18 @@ function ProductsPage() {
 
   useEffect(() => {
     loadProducts();
+    loadVerification();
   }, []);
+
+  const loadVerification = async () => {
+    try {
+      const response = await farmerVerificationAPI.getVerification();
+      setVerified(response.data.verificationStatus === 'APPROVED');
+    } catch (err) {
+      // 404 = no submission yet — the account is not approved
+      setVerified(false);
+    }
+  };
 
   const loadProducts = async () => {
     setLoading(true);
@@ -43,10 +60,7 @@ function ProductsPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this product?')) {
-      return;
-    }
-
+    setConfirmDeleteProduct(null);
     setDeleting(id);
     setError('');
     setSuccess('');
@@ -109,11 +123,34 @@ function ProductsPage() {
               {products.length} {products.length === 1 ? 'Product' : 'Products'} Listed
             </p>
           </div>
-          <Link to="/farmer/products/add" className="mp-btn-add">
-            <Icon name="plus" size={17} />
-            Add Product
-          </Link>
+          {verified ? (
+            <Link to="/farmer/products/add" className="mp-btn-add">
+              <Icon name="plus" size={17} />
+              Add Product
+            </Link>
+          ) : (
+            <button
+              type="button"
+              className="mp-btn-add mp-btn-add-locked"
+              title="Complete farmer verification to add products"
+            >
+              <Icon name="lock" size={16} />
+              Add Product
+            </button>
+          )}
         </header>
+
+        {verified === false && (
+          <div className="alert alert-warning">
+            <Icon name="shieldCheck" size={15} />
+            Your account is not verified yet. Create, edit and delete are
+            unlocked after an admin approves your{' '}
+            <Link to="/farmer/verification" className="fd-banner-link">
+              verification request
+            </Link>
+            .
+          </div>
+        )}
 
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
@@ -163,26 +200,41 @@ function ProductsPage() {
             {/* ============ Empty / Grid ============ */}
             {products.length === 0 ? (
               <div className="mp-empty">
-                <span className="mp-empty-icon">
-                  <Icon name="package" size={28} />
-                </span>
-                <h2>You haven&apos;t added any products yet.</h2>
-                <p>List your fresh produce and start selling to buyers.</p>
-                <Link to="/farmer/products/add" className="mp-empty-btn">
-                  <Icon name="plus" size={16} />
-                  Add your first product
-                </Link>
+                <EmptyState
+                  icon={<FaBoxOpen size={30} />}
+                  title="You haven't added any products yet."
+                  description={
+                    verified
+                      ? 'List your fresh produce and start selling to buyers.'
+                      : 'Complete your farmer verification to start listing products.'
+                  }
+                  action={
+                    verified ? (
+                      <Link to="/farmer/products/add" className="mp-empty-btn">
+                        <Icon name="plus" size={16} />
+                        Add your first product
+                      </Link>
+                    ) : (
+                      <Link to="/farmer/verification" className="mp-empty-btn">
+                        <Icon name="shieldCheck" size={16} />
+                        Complete verification
+                      </Link>
+                    )
+                  }
+                />
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="mp-empty">
-                <span className="mp-empty-icon">
-                  <Icon name="search" size={28} />
-                </span>
-                <h2>No matching products</h2>
-                <p>Try adjusting your search or filters.</p>
-                <button type="button" className="mp-clear-btn" onClick={clearFilters}>
-                  Clear Filters
-                </button>
+                <EmptyState
+                  icon={<FaSearch size={30} />}
+                  title="No matching products"
+                  description="Try adjusting your search or filters."
+                  action={
+                    <button type="button" className="mp-clear-btn" onClick={clearFilters}>
+                      Clear Filters
+                    </button>
+                  }
+                />
               </div>
             ) : (
               <div className="mp-grid">
@@ -191,23 +243,47 @@ function ProductsPage() {
                     key={product.id}
                     product={product}
                     deleting={deleting === product.id}
+                    locked={!verified}
                     onEdit={(id) => navigate(`/farmer/products/edit/${id}`)}
-                    onDelete={handleDelete}
+                    onDelete={(id) => setConfirmDeleteProduct(id)}
                   />
                 ))}
 
                 {/* Add New Product tile — last card in the grid */}
-                <Link to="/farmer/products/add" className="mp-tile">
-                  <span className="mp-tile-icon">
-                    <Icon name="plus" size={24} />
-                  </span>
-                  <span>Add New Product</span>
-                </Link>
+                {verified ? (
+                  <Link to="/farmer/products/add" className="mp-tile">
+                    <span className="mp-tile-icon">
+                      <Icon name="plus" size={24} />
+                    </span>
+                    <span>Add New Product</span>
+                  </Link>
+                ) : (
+                  <Link to="/farmer/verification" className="mp-tile mp-tile-locked">
+                    <span className="mp-tile-icon">
+                      <Icon name="shieldCheck" size={24} />
+                    </span>
+                    <span>Complete verification to add products</span>
+                  </Link>
+                )}
               </div>
             )}
           </>
         )}
       </div>
+
+      {/* ==========================================
+          DELETE PRODUCT CONFIRMATION (design system)
+          ========================================== */}
+      <ConfirmDialog
+        open={!!confirmDeleteProduct}
+        onCancel={() => setConfirmDeleteProduct(null)}
+        onConfirm={() => handleDelete(confirmDeleteProduct)}
+        title="Delete product?"
+        message="This will permanently remove this product and its image. Existing orders are not affected. This action cannot be undone."
+        confirmLabel="Delete Product"
+        variant="danger"
+        loading={deleting === confirmDeleteProduct}
+      />
     </div>
   );
 }

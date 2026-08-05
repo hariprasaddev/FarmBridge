@@ -2,6 +2,8 @@ package com.farmbridge.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "orders")
 public class Order {
@@ -37,6 +39,12 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
+
+    // When the order was placed. Populated by @PrePersist; legacy rows
+    // (created before this column existed) carry NULL and are excluded
+    // from time-based analytics.
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     // Default constructor
     public Order() {
@@ -98,5 +106,21 @@ public class Order {
 
     public void setStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // Stamp the creation timestamp before the order is first persisted
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 }

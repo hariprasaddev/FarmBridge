@@ -22,6 +22,10 @@ public interface ProductService {
 
     List<ProductResponse> getAllProducts();
 
+    // Admin oversight — every product, regardless of the seller's
+    // verification status (buyer-visible lists stay filtered).
+    List<ProductResponse> getAllProductsForAdmin();
+
     List<ProductResponse> getMyProducts(String email);
 
     List<ProductResponse> getProductsByCategory(String category);

@@ -1,0 +1,29 @@
+.fb-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-pill);
+  background: linear-gradient(135deg, var(--fb-primary-500), var(--fb-primary-700));
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+  user-select: none;
+  text-transform: uppercase;
+}
+
+.fb-avatar-sm { width: 30px; height: 30px; font-size: 0.72rem; }
+.fb-avatar-md { width: 38px; height: 38px; font-size: 0.85rem; }
+.fb-avatar-lg { width: 48px; height: 48px; font-size: 1rem; }
+.fb-avatar-xl { width: 60px; height: 60px; font-size: 1.25rem; }
+
+.fb-avatar-ring {
+  box-shadow: 0 0 0 2px var(--fb-surface), 0 0 0 4px var(--fb-primary-300);
+}
+
+.fb-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}

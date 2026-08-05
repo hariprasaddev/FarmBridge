@@ -1,9 +1,11 @@
 # FarmBridge - API Contract
 
-> **Document Version:** 1.0  
-> **Last Updated:** 2026-07-28  
+> **Document Version:** 1.2  
+> **Last Updated:** 2026-08-05  
 > **Framework:** TrainingMug ADF v1.0  
-> **Status:** ✅ Based on actual source code inspection
+> **Status:** ✅ Based on actual source code inspection  
+> **Day 16 update:** Added the Farmer Verification Workflow (submit / resubmit, approve, reject-with-reason, product gating, buyer visibility filtering).  
+> **Day 17 update:** Added the Analytics module — 10 role-scoped dashboard endpoints with server-side aggregation (cards, charts and tables) for ADMIN, FARMER and BUYER dashboards. Revenue is defined as COMPLETED-order value.
 
 ---
 
@@ -676,6 +678,87 @@ curl -X PUT http://localhost:8080/api/farmer/orders/1/status \
 
 ---
 
+#### 3.2.9 Get My Verification Status
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/farmer/profile/verification` |
+| **HTTP Method** | `GET` |
+| **Description** | Returns the logged-in farmer's full verification profile, current status (`PENDING` / `APPROVED` / `REJECTED`), and the stored rejection reason when present. |
+| **Authentication** | JWT required |
+| **Required Role** | FARMER |
+
+**Success Response (200 OK):** `FarmerVerificationResponse` (see §5.12).
+
+**Error Responses:**
+
+- **404 Not Found** — `"Farmer profile not found"` (no profile / no submission yet)
+
+**Sample cURL:**
+
+```bash
+curl -X GET http://localhost:8080/api/farmer/profile/verification \
+  -H "Authorization: Bearer <JWT_TOKEN>"
+```
+
+---
+
+#### 3.2.10 Submit / Resubmit Verification
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/farmer/profile/verification` |
+| **HTTP Method** | `POST` |
+| **Content-Type** | `multipart/form-data` |
+| **Description** | Submits (or resubmits) the farmer's verification request: personal, farm and cultivation details plus the required documents. A resubmission resets the request to `PENDING` and keeps previously uploaded documents that are not replaced. |
+| **Authentication** | JWT required |
+| **Required Role** | FARMER |
+
+**Form Fields (multipart):**
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `fullName` | String | ✅ | NotBlank |
+| `mobileNumber` | String | ✅ | Exactly 10 digits |
+| `aadhaarNumber` | String | ❌ | Optional |
+| `village` / `mandal` / `district` / `state` | String | ✅ | NotBlank |
+| `farmName` / `farmAddress` | String | ✅ | NotBlank |
+| `farmSize` | Double | ✅ | NotNull |
+| `surveyNumber` | String | ❌ | Optional |
+| `cultivationMethod` | String | ✅ | One of `ORGANIC`, `NATURAL`, `CHEMICAL`, `MIXED` |
+| `mainCrops` / `farmingExperience` | String | ✅ | NotBlank |
+
+**File Parts:**
+
+| Part | Required | Description |
+|---|---|---|
+| `farmerPhoto` | ✅ (new submissions) | Farmer's photo (image, ≤ 5 MB) |
+| `landCertificate` | ✅ (new submissions) | Land ownership certificate (image, ≤ 5 MB) |
+| `farmPhoto` | ✅ (new submissions) | Farm photo (image, ≤ 5 MB) |
+| `organicCertificate` | ❌ | Organic certificate (image, ≤ 5 MB) |
+
+> On resubmission the three required documents may be omitted — the previously uploaded files are kept.
+
+**Success Response (200 OK):** `FarmerVerificationResponse` with `verificationStatus: "PENDING"`.
+
+**Error Responses:**
+
+- **400 Bad Request** — `"Validation failed"` (bean validation) or missing document (`"Farmer photo is required"`) or non-image upload (`"Only image files (JPG, PNG, WEBP, GIF) are allowed"`)
+
+**Sample cURL:**
+
+```bash
+curl -X POST http://localhost:8080/api/farmer/profile/verification \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -F "fullName=John Farmer" -F "mobileNumber=9876543210" \
+  -F "village=Pedda" -F "mandal=Nizamabad" -F "district=Nizamabad" -F "state=Telangana" \
+  -F "farmName=Green Valley Farm" -F "farmAddress=Survey 45" -F "farmSize=5.5" \
+  -F "cultivationMethod=ORGANIC" -F "mainCrops=Rice, Chillies" -F "farmingExperience=10 years" \
+  -F "farmerPhoto=@photo.png" -F "landCertificate=@land.png" -F "farmPhoto=@farm.png"
+```
+
+---
+
 ### 3.3 Buyer APIs
 
 #### 3.3.1 Buyer Dashboard (Stub)
@@ -1138,6 +1221,201 @@ curl -X PUT http://localhost:8080/api/admin/farmers/3/verify \
 
 ---
 
+#### 3.4.13 Reject Farmer Verification
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/farmers/{profileId}/reject` |
+| **HTTP Method** | `PUT` |
+| **Description** | Rejects a **pending** verification request. The mandatory reason is stored on the profile and shown to the farmer, who may then update and resubmit. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Request Body:**
+
+```json
+{
+  "reason": "Land certificate is illegible — please re-upload"
+}
+```
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `reason` | String | ✅ | NotBlank, max 1000 chars |
+
+**Success Response (200 OK):** `FarmerVerificationResponse` with `verificationStatus: "REJECTED"` and the stored `rejectionReason`.
+
+**Error Responses:**
+
+- **400 Bad Request** — `"Validation failed"` (blank reason) or `"Only pending verification requests can be rejected"`
+- **404 Not Found** — `"Farmer profile not found"`
+
+**Sample cURL:**
+
+```bash
+curl -X PUT http://localhost:8080/api/admin/farmers/3/reject \
+  -H "Authorization: Bearer <JWT_TOKEN>" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Land certificate is illegible — please re-upload"}'
+```
+
+---
+
+### 3.6 Analytics APIs
+
+Every analytics dashboard fetches its **full payload from a single endpoint**; the dedicated series endpoints (`revenue`, `orders`, `sales`, `spending`, `top-*`) support drill-down without additional dashboard calls. All values are computed server-side via grouped JPQL queries (`COUNT` / `SUM` / `AVG` / `GROUP BY YEAR·MONTH`) — the browser never computes numbers and no per-row lazy loading is used.
+
+> **Revenue definition:** every `*Revenue` / `*Spending` value counts only **COMPLETED** orders (money actually earned). Order-value series (e.g. sales per month) include all statuses.
+
+---
+
+#### 3.6.1 Get Admin Analytics
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/analytics` |
+| **HTTP Method** | `GET` |
+| **Description** | Full admin dashboard payload: 13 cards, 6 chart series and 7 tables in one response. |
+| **Authentication** | JWT required |
+| **Required Role** | ADMIN |
+
+**Success Response (200 OK)** — `AdminAnalyticsResponse` (see §5.14):
+
+```json
+{
+  "totalUsers": 50, "totalFarmers": 30, "verifiedFarmers": 24,
+  "pendingVerifications": 2, "buyers": 19, "products": 45,
+  "orders": 120, "monthlyOrders": 14, "platformRevenue": 48500.0,
+  "monthlyRevenue": 6200.0, "completedOrders": 80, "cancelledOrders": 12,
+  "activeFarmers": 22,
+  "revenuePerMonth": [ { "year": 2026, "month": 7, "value": 4100.0, "count": 9 } ],
+  "ordersPerMonth": [ { "year": 2026, "month": 7, "value": 14.0, "count": 14 } ],
+  "farmerRegistrations": [ { "year": 2026, "month": 7, "value": 3.0, "count": 3 } ],
+  "productCategories": [ { "category": "Grains", "count": 18, "quantity": 0 } ],
+  "orderStatus": [ { "status": "PENDING", "count": 28 } ],
+  "topSellingCategories": [ { "category": "Grains", "count": 40, "quantity": 320 } ],
+  "latestOrders": [ { "id": 120, "productName": "Rice", "buyerName": "Jane", "farmerName": "John", "quantity": 2, "totalPrice": 100.0, "status": "PENDING", "createdAt": "2026-08-05T10:00:00" } ],
+  "latestFarmers": [ { "id": 7, "name": "Sarah Farmer", "email": "sarah@farm.com", "role": "FARMER" } ],
+  "pendingVerificationList": [ { "profileId": 3, "farmName": "Green Acres", "verificationStatus": "PENDING", "...": "..." } ],
+  "topBuyers": [ { "userId": 5, "name": "Jane", "email": "jane@mail.com", "orderCount": 22, "totalAmount": 15600.0 } ],
+  "topFarmers": [ { "userId": 2, "name": "John", "email": "john@farm.com", "orderCount": 60, "totalAmount": 41000.0 } ],
+  "topProducts": [ { "productId": 1, "productName": "Rice", "category": "Grains", "quantity": 340, "revenue": 17000.0 } ],
+  "lowStockProducts": [ { "id": 9, "name": "Wheat", "category": "Grains", "quantity": 3, "price": 40.0, "farmerName": "John" } ],
+  "latestReviews": [ { "id": 4, "productName": "Rice", "buyerName": "Jane", "rating": 5, "comment": "Great!", "createdAt": "2026-08-05T09:00:00" } ]
+}
+```
+
+---
+
+#### 3.6.2 Admin Revenue / Orders Per Month
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/admin/analytics/revenue` | Monthly COMPLETED-order revenue series `[MonthlyMetric]` |
+| `GET` | `/api/admin/analytics/orders` | Monthly order-count series `[MonthlyMetric]` |
+
+**Role:** ADMIN · **Authentication:** JWT
+
+---
+
+#### 3.6.3 Admin Top-* Lists
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/admin/top-products` | Top products by total ordered quantity — `[ProductMetric]` |
+| `GET` | `/api/admin/top-farmers` | Top farmers by total order value — `[UserMetric]` |
+| `GET` | `/api/admin/top-buyers` | Top buyers by total order value — `[UserMetric]` |
+
+**Role:** ADMIN · **Authentication:** JWT
+
+---
+
+#### 3.6.4 Get Farmer Analytics
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/farmer/analytics` |
+| **HTTP Method** | `GET` |
+| **Description** | Full farmer dashboard payload: 11 cards, 6 chart series and 5 sections — scoped to the logged-in farmer only. |
+| **Authentication** | JWT required |
+| **Required Role** | FARMER |
+
+**Success Response (200 OK)** — `FarmerAnalyticsResponse` (see §5.15):
+
+```json
+{
+  "todayOrders": 2, "pendingOrders": 1, "acceptedOrders": 2,
+  "completedOrders": 9, "rejectedOrders": 1, "monthlyRevenue": 3200.0,
+  "totalRevenue": 18400.0, "products": 5, "averageRating": 4.6,
+  "reviews": 12, "customers": 6,
+  "revenueTrend": [ { "year": 2026, "month": 7, "value": 3200.0, "count": 9 } ],
+  "ordersTrend": [ { "year": 2026, "month": 7, "value": 4400.0, "count": 13 } ],
+  "salesPerProduct": [ { "productId": 1, "productName": "Rice", "category": "Grains", "quantity": 340, "revenue": 17000.0 } ],
+  "salesPerMonth": [ { "year": 2026, "month": 7, "value": 4400.0, "count": 13 } ],
+  "ratingTrend": [ { "year": 2026, "month": 7, "value": 4.6, "count": 12 } ],
+  "categorySales": [ { "category": "Grains", "count": 60, "quantity": 340 } ],
+  "bestSellingProduct": { "productId": 1, "productName": "Rice", "category": "Grains", "quantity": 340, "revenue": 17000.0 },
+  "lowStockProducts": [ { "id": 9, "name": "Wheat", "category": "Grains", "quantity": 3, "price": 40.0, "farmerName": "John" } ],
+  "recentReviews": [ { "id": 4, "productName": "Rice", "buyerName": "Jane", "rating": 5, "comment": "Great!", "createdAt": "2026-08-05T09:00:00" } ],
+  "recentOrders": [ { "id": 120, "productName": "Rice", "buyerName": "Jane", "farmerName": "John", "quantity": 2, "totalPrice": 100.0, "status": "PENDING", "createdAt": "2026-08-05T10:00:00" } ],
+  "topCustomers": [ { "userId": 5, "name": "Jane", "email": "jane@mail.com", "orderCount": 9, "totalAmount": 4300.0 } ]
+}
+```
+
+---
+
+#### 3.6.5 Farmer Sales Per Product
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/farmer/analytics/sales` |
+| **HTTP Method** | `GET` |
+| **Description** | Sales of the logged-in farmer's products ranked by quantity — `[ProductMetric]`. |
+| **Authentication** | JWT required |
+| **Required Role** | FARMER |
+
+---
+
+#### 3.6.6 Get Buyer Analytics
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/analytics` |
+| **HTTP Method** | `GET` |
+| **Description** | Full buyer dashboard payload: 8 cards, 3 chart series and 4 sections (recommendations, latest orders, favourite farmers; recently-viewed is tracked client-side). |
+| **Authentication** | JWT required |
+| **Required Role** | BUYER |
+
+**Success Response (200 OK)** — `BuyerAnalyticsResponse` (see §5.16):
+
+```json
+{
+  "orders": 4, "wishlist": 2, "reviews": 1, "moneySpent": 1250.0,
+  "favoriteCategory": "Grains", "purchasedProducts": 3,
+  "pendingOrders": 1, "completedOrders": 3,
+  "monthlySpending": [ { "year": 2026, "month": 7, "value": 1250.0, "count": 4 } ],
+  "purchasesByCategory": [ { "category": "Grains", "count": 4, "quantity": 9 } ],
+  "ordersTimeline": [ { "year": 2026, "month": 7, "value": 4.0, "count": 4 } ],
+  "recommendedProducts": [ /* ProductResponse[] — only APPROVED farmers, excludes already-purchased */ ],
+  "latestOrders": [ { "id": 120, "productName": "Rice", "buyerName": "Jane", "farmerName": "John", "quantity": 2, "totalPrice": 100.0, "status": "PENDING", "createdAt": "2026-08-05T10:00:00" } ],
+  "favoriteFarmers": [ { "userId": 2, "name": "John", "email": "john@farm.com", "orderCount": 4, "totalAmount": 1250.0 } ]
+}
+```
+
+---
+
+#### 3.6.7 Buyer Monthly Spending
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/analytics/spending` |
+| **HTTP Method** | `GET` |
+| **Description** | Monthly COMPLETED-order spending series of the logged-in buyer — `[MonthlyMetric]`. |
+| **Authentication** | JWT required |
+| **Required Role** | BUYER |
+
+---
+
 ### 3.5 System APIs
 
 #### 3.5.1 Health Check / Test
@@ -1203,8 +1481,21 @@ curl -X GET http://localhost:8080/api/test \
 | 32 | `PUT` | `/api/users/{id}` | JWT | ADMIN | Update user (User module) |
 | 33 | `DELETE` | `/api/users/{id}` | JWT | ADMIN | Delete user (User module) |
 | 34 | `GET` | `/api/test` | JWT | Any | Health check / test |
+| 35 | `GET` | `/api/farmer/profile/verification` | JWT | FARMER | Get my verification status |
+| 36 | `POST` | `/api/farmer/profile/verification` | JWT | FARMER | Submit / resubmit verification (multipart) |
+| 37 | `PUT` | `/api/admin/farmers/{profileId}/reject` | JWT | ADMIN | Reject a pending verification with reason |
+| 38 | `GET` | `/api/admin/analytics` | JWT | ADMIN | Full admin analytics dashboard |
+| 39 | `GET` | `/api/admin/analytics/revenue` | JWT | ADMIN | Revenue per month series |
+| 40 | `GET` | `/api/admin/analytics/orders` | JWT | ADMIN | Orders per month series |
+| 41 | `GET` | `/api/admin/top-products` | JWT | ADMIN | Top selling products |
+| 42 | `GET` | `/api/admin/top-farmers` | JWT | ADMIN | Top farmers by order value |
+| 43 | `GET` | `/api/admin/top-buyers` | JWT | ADMIN | Top buyers by order value |
+| 44 | `GET` | `/api/farmer/analytics` | JWT | FARMER | Full farmer analytics dashboard |
+| 45 | `GET` | `/api/farmer/analytics/sales` | JWT | FARMER | Sales per product |
+| 46 | `GET` | `/api/buyer/analytics` | JWT | BUYER | Full buyer analytics dashboard |
+| 47 | `GET` | `/api/buyer/analytics/spending` | JWT | BUYER | Monthly spending series |
 
-**Total Implemented Endpoints: 34**
+**Total Implemented Endpoints: 47**
 
 ---
 
@@ -1306,6 +1597,102 @@ curl -X GET http://localhost:8080/api/test \
 |---|---|---|---|
 | `status` | String (enum) | ✅ | NotNull. Valid values: `PENDING`, `ACCEPTED`, `REJECTED`, `COMPLETED` |
 
+### 5.11 FarmerVerificationRequest (multipart form fields)
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `fullName` | String | ✅ | NotBlank |
+| `mobileNumber` | String | ✅ | Pattern `^[0-9]{10}$` |
+| `aadhaarNumber` | String | ❌ | Optional |
+| `village`, `mandal`, `district`, `state` | String | ✅ | NotBlank |
+| `farmName`, `farmAddress` | String | ✅ | NotBlank |
+| `farmSize` | Double | ✅ | NotNull |
+| `surveyNumber` | String | ❌ | Optional |
+| `cultivationMethod` | String | ✅ | Pattern `^(ORGANIC|NATURAL|CHEMICAL|MIXED)$` |
+| `mainCrops`, `farmingExperience` | String | ✅ | NotBlank |
+
+### 5.12 FarmerVerificationResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `profileId` | Long | Profile ID |
+| `userId` | Long | Linked user ID |
+| `farmerName`, `email` | String | Account name / email |
+| `fullName`, `mobileNumber`, `aadhaarNumber` | String | Personal info |
+| `village`, `mandal`, `district`, `state` | String | Address parts |
+| `farmName`, `location`, `farmAddress`, `farmSize`, `surveyNumber` | String/Double | Farm info |
+| `cultivationMethod`, `mainCrops`, `farmingExperience` | String | Cultivation info |
+| `farmerPhotoUrl`, `landCertificateUrl`, `farmPhotoUrl`, `organicCertificateUrl` | String | Public `/uploads/...` document URLs |
+| `verified` | Boolean | True only when `APPROVED` |
+| `verificationStatus` | String | `PENDING`, `APPROVED`, or `REJECTED` |
+| `rejectionReason` | String | Stored admin reason (only when rejected) |
+| `submittedAt` | String (ISO datetime) | Submission timestamp |
+
+### 5.13 RejectVerificationRequest
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `reason` | String | ✅ | NotBlank, max 1000 chars |
+
+### 5.14 AdminAnalyticsResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `totalUsers`, `totalFarmers`, `verifiedFarmers`, `pendingVerifications`, `buyers`, `products`, `orders`, `monthlyOrders`, `completedOrders`, `cancelledOrders`, `activeFarmers` | Long | Stat cards |
+| `platformRevenue`, `monthlyRevenue` | Double | COMPLETED-order revenue (all-time / current month) |
+| `revenuePerMonth`, `ordersPerMonth`, `farmerRegistrations` | `MonthlyMetric[]` | Monthly series (`value` + `count`) |
+| `productCategories`, `topSellingCategories` | `CategoryMetric[]` | Category breakdowns |
+| `orderStatus` | `StatusMetric[]` | Per-status counts |
+| `latestOrders` | `OrderMetric[]` | Latest 5 orders (joined names) |
+| `latestFarmers` | `UserResponse[]` | Latest 5 farmer accounts |
+| `pendingVerificationList` | `FarmerVerificationResponse[]` | Latest 5 pending requests |
+| `topBuyers`, `topFarmers` | `UserMetric[]` | Top 5 by order value |
+| `topProducts` | `ProductMetric[]` | Top 5 by quantity |
+| `lowStockProducts` | `LowStockProduct[]` | Quantity ≤ 5, ascending |
+| `latestReviews` | `ReviewMetric[]` | Latest 5 reviews |
+
+### 5.15 FarmerAnalyticsResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `todayOrders`, `pendingOrders`, `acceptedOrders`, `completedOrders`, `rejectedOrders`, `products`, `reviews`, `customers` | Long | Stat cards (customers = distinct buyers) |
+| `monthlyRevenue`, `totalRevenue` | Double | COMPLETED-order revenue (current month / all-time) |
+| `averageRating` | Double | Average rating of the farmer's products (1 decimal) |
+| `revenueTrend`, `ordersTrend`, `salesPerMonth`, `ratingTrend` | `MonthlyMetric[]` | Monthly series |
+| `salesPerProduct` | `ProductMetric[]` | Quantity + revenue per product |
+| `categorySales` | `CategoryMetric[]` | Quantity per category |
+| `bestSellingProduct` | `ProductMetric` | Top product by quantity (null when no sales) |
+| `lowStockProducts` | `LowStockProduct[]` | Farmer's own low-stock products |
+| `recentReviews` | `ReviewMetric[]` | Latest 5 reviews of the farmer's products |
+| `recentOrders` | `OrderMetric[]` | Latest 5 orders received |
+| `topCustomers` | `UserMetric[]` | Top 5 customers by spend |
+
+### 5.16 BuyerAnalyticsResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `orders`, `wishlist`, `reviews`, `purchasedProducts`, `pendingOrders`, `completedOrders` | Long | Stat cards |
+| `moneySpent` | Double | COMPLETED-order spend |
+| `favoriteCategory` | String | Most-purchased category (null when no orders) |
+| `monthlySpending`, `ordersTimeline` | `MonthlyMetric[]` | Monthly series |
+| `purchasesByCategory` | `CategoryMetric[]` | Quantity per category |
+| `recommendedProducts` | `ProductResponse[]` | Top-rated products of the favourite category (or marketplace-wide), APPROVED farmers only, excluding purchased |
+| `latestOrders` | `OrderMetric[]` | Latest 5 orders |
+| `favoriteFarmers` | `UserMetric[]` | Top 5 farmers by spend |
+
+### 5.17 Analytics metric DTOs
+
+| DTO | Fields | Used by |
+|---|---|---|
+| `MonthlyMetric` | `year` int, `month` int, `value` double, `count` long | All monthly series |
+| `CategoryMetric` | `category` String, `count` long, `quantity` double | Category charts |
+| `StatusMetric` | `status` String, `count` long | Order-status donut |
+| `ProductMetric` | `productId`, `productName`, `category`, `quantity` double, `revenue` double | Top products / sales per product |
+| `UserMetric` | `userId`, `name`, `email`, `orderCount` long, `totalAmount` double | Top buyers / farmers / customers |
+| `OrderMetric` | `id`, `productName`, `buyerName`, `farmerName`, `quantity`, `totalPrice`, `status`, `createdAt` | Latest-orders tables |
+| `ReviewMetric` | `id`, `productName`, `buyerName`, `rating`, `comment`, `createdAt` | Latest-reviews tables |
+| `LowStockProduct` | `id`, `name`, `category`, `quantity`, `price`, `farmerName` | Low-stock tables |
+
 ---
 
 ## 6. Planned APIs (Not Yet Implemented)
@@ -1370,9 +1757,12 @@ When request validation fails (Jakarta `@Valid`), Spring Boot returns a default 
 
 > ✅ **Implemented:** `GlobalExceptionHandler` (`@RestControllerAdvice`) handles:
 > - `MethodArgumentNotValidException` → 400 with field-specific error map
-> - `RuntimeException` → status mapped from the message (404 for "not found", 409 for "already exists"/"already in use", else 400)
+> - `RuntimeException` → status mapped from the message (403 for "not been verified", 404 for "not found", 409 for "already exists"/"already in use", else 400)
 > - `DataIntegrityViolationException` → 400 with a friendly message
+> - `NoResourceFoundException` → 404 (missing static files, e.g. deleted product images)
 > - Any other exception → 500 with a generic message
+
+**Business-level 403 (verification gate):** until a farmer's profile is `APPROVED`, product mutations (`POST/PUT/DELETE /api/farmer/products/**`) and order actions (`POST /api/buyer/orders`, `PUT /api/farmer/orders/{id}/status`) return **403** with `"Your farmer account has not been verified yet."`
 
 ### 7.2 Authentication Errors (401 Unauthorized)
 

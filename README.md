@@ -17,6 +17,7 @@ JWT and a responsive React frontend.
 - Product Management
 - Order Management
 - Farmer Verification
+- Analytics Dashboards (Admin / Farmer / Buyer)
 - Swagger API Documentation
 - Responsive React Frontend
 
@@ -27,6 +28,8 @@ JWT and a responsive React frontend.
 - React
 - JavaScript
 - CSS
+- Recharts (charts)
+- React Icons
 
 ### Backend
 
@@ -108,6 +111,8 @@ FarmBridge/                      # Repository root
 - **Products** — Product listing, browsing, and admin overview.
 - **Orders** — Order placement, tracking, and management.
 - **Admin** — Statistics, user management, and farmer verification.
+- **Analytics** — Role-scoped business dashboards (Admin / Farmer / Buyer) with
+  aggregated, real backend data served through single-payload endpoints.
 
 Interactive API documentation is available through Swagger UI
 (`http://localhost:8080/swagger-ui.html`) once the backend is running.
@@ -203,6 +208,18 @@ Interactive API documentation is available through Swagger UI
 
 ![Swagger UI](screenshots/swagger-ui.png)
 
+### Admin Analytics Dashboard
+
+![Admin Analytics Dashboard](screenshots/admin-analytics.png)
+
+### Farmer Analytics Dashboard
+
+![Farmer Analytics Dashboard](screenshots/farmer-analytics.png)
+
+### Buyer Analytics Dashboard
+
+![Buyer Analytics Dashboard](screenshots/buyer-analytics.png)
+
 ## Future Enhancements
 
 - Payment Gateway
@@ -225,14 +242,22 @@ GitHub: [https://github.com/hariprasaddev](https://github.com/hariprasaddev)
 
 FarmBridge exposes a REST API secured with **JWT Bearer tokens**. The API
 covers Authentication, Admin, Farmer, Buyer, Reviews, Wishlist, Notifications,
-and Forgot/Reset Password modules. Full interactive documentation is available
-through Swagger UI.
+Forgot/Reset Password, Farmer Verification, and Analytics modules. Full
+interactive documentation is available through Swagger UI.
+
+Analytics dashboards:
+
+| Dashboard | Endpoint | Charts |
+|---|---|---|
+| Admin | `GET /api/admin/analytics` | Revenue & orders per month, farmer registrations, product categories (pie), order status (donut), top-selling categories |
+| Farmer | `GET /api/farmer/analytics` | Revenue & orders trend, sales per product/month, rating trend, category sales |
+| Buyer | `GET /api/buyer/analytics` | Monthly spending, purchases by category, orders timeline |
 
 ### Technologies
 
 - **Backend:** Java, Spring Boot, Spring Security, Spring Data JPA, Hibernate,
   MySQL, Spring Mail, JWT (jjwt), Springdoc OpenAPI (Swagger)
-- **Frontend:** React, JavaScript, CSS, Vite
+- **Frontend:** React, JavaScript, CSS, Vite, Recharts, React Icons
 
 ### Swagger UI
 

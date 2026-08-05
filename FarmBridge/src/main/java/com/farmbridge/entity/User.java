@@ -2,6 +2,8 @@ package com.farmbridge.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "users")
 
@@ -22,6 +24,11 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    // When the account was registered. Populated by @PrePersist; legacy
+    // rows carry NULL and are excluded from registration analytics.
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     public User () {
 
@@ -72,6 +79,22 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // Stamp the registration timestamp before the account is persisted
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 }
 

@@ -15,7 +15,7 @@ export function getStock(qty) {
  * @param {Function} props.onEdit  - existing edit handler (navigates to edit page)
  * @param {Function} props.onDelete - existing delete handler (keeps its confirmation dialog)
  */
-function ProductCard({ product, deleting = false, onEdit, onDelete }) {
+function ProductCard({ product, deleting = false, locked = false, onEdit, onDelete }) {
   const stock = getStock(product.quantity);
 
   return (
@@ -33,27 +33,34 @@ function ProductCard({ product, deleting = false, onEdit, onDelete }) {
         <div className="mp-card-qty">{product.quantity} available</div>
       </div>
 
-      <div className="mp-card-actions">
-        <button
-          type="button"
-          className="mp-edit-btn"
-          onClick={() => onEdit(product.id)}
-          aria-label={`Edit ${product.name}`}
-        >
-          <Icon name="edit" size={15} />
-          Edit
-        </button>
-        <button
-          type="button"
-          className="mp-delete-btn"
-          onClick={() => onDelete(product.id)}
-          disabled={deleting}
-          aria-label={`Delete ${product.name}`}
-        >
-          <Icon name="trash" size={16} />
-          {deleting ? 'Deleting...' : ''}
-        </button>
-      </div>
+      {locked ? (
+        <div className="mp-card-locked">
+          <Icon name="lock" size={13} />
+          Verified accounts can edit or delete
+        </div>
+      ) : (
+        <div className="mp-card-actions">
+          <button
+            type="button"
+            className="mp-edit-btn"
+            onClick={() => onEdit(product.id)}
+            aria-label={`Edit ${product.name}`}
+          >
+            <Icon name="edit" size={15} />
+            Edit
+          </button>
+          <button
+            type="button"
+            className="mp-delete-btn"
+            onClick={() => onDelete(product.id)}
+            disabled={deleting}
+            aria-label={`Delete ${product.name}`}
+          >
+            <Icon name="trash" size={16} />
+            {deleting ? 'Deleting...' : ''}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

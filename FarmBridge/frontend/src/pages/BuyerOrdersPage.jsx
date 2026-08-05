@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { buyerOrdersAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 import Icon from '../components/Icon';
+import { Modal } from '../components/ui';
 import './BuyerOrdersPage.css';
 
 const STATUS_OPTIONS = ['ALL', 'PENDING', 'ACCEPTED', 'COMPLETED', 'REJECTED'];
@@ -339,69 +340,59 @@ function BuyerOrdersPage() {
         )}
       </div>
 
-      {/* ============ Order Details Modal ============ */}
-      {detailsOrder && (
-        <div className="modal-overlay" onClick={() => setDetailsOrder(null)}>
-          <div className="modal bo-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Order Details</h3>
-              <button
-                className="modal-close"
-                onClick={() => setDetailsOrder(null)}
-                aria-label="Close"
-              >
-                ×
-              </button>
+      {/* ============ Order Details Modal (design system) ============ */}
+      <Modal
+        open={!!detailsOrder}
+        onClose={() => setDetailsOrder(null)}
+        title="Order Details"
+        subtitle={detailsOrder ? `Order #${detailsOrder.id}` : ''}
+        icon={<Icon name="orders" size={18} />}
+        footer={
+          <>
+            <Link
+              to="/buyer/products"
+              className="btn btn-outline"
+              onClick={() => setDetailsOrder(null)}
+            >
+              Browse More Products
+            </Link>
+            <button className="btn btn-primary" onClick={() => setDetailsOrder(null)}>
+              Close
+            </button>
+          </>
+        }
+      >
+        {detailsOrder && (
+          <div className="order-summary">
+            <div className="order-summary-item">
+              <span className="detail-label">Order ID</span>
+              <span className="detail-value">#{detailsOrder.id}</span>
             </div>
-
-            <div className="modal-body">
-              <div className="order-summary">
-                <div className="order-summary-item">
-                  <span className="detail-label">Order ID</span>
-                  <span className="detail-value">#{detailsOrder.id}</span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Status</span>
-                  <span className="detail-value">
-                    <OrderStatusBadge status={detailsOrder.status} />
-                  </span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Product</span>
-                  <span className="detail-value">{detailsOrder.productName}</span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Farmer</span>
-                  <span className="detail-value">{detailsOrder.farmerName}</span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Quantity</span>
-                  <span className="detail-value">{detailsOrder.quantity}</span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Total</span>
-                  <span className="detail-value">
-                    ₹{detailsOrder.totalPrice?.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <Link
-                  to="/buyer/products"
-                  className="btn btn-outline"
-                  onClick={() => setDetailsOrder(null)}
-                >
-                  Browse More Products
-                </Link>
-                <button className="btn btn-primary" onClick={() => setDetailsOrder(null)}>
-                  Close
-                </button>
-              </div>
+            <div className="order-summary-item">
+              <span className="detail-label">Status</span>
+              <span className="detail-value">
+                <OrderStatusBadge status={detailsOrder.status} />
+              </span>
+            </div>
+            <div className="order-summary-item">
+              <span className="detail-label">Product</span>
+              <span className="detail-value">{detailsOrder.productName}</span>
+            </div>
+            <div className="order-summary-item">
+              <span className="detail-label">Farmer</span>
+              <span className="detail-value">{detailsOrder.farmerName}</span>
+            </div>
+            <div className="order-summary-item">
+              <span className="detail-label">Quantity</span>
+              <span className="detail-value">{detailsOrder.quantity}</span>
+            </div>
+            <div className="order-summary-item">
+              <span className="detail-label">Total</span>
+              <span className="detail-value">₹{detailsOrder.totalPrice?.toLocaleString()}</span>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

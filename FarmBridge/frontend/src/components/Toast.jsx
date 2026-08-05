@@ -6,15 +6,24 @@ import {
   useRef,
   useState,
 } from 'react';
+import { FaCheckCircle, FaExclamationCircle, FaExclamationTriangle, FaInfoCircle, FaTimes } from 'react-icons/fa';
 import './Toast.css';
 
 const ToastContext = createContext(null);
 
 const TOAST_DURATION_MS = 4000;
 
+const TOAST_ICONS = {
+  success: <FaCheckCircle />,
+  error: <FaExclamationCircle />,
+  warning: <FaExclamationTriangle />,
+  info: <FaInfoCircle />,
+};
+
 /**
  * Global toast notifications.
  * Wrap the app with <ToastProvider> and call useToast().showToast().
+ * Types: success | error | warning | info (anything else → info).
  */
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -46,7 +55,7 @@ export function ToastProvider({ children }) {
             role="status"
           >
             <span className="toast-icon" aria-hidden="true">
-              {toast.type === 'success' ? '✓' : '!'}
+              {TOAST_ICONS[toast.type] || TOAST_ICONS.info}
             </span>
             <span className="toast-message">{toast.message}</span>
             <button
@@ -55,7 +64,7 @@ export function ToastProvider({ children }) {
               onClick={() => dismiss(toast.id)}
               aria-label="Dismiss notification"
             >
-              ×
+              <FaTimes size={13} />
             </button>
           </div>
         ))}

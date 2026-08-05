@@ -1,0 +1,34 @@
+.fb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  border-radius: var(--fb-radius-pill);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  line-height: 1.4;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.fb-badge-icon { display: inline-flex; }
+
+.fb-badge-success { background: var(--fb-success-bg); color: var(--fb-primary-800); border-color: var(--fb-success-border); }
+.fb-badge-warning { background: var(--fb-warning-bg); color: var(--fb-warning); border-color: var(--fb-warning-border); }
+.fb-badge-danger  { background: var(--fb-danger-bg);  color: var(--fb-danger);  border-color: var(--fb-danger-border); }
+.fb-badge-info    { background: var(--fb-info-bg);    color: var(--fb-info);    border-color: var(--fb-info-border); }
+.fb-badge-neutral { background: var(--fb-gray-100);   color: var(--fb-gray-600); border-color: var(--fb-gray-200); }
+.fb-badge-primary { background: var(--fb-primary-50); color: var(--fb-primary-700); border-color: var(--fb-primary-200); }
+
+/* Solid variant for high-emphasis spots (e.g. counters) */
+.fb-badge-solid {
+  color: #fff;
+  border-color: transparent;
+}
+.fb-badge-solid.fb-badge-success { background: var(--fb-success); }
+.fb-badge-solid.fb-badge-warning { background: var(--fb-warning); }
+.fb-badge-solid.fb-badge-danger  { background: var(--fb-danger); }
+.fb-badge-solid.fb-badge-info    { background: var(--fb-info); }
+.fb-badge-solid.fb-badge-neutral { background: var(--fb-gray-500); }
+.fb-badge-solid.fb-badge-primary { background: var(--fb-primary-600); }

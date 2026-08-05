@@ -198,12 +198,6 @@ public class FarmerProfileService {
                         new RuntimeException("User not found")
                 );
 
-        // Missing documents are rejected before any file is written
-        requireDocument(farmerPhoto, "Farmer photo is required");
-        requireDocument(landCertificate,
-                "Land ownership certificate is required");
-        requireDocument(farmPhoto, "Farm photo is required");
-
         FarmerProfile profile = farmerProfileRepository
                 .findByUserEmail(email)
                 .orElse(null);
@@ -213,6 +207,27 @@ public class FarmerProfileService {
         if (isNewProfile) {
             profile = new FarmerProfile();
             profile.setUser(user);
+        }
+
+        // Missing documents are rejected before any file is written.
+        // New submissions must include all three required documents;
+        // resubmissions may keep the previously uploaded ones.
+        if (isNewProfile) {
+            requireDocument(farmerPhoto, "Farmer photo is required");
+            requireDocument(landCertificate,
+                    "Land ownership certificate is required");
+            requireDocument(farmPhoto, "Farm photo is required");
+        } else {
+            if (profile.getFarmerPhotoUrl() == null) {
+                requireDocument(farmerPhoto, "Farmer photo is required");
+            }
+            if (profile.getLandCertificateUrl() == null) {
+                requireDocument(landCertificate,
+                        "Land ownership certificate is required");
+            }
+            if (profile.getFarmPhotoUrl() == null) {
+                requireDocument(farmPhoto, "Farm photo is required");
+            }
         }
 
         // ----- Personal information -----
@@ -248,23 +263,56 @@ public class FarmerProfileService {
         String oldFarmPhoto = profile.getFarmPhotoUrl();
         String oldOrganicCertificate = profile.getOrganicCertificateUrl();
 
-        String newFarmerPhoto =
-                fileStorageService.storeImage(farmerPhoto);
-        String newLandCertificate =
-                fileStorageService.storeImage(landCertificate);
-        String newFarmPhoto =
-                fileStorageService.storeImage(farmPhoto);
+        // A file part replaces the existing document; an empty part keeps it.
+        // A file part replaces the existing document; an empty part keeps
+        // the previously stored one. Newly stored files are tracked so a
+        // failure on a later document cleans up the earlier ones.
+        String newFarmerPhoto = null;
+        String newLandCertificate = null;
+        String newFarmPhoto = null;
         String newOrganicCertificate = null;
 
-        if (organicCertificate != null && !organicCertificate.isEmpty()) {
-            newOrganicCertificate =
-                    fileStorageService.storeImage(organicCertificate);
+        try {
+            if (farmerPhoto != null && !farmerPhoto.isEmpty()) {
+                newFarmerPhoto =
+                        fileStorageService.storeImage(farmerPhoto);
+            }
+            if (landCertificate != null && !landCertificate.isEmpty()) {
+                newLandCertificate =
+                        fileStorageService.storeImage(landCertificate);
+            }
+            if (farmPhoto != null && !farmPhoto.isEmpty()) {
+                newFarmPhoto =
+                        fileStorageService.storeImage(farmPhoto);
+            }
+            if (organicCertificate != null && !organicCertificate.isEmpty()) {
+                newOrganicCertificate =
+                        fileStorageService.storeImage(organicCertificate);
+            }
+        } catch (RuntimeException e) {
+            // A document failed to store — remove the ones already written
+            fileStorageService.deleteImage(newFarmerPhoto);
+            fileStorageService.deleteImage(newLandCertificate);
+            fileStorageService.deleteImage(newFarmPhoto);
+            fileStorageService.deleteImage(newOrganicCertificate);
+            throw e;
         }
 
-        profile.setFarmerPhotoUrl(newFarmerPhoto);
-        profile.setLandCertificateUrl(newLandCertificate);
-        profile.setFarmPhotoUrl(newFarmPhoto);
-        profile.setOrganicCertificateUrl(newOrganicCertificate);
+        String finalFarmerPhoto =
+                newFarmerPhoto != null ? newFarmerPhoto : oldFarmerPhoto;
+        String finalLandCertificate =
+                newLandCertificate != null
+                        ? newLandCertificate : oldLandCertificate;
+        String finalFarmPhoto =
+                newFarmPhoto != null ? newFarmPhoto : oldFarmPhoto;
+        String finalOrganicCertificate =
+                newOrganicCertificate != null
+                        ? newOrganicCertificate : oldOrganicCertificate;
+
+        profile.setFarmerPhotoUrl(finalFarmerPhoto);
+        profile.setLandCertificateUrl(finalLandCertificate);
+        profile.setFarmPhotoUrl(finalFarmPhoto);
+        profile.setOrganicCertificateUrl(finalOrganicCertificate);
 
         // ----- Verification workflow -----
         // Every (re)submission resets the request to PENDING.
@@ -287,12 +335,12 @@ public class FarmerProfileService {
             throw e;
         }
 
-        // Success — clean up the replaced documents (if any)
+        // Success — clean up only the documents that were actually replaced
         if (!isNewProfile) {
-            fileStorageService.deleteImage(oldFarmerPhoto);
-            fileStorageService.deleteImage(oldLandCertificate);
-            fileStorageService.deleteImage(oldFarmPhoto);
-            fileStorageService.deleteImage(oldOrganicCertificate);
+            deleteIfReplaced(finalFarmerPhoto, oldFarmerPhoto);
+            deleteIfReplaced(finalLandCertificate, oldLandCertificate);
+            deleteIfReplaced(finalFarmPhoto, oldFarmPhoto);
+            deleteIfReplaced(finalOrganicCertificate, oldOrganicCertificate);
         }
 
         return toVerificationResponse(savedProfile);
@@ -305,6 +353,12 @@ public class FarmerProfileService {
     private void requireDocument(MultipartFile file, String message) {
         if (file == null || file.isEmpty()) {
             throw new RuntimeException(message);
+        }
+    }
+
+    private void deleteIfReplaced(String newUrl, String oldUrl) {
+        if (oldUrl != null && !oldUrl.equals(newUrl)) {
+            fileStorageService.deleteImage(oldUrl);
         }
     }
 

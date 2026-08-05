@@ -1,0 +1,104 @@
+.fb-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: var(--fb-z-modal);
+  animation: fbOverlayIn var(--fb-transition);
+}
+
+@keyframes fbOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fb-modal {
+  background: var(--fb-surface);
+  border-radius: var(--fb-radius-xl);
+  box-shadow: var(--fb-shadow-xl);
+  width: 100%;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  animation: fbModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fbModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.fb-modal-sm { max-width: 360px; }
+.fb-modal-md { max-width: 480px; }
+.fb-modal-lg { max-width: 680px; }
+.fb-modal-xl { max-width: 900px; }
+
+.fb-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid var(--fb-border);
+}
+
+.fb-modal-header-icon {
+  display: inline-flex;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+}
+
+.fb-modal-title {
+  font-size: var(--fb-text-lg);
+  font-weight: 700;
+  color: var(--fb-gray-800);
+}
+
+.fb-modal-subtitle {
+  font-size: var(--fb-text-sm);
+  color: var(--fb-gray-500);
+  margin-top: 0.15rem;
+}
+
+.fb-modal-close {
+  border: none;
+  background: transparent;
+  color: var(--fb-gray-400);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-md);
+  transition: all var(--fb-transition-fast);
+  flex-shrink: 0;
+}
+
+.fb-modal-close:hover { background: var(--fb-gray-100); color: var(--fb-gray-700); }
+
+.fb-modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  color: var(--fb-gray-700);
+  font-size: var(--fb-text-md);
+}
+
+.fb-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--fb-border);
+  background: var(--fb-surface-alt);
+  border-radius: 0 0 var(--fb-radius-xl) var(--fb-radius-xl);
+}

@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -142,11 +143,15 @@ public class WishlistServiceImpl implements WishlistService {
                                 Function.identity()
                         ));
 
-        // Preserve the wishlist order (newest first)
+        // Preserve the wishlist order (newest first). Products of farmers
+        // who are no longer APPROVED are filtered out by getProductsByIds,
+        // so skip any entry without a visible product instead of emitting
+        // a null element.
         return entries.stream()
                 .map(entry ->
                         productsById.get(entry.getProduct().getId())
                 )
+                .filter(Objects::nonNull)
                 .toList();
     }
 

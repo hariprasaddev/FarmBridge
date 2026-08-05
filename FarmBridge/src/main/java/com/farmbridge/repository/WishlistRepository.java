@@ -20,6 +20,9 @@ public interface WishlistRepository
     // All wishlist entries of a buyer, newest first
     List<Wishlist> findByBuyerEmailOrderByCreatedAtDesc(String email);
 
+    // Wishlist size of a buyer (buyer dashboard card)
+    long countByBuyerEmail(String email);
+
     // Remove a saved product (returns the number of removed rows)
     long deleteByBuyerEmailAndProductId(
             String email,

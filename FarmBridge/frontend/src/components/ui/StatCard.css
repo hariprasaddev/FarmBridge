@@ -1,0 +1,71 @@
+.fb-statcard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem 1.25rem;
+  background: var(--fb-surface);
+  border: 1px solid var(--fb-border);
+  border-radius: var(--fb-radius-lg);
+  box-shadow: var(--fb-shadow-sm);
+  overflow: hidden;
+  transition: box-shadow var(--fb-transition), transform var(--fb-transition);
+}
+
+.fb-statcard:hover {
+  box-shadow: var(--fb-shadow-lg);
+  transform: translateY(-2px);
+}
+
+.fb-statcard-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--fb-radius-md);
+  flex-shrink: 0;
+}
+
+.fb-statcard-accent-primary { background: var(--fb-primary-50); color: var(--fb-primary-700); }
+.fb-statcard-accent-success { background: var(--fb-success-bg); color: var(--fb-success); }
+.fb-statcard-accent-warning { background: var(--fb-warning-bg); color: var(--fb-warning); }
+.fb-statcard-accent-danger  { background: var(--fb-danger-bg);  color: var(--fb-danger); }
+.fb-statcard-accent-info    { background: var(--fb-info-bg);    color: var(--fb-info); }
+.fb-statcard-accent-neutral { background: var(--fb-gray-100);   color: var(--fb-gray-600); }
+
+.fb-statcard-content {
+  min-width: 0;
+  flex: 1;
+}
+
+.fb-statcard-label {
+  font-size: var(--fb-text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fb-gray-500);
+}
+
+.fb-statcard-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--fb-gray-900);
+  line-height: 1.25;
+  margin-top: 0.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.fb-statcard-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--fb-text-xs);
+  font-weight: 600;
+  margin-top: 0.25rem;
+}
+
+.fb-statcard-trend-up { color: var(--fb-success); }
+.fb-statcard-trend-down { color: var(--fb-danger); }
+.fb-statcard-trend-flat { color: var(--fb-gray-400); }

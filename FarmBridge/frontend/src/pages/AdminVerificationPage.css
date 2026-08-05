@@ -203,3 +203,266 @@
     gap: 0.75rem 1rem;
   }
 }
+
+/* ============================================================
+   ADMIN VERIFICATION v2 — actions, details dialog, reject dialog
+   ============================================================ */
+
+.av-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  background: #fff;
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.av-refresh:hover:not(:disabled) {
+  border-color: #2e7d32;
+  color: #2e7d32;
+}
+
+.av-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.av-chip {
+  background: #e8f5e9 !important;
+  color: #1b5e20 !important;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.av-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.av-view,
+.av-reject {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.av-view {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.av-view:hover {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+}
+
+.av-reject {
+  background: #fff;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.av-reject:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.av-reject:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.av-reject-solid {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+}
+
+.av-reject-solid:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+/* ------------------------------------------------------------
+   DETAILS DIALOG
+   ------------------------------------------------------------ */
+
+.av-modal {
+  max-width: 680px !important;
+}
+
+.av-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.av-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.av-detail-block h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1b5e20;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.55rem;
+}
+
+.av-detail-block dl {
+  margin: 0;
+}
+
+.av-detail-block dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.32rem 0;
+  border-bottom: 1px dashed #e5e7eb;
+  font-size: 0.84rem;
+}
+
+.av-detail-block dl > div:last-child {
+  border-bottom: none;
+}
+
+.av-detail-block dt {
+  color: #6b7280;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.av-detail-block dd {
+  color: #1f2937;
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+.av-docs h4 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #1b5e20;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.6rem;
+}
+
+.av-docs-empty {
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.av-doc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.8rem;
+}
+
+.av-doc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  background: #f9fafb;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.av-doc-item:hover {
+  border-color: #9ccc9c;
+  box-shadow: 0 6px 14px -8px rgba(16, 24, 40, 0.25);
+}
+
+.av-doc-item img {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.av-doc-item span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.6rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ------------------------------------------------------------
+   REJECT DIALOG
+   ------------------------------------------------------------ */
+
+.av-reject-sub {
+  color: #4b5563;
+  font-size: 0.88rem;
+  margin-bottom: 0.9rem;
+}
+
+.av-reject-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 0.3rem;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.9rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* ------------------------------------------------------------
+   RESPONSIVE
+   ------------------------------------------------------------ */
+
+@media (max-width: 640px) {
+  .av-actions {
+    flex: 1 1 100%;
+    justify-content: stretch;
+  }
+
+  .av-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .av-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

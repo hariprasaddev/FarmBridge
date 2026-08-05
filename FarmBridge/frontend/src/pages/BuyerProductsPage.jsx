@@ -5,6 +5,7 @@ import Icon from '../components/Icon';
 import ProductImage from '../components/ProductImage';
 import WishlistButton from '../components/WishlistButton';
 import { getStock } from '../utils/stock';
+import { Modal } from '../components/ui';
 import './BuyerProductsPage.css';
 
 function BuyerProductsPage() {
@@ -140,6 +141,12 @@ function BuyerProductsPage() {
           <p className="bp-card-farmer">
             <Icon name="profile" size={13} />
             by {product.farmerName}
+            {product.farmerVerified && (
+              <span className="bp-verified" title="Verified Farmer">
+                <Icon name="badgeCheck" size={13} />
+                Verified Farmer
+              </span>
+            )}
           </p>
           <div className="bp-card-foot">
             <span className="bp-card-price">₹{product.price?.toLocaleString()}</span>
@@ -234,104 +241,79 @@ function BuyerProductsPage() {
       </div>
 
       {/* ==========================================
-          PLACE ORDER MODAL
+          PLACE ORDER MODAL (design system)
           ========================================== */}
-      {selectedProduct && (
-        <div className="modal-overlay" onClick={closeOrderModal}>
-          <div
-            className="modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h3>Place Order</h3>
-              <button
-                className="modal-close"
-                onClick={closeOrderModal}
-                aria-label="Close"
-              >
-                ×
-              </button>
+      <Modal
+        open={!!selectedProduct}
+        onClose={closeOrderModal}
+        title="Place Order"
+        subtitle={selectedProduct ? `₹${selectedProduct.price?.toLocaleString()} per unit` : ''}
+        icon={<Icon name="cart" size={18} />}
+        footer={
+          <>
+            <button type="button" className="btn btn-outline" onClick={closeOrderModal}>
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="bp-order-form"
+              className="btn btn-primary"
+              disabled={placing}
+            >
+              {placing ? 'Placing...' : 'Confirm Order'}
+            </button>
+          </>
+        }
+      >
+        {selectedProduct && (
+          <>
+            <div className="order-summary">
+              <div className="order-summary-item">
+                <span className="detail-label">Product</span>
+                <span className="detail-value">{selectedProduct.name}</span>
+              </div>
+              <div className="order-summary-item">
+                <span className="detail-label">Farmer</span>
+                <span className="detail-value">{selectedProduct.farmerName}</span>
+              </div>
+              <div className="order-summary-item">
+                <span className="detail-label">Price</span>
+                <span className="detail-value">₹{selectedProduct.price?.toLocaleString()}</span>
+              </div>
+              <div className="order-summary-item">
+                <span className="detail-label">Available</span>
+                <span className="detail-value">{selectedProduct.quantity}</span>
+              </div>
             </div>
 
-            <div className="modal-body">
-              <div className="order-summary">
-                <div className="order-summary-item">
-                  <span className="detail-label">Product</span>
-                  <span className="detail-value">
-                    {selectedProduct.name}
-                  </span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Farmer</span>
-                  <span className="detail-value">
-                    {selectedProduct.farmerName}
-                  </span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Price</span>
-                  <span className="detail-value">
-                    ₹{selectedProduct.price?.toLocaleString()}
-                  </span>
-                </div>
-                <div className="order-summary-item">
-                  <span className="detail-label">Available</span>
-                  <span className="detail-value">
-                    {selectedProduct.quantity}
-                  </span>
-                </div>
+            {orderError && <div className="alert alert-error">{orderError}</div>}
+
+            <form id="bp-order-form" onSubmit={handlePlaceOrder} className="order-form">
+              <div className="form-group">
+                <label htmlFor="order-quantity">Quantity</label>
+                <input
+                  id="order-quantity"
+                  type="number"
+                  min="1"
+                  max={selectedProduct.quantity}
+                  step="1"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
               </div>
 
-              {orderError && (
-                <div className="alert alert-error">{orderError}</div>
-              )}
-
-              <form onSubmit={handlePlaceOrder} className="order-form">
-                <div className="form-group">
-                  <label htmlFor="order-quantity">Quantity</label>
-                  <input
-                    id="order-quantity"
-                    type="number"
-                    min="1"
-                    max={selectedProduct.quantity}
-                    step="1"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="order-total">
-                  <span>Total</span>
-                  <span className="order-total-amount">
-                    ₹
-                    {(
-                      (selectedProduct.price || 0) *
-                      (parseInt(quantity, 10) || 0)
-                    ).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="form-actions">
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={closeOrderModal}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={placing}
-                  >
-                    {placing ? 'Placing...' : 'Confirm Order'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
+              <div className="order-total">
+                <span>Total</span>
+                <span className="order-total-amount">
+                  ₹
+                  {((selectedProduct.price || 0) * (parseInt(quantity, 10) || 0)).toLocaleString()}
+                </span>
+              </div>
+            </form>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

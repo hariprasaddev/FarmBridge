@@ -1,0 +1,53 @@
+.fb-pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.fb-pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--fb-border);
+  border-radius: var(--fb-radius-md);
+  background: var(--fb-surface);
+  color: var(--fb-gray-600);
+  font-size: var(--fb-text-sm);
+  font-weight: 600;
+  font-family: var(--fb-font);
+  cursor: pointer;
+  transition: all var(--fb-transition-fast);
+}
+
+.fb-pagination-btn:hover:not(:disabled):not(.fb-pagination-active) {
+  border-color: var(--fb-primary-400);
+  color: var(--fb-primary-700);
+  background: var(--fb-primary-50);
+}
+
+.fb-pagination-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.fb-pagination-active {
+  background: var(--fb-primary-600);
+  border-color: var(--fb-primary-600);
+  color: #fff;
+}
+
+.fb-pagination-ellipsis {
+  color: var(--fb-gray-400);
+  padding: 0 0.25rem;
+}
+
+.fb-pagination-info {
+  margin-left: 0.5rem;
+  font-size: var(--fb-text-xs);
+  color: var(--fb-gray-500);
+  white-space: nowrap;
+}
