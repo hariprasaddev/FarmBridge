@@ -1,6 +1,8 @@
 package com.farmbridge.controller;
 
 import com.farmbridge.dto.AdminDashboardResponse;
+import com.farmbridge.dto.AnnouncementRequest;
+import com.farmbridge.dto.AnnouncementResponse;
 import com.farmbridge.dto.FarmerVerificationResponse;
 import com.farmbridge.dto.RejectVerificationRequest;
 import com.farmbridge.dto.OrderResponse;
@@ -8,6 +10,7 @@ import com.farmbridge.dto.ProductResponse;
 import com.farmbridge.dto.UserRequest;
 import com.farmbridge.dto.UserResponse;
 import com.farmbridge.service.AdminService;
+import com.farmbridge.service.AnnouncementService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,6 +19,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,9 +31,14 @@ import java.util.List;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AnnouncementService announcementService;
 
-    public AdminController(AdminService adminService) {
+    public AdminController(
+            AdminService adminService,
+            AnnouncementService announcementService) {
+
         this.adminService = adminService;
+        this.announcementService = announcementService;
     }
 
     // ==========================================
@@ -191,6 +200,38 @@ public class AdminController {
                         profileId,
                         request.getReason()
                 );
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // EMAIL ANNOUNCEMENTS
+    // ==========================================
+
+    @PostMapping("/announcements")
+    @Operation(summary = "Send an announcement email", description = "Emails every user matching the audience (ALL, BUYERS or FARMERS). A delivery failure for one recipient never stops the remaining emails.")
+    public ResponseEntity<AnnouncementResponse> sendAnnouncement(
+            @Valid @RequestBody AnnouncementRequest request,
+            Authentication authentication) {
+
+        // Get logged-in admin email from JWT
+        String adminEmail = authentication.getName();
+
+        AnnouncementResponse response =
+                announcementService.sendAnnouncement(
+                        request,
+                        adminEmail
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/announcements")
+    @Operation(summary = "Get announcement history", description = "Lists every announcement email sent, newest first.")
+    public ResponseEntity<List<AnnouncementResponse>> getAnnouncements() {
+
+        List<AnnouncementResponse> response =
+                announcementService.getAnnouncements();
 
         return ResponseEntity.ok(response);
     }

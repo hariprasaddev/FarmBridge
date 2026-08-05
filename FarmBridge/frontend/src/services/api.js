@@ -138,8 +138,11 @@ export const buyerOrdersAPI = {
 // Farmer Orders API
 export const farmerOrdersAPI = {
   getOrders: () => api.get('/farmer/orders'),
-  updateStatus: (orderId, status) =>
-    api.put(`/farmer/orders/${orderId}/status`, { status }),
+  updateStatus: (orderId, status, reason) =>
+    api.put(`/farmer/orders/${orderId}/status`, {
+      status,
+      ...(reason ? { reason } : {}),
+    }),
 };
 
 // Analytics API
@@ -173,6 +176,8 @@ export const adminAPI = {
   verifyFarmer: (profileId) => api.put(`/admin/farmers/${profileId}/verify`),
   rejectFarmer: (profileId, reason) =>
     api.put(`/admin/farmers/${profileId}/reject`, { reason }),
+  sendAnnouncement: (data) => api.post('/admin/announcements', data),
+  getAnnouncements: () => api.get('/admin/announcements'),
 };
 
 // ==========================================

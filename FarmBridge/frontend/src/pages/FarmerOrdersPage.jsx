@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { farmerOrdersAPI, getErrorMessage } from '../services/api';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 import Icon from '../components/Icon';
-import { ConfirmDialog } from '../components/ui';
+import { Modal } from '../components/ui';
 import './FarmerOrdersPage.css';
 
 const STATUS_PILLS = [
@@ -36,6 +36,7 @@ function FarmerOrdersPage() {
   const [success, setSuccess] = useState('');
   const [updating, setUpdating] = useState(null);
   const [rejectOrder, setRejectOrder] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   // Presentation-level filters (client-side, on the already-fetched orders)
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -58,14 +59,15 @@ function FarmerOrdersPage() {
     }
   };
 
-  const handleStatusChange = async (orderId, status) => {
+  const handleStatusChange = async (orderId, status, reason) => {
     setRejectOrder(null);
+    setRejectReason('');
     setUpdating(orderId);
     setError('');
     setSuccess('');
 
     try {
-      const response = await farmerOrdersAPI.updateStatus(orderId, status);
+      const response = await farmerOrdersAPI.updateStatus(orderId, status, reason);
       // Update the order in local state with the returned order
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? response.data : o))
@@ -307,22 +309,62 @@ function FarmerOrdersPage() {
       </div>
 
       {/* ==========================================
-          REJECT ORDER CONFIRMATION (design system)
+          REJECT ORDER DIALOG (design system)
           ========================================== */}
-      <ConfirmDialog
+      <Modal
         open={!!rejectOrder}
-        onCancel={() => setRejectOrder(null)}
-        onConfirm={() => handleStatusChange(rejectOrder?.id, 'REJECTED')}
+        onClose={() => !updating && setRejectOrder(null)}
         title="Reject this order?"
-        message={
-          rejectOrder
-            ? `Order #${rejectOrder.id} — ${rejectOrder.productName} by ${rejectOrder.buyerName} will be rejected. This is irreversible and the buyer will be notified.`
-            : ''
+        icon={<Icon name="xCircle" size={18} />}
+        footer={
+          <div className="modal-footer">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setRejectOrder(null)}
+              disabled={updating === rejectOrder?.id}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger-outline fo-reject-confirm"
+              onClick={() =>
+                handleStatusChange(
+                  rejectOrder?.id,
+                  'REJECTED',
+                  rejectReason.trim() || undefined
+                )
+              }
+              disabled={updating === rejectOrder?.id}
+            >
+              <Icon name="xCircle" size={15} />
+              {updating === rejectOrder?.id ? 'Rejecting…' : 'Reject Order'}
+            </button>
+          </div>
         }
-        confirmLabel="Reject Order"
-        variant="danger"
-        loading={updating === rejectOrder?.id}
-      />
+      >
+        {rejectOrder && (
+          <>
+            <p className="fo-reject-sub">
+              Order <strong>#{rejectOrder.id}</strong> —{' '}
+              {rejectOrder.productName} by {rejectOrder.buyerName} will be
+              rejected. This is irreversible and the buyer will be notified.
+            </p>
+            <div className="form-group">
+              <label htmlFor="fo-reject-reason">Reason (optional)</label>
+              <textarea
+                id="fo-reject-reason"
+                rows={3}
+                maxLength={500}
+                placeholder="e.g. Item is out of stock this season — apologize and offer a refund."
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+            </div>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }

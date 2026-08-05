@@ -24,6 +24,7 @@ import AdminUsersPage from './pages/AdminUsersPage';
 import AdminProductsPage from './pages/AdminProductsPage';
 import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminVerificationPage from './pages/AdminVerificationPage';
+import AdminAnnouncementPage from './pages/AdminAnnouncementPage';
 import './App.css';
 
 function App() {
@@ -196,6 +197,14 @@ function App() {
             element={
               <ProtectedRoute role="ADMIN">
                 <AdminVerificationPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/announcements"
+            element={
+              <ProtectedRoute role="ADMIN">
+                <AdminAnnouncementPage />
               </ProtectedRoute>
             }
           />

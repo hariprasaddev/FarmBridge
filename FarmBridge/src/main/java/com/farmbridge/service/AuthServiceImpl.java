@@ -17,15 +17,18 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final EmailService emailService;
 
     public AuthServiceImpl(
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
-            JwtUtil jwtUtil) {
+            JwtUtil jwtUtil,
+            EmailService emailService) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.emailService = emailService;
     }
 
     @Override
@@ -60,6 +63,10 @@ public class AuthServiceImpl implements AuthService {
         user.setRole(role);
 
         userRepository.save(user);
+
+        // Best-effort welcome email — a mail outage must never fail
+        // registration (EmailService swallows and logs the failure).
+        emailService.sendWelcomeEmail(user);
 
         return "User Registered Successfully";
     }

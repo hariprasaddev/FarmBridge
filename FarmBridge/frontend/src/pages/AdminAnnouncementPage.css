@@ -1,0 +1,330 @@
+/* ============================================================
+   Admin Announcement page — compose + live preview + history
+   ============================================================ */
+
+.aa-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.aa-card {
+  background: #fff;
+  border: 1px solid var(--adm-border, #e5e7eb);
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(16, 61, 46, 0.06);
+}
+
+.aa-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.aa-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--adm-primary, #16a34a);
+  flex-shrink: 0;
+}
+
+.aa-card-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--adm-dark, #0f3d2e);
+}
+
+.aa-card-sub {
+  margin: 2px 0 0;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* ---- audience picker ---- */
+.aa-audience {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.aa-audience-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  text-align: left;
+  padding: 0.7rem 0.75rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 11px;
+  background: #fbfdfc;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.aa-audience-option:hover {
+  border-color: #a7f3d0;
+  background: #f0fdf4;
+}
+
+.aa-audience-option.active {
+  border-color: var(--adm-primary, #16a34a);
+  background: #ecfdf5;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+.aa-audience-icon {
+  color: #16a34a;
+  display: grid;
+  place-items: center;
+}
+
+.aa-audience-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.aa-audience-hint {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+/* ---- message counter ---- */
+.aa-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.7rem;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+/* ---- button fields ---- */
+.aa-button-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ---- actions ---- */
+.aa-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+/* ============================================================
+   LIVE PREVIEW
+   ============================================================ */
+
+.aa-preview {
+  position: sticky;
+  top: 1rem;
+}
+
+.aa-preview-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 0.6rem;
+}
+
+.aa-preview-tag {
+  margin-left: auto;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #16a34a;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 99px;
+  padding: 2px 9px;
+}
+
+.aa-preview-shell {
+  background: #f3f6f4;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.aa-preview-header {
+  background: #0f3d2e;
+  border-radius: 10px 10px 0 0;
+  padding: 14px 18px;
+}
+
+.aa-preview-logo {
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.3px;
+  display: block;
+}
+
+.aa-preview-tagline {
+  color: #7dd3a8;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.aa-preview-body {
+  background: #fff;
+  border-left: 1px solid #e3e9e5;
+  border-right: 1px solid #e3e9e5;
+  padding: 16px 18px;
+  min-height: 180px;
+}
+
+.aa-preview-body h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+  color: #0f3d2e;
+}
+
+.aa-preview-body p {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aa-preview-placeholder {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.aa-preview-btn {
+  display: inline-block;
+  margin-top: 8px;
+  background: #16a34a;
+  color: #fff;
+  text-decoration: none;
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+}
+
+.aa-preview-footer {
+  background: #fff;
+  border: 1px solid #e3e9e5;
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  padding: 12px 18px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+
+.aa-history {
+  margin-top: 1.5rem;
+}
+
+.aa-history-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.7rem;
+}
+
+.aa-history-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--adm-dark, #0f3d2e);
+}
+
+.aa-history-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.aa-history-retry {
+  flex-shrink: 0;
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.aa-history-retry:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.aa-history-count {
+  font-size: 0.75rem;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 99px;
+  padding: 3px 10px;
+}
+
+.aa-aud-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #0f3d2e;
+  background: #ecfdf5;
+  border: 1px solid #bbf7d0;
+  border-radius: 99px;
+  padding: 3px 10px;
+}
+
+.aa-date {
+  color: #64748b;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1024px) {
+  .aa-grid {
+    grid-template-columns: 1fr;
+  }
+  .aa-preview {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .aa-audience {
+    grid-template-columns: 1fr;
+  }
+  .aa-button-fields {
+    grid-template-columns: 1fr;
+  }
+  .aa-card {
+    padding: 1rem;
+  }
+}

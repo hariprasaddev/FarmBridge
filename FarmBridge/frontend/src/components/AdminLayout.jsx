@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { to: '/admin/products', label: 'Products', icon: 'package', isActive: (p) => p === '/admin/products' },
   { to: '/admin/orders', label: 'Orders', icon: 'orders', isActive: (p) => p === '/admin/orders' },
   { to: '/admin/verification', label: 'Verification', icon: 'shieldCheck', isActive: (p) => p === '/admin/verification' },
+  { to: '/admin/announcements', label: 'Announcements', icon: 'mail', isActive: (p) => p === '/admin/announcements' },
 ];
 
 /**

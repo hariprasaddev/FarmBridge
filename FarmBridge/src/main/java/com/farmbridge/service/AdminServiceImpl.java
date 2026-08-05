@@ -29,6 +29,7 @@ public class AdminServiceImpl implements AdminService {
     private final OrderRepository orderRepository;
     private final UserService userService;
     private final ProductService productService;
+    private final EmailService emailService;
 
     public AdminServiceImpl(
             UserRepository userRepository,
@@ -36,7 +37,8 @@ public class AdminServiceImpl implements AdminService {
             ProductRepository productRepository,
             OrderRepository orderRepository,
             UserService userService,
-            ProductService productService) {
+            ProductService productService,
+            EmailService emailService) {
 
         this.userRepository = userRepository;
         this.farmerProfileRepository = farmerProfileRepository;
@@ -44,6 +46,7 @@ public class AdminServiceImpl implements AdminService {
         this.orderRepository = orderRepository;
         this.userService = userService;
         this.productService = productService;
+        this.emailService = emailService;
     }
 
     // ==========================================
@@ -169,6 +172,12 @@ public class AdminServiceImpl implements AdminService {
         FarmerProfile savedProfile =
                 farmerProfileRepository.save(profile);
 
+        // Best-effort approval email (failure is logged, never thrown)
+        emailService.sendVerificationApproved(
+                profile.getUser(),
+                profile.getFarmName()
+        );
+
         return toVerificationResponse(savedProfile);
     }
 
@@ -196,6 +205,12 @@ public class AdminServiceImpl implements AdminService {
 
         FarmerProfile savedProfile =
                 farmerProfileRepository.save(profile);
+
+        // Best-effort rejection email (failure is logged, never thrown)
+        emailService.sendVerificationRejected(
+                profile.getUser(),
+                reason
+        );
 
         return toVerificationResponse(savedProfile);
     }

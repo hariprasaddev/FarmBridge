@@ -7,6 +7,7 @@ import {
   FaUserCircle,
   FaUsers,
   FaBell,
+  FaBullhorn,
 } from 'react-icons/fa';
 import { MdDashboard } from 'react-icons/md';
 import { LuChartBar } from 'react-icons/lu';
@@ -106,6 +107,12 @@ export const NAV_CONFIG = {
       label: 'Verification',
       icon: <FaUserCheck size={17} />,
       match: (p) => p.startsWith('/admin/verification'),
+    },
+    {
+      to: '/admin/announcements',
+      label: 'Announcements',
+      icon: <FaBullhorn size={17} />,
+      match: (p) => p.startsWith('/admin/announcements'),
     },
   ],
 };

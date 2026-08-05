@@ -385,6 +385,7 @@ async function logout(page) {
       ['/admin/products', 'Products'],
       ['/admin/orders', 'Orders'],
       ['/admin/verification', 'Verification'],
+      ['/admin/announcements', 'Email Announcements'],
     ];
     for (const [path, heading] of adminPages) {
       await page.goto(BASE + path, { waitUntil: 'networkidle2' });
@@ -392,6 +393,28 @@ async function logout(page) {
       (await hasText(page, heading))
         ? ok(`admin page ${path} renders (${heading})`)
         : bad('admin page ' + path, 'heading ' + heading + ' not found');
+    }
+
+    // --- Email announcement compose + send ---
+    await page.goto(BASE + '/admin/announcements', { waitUntil: 'networkidle2' });
+    await page.waitForSelector('#aa-subject, #aa-message', { timeout: 10000 }).catch(() => {});
+    const hasCompose = !!(await page.$('#aa-message'));
+    if (hasCompose) {
+      await typeText(page, '#aa-subject', 'QA Announcement ' + TS);
+      await typeText(page, '#aa-message', 'This is a QA announcement sent through the UI.');
+      await page.evaluate(() => {
+        const btn = [...document.querySelectorAll('button')].find(
+          (b) => (b.textContent || '').includes('Send Announcement')
+        );
+        if (btn) btn.click();
+      });
+      await page.waitForSelector('.toast', { timeout: 12000 }).catch(() => {});
+      (await page.$('.toast'))
+        ? ok('announcement sent through the UI (success toast)')
+        : bad('announcement send', 'no success toast');
+      await page.screenshot({ path: path.join(SHOT_DIR, 'admin-announcements.png') }).catch(() => {});
+    } else {
+      bad('announcement compose', 'compose form not rendered');
     }
     await page.screenshot({ path: path.join(SHOT_DIR, 'admin-verification.png') }).catch(() => {});
     await logout(page);

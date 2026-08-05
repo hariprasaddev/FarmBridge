@@ -32,19 +32,22 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final FarmerProfileRepository farmerProfileRepository;
     private final NotificationService notificationService;
+    private final EmailService emailService;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
             FarmerProfileRepository farmerProfileRepository,
-            NotificationService notificationService) {
+            NotificationService notificationService,
+            EmailService emailService) {
 
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
         this.farmerProfileRepository = farmerProfileRepository;
         this.notificationService = notificationService;
+        this.emailService = emailService;
     }
 
     // ==========================================
@@ -122,6 +125,9 @@ public class OrderServiceImpl implements OrderService {
                 NotificationType.NEW_ORDER,
                 savedOrder.getId()
         );
+
+        // Best-effort new-order email to the farmer (failure is logged)
+        emailService.sendNewOrderEmail(farmer, savedOrder);
 
         // Reduce product quantity
         product.setQuantity(
@@ -344,6 +350,9 @@ public class OrderServiceImpl implements OrderService {
                     NotificationType.ORDER_ACCEPTED,
                     order.getId()
             );
+
+            // Best-effort acceptance email to the buyer
+            emailService.sendOrderAcceptedEmail(order.getBuyer(), updatedOrder);
         } else if (newStatus == OrderStatus.REJECTED) {
 
             notifyUser(
@@ -353,6 +362,14 @@ public class OrderServiceImpl implements OrderService {
                             + " was rejected.",
                     NotificationType.ORDER_REJECTED,
                     order.getId()
+            );
+
+            // Best-effort rejection email to the buyer (with the reason
+            // the farmer supplied, when present)
+            emailService.sendOrderRejectedEmail(
+                    order.getBuyer(),
+                    updatedOrder,
+                    request.getReason()
             );
         } else if (newStatus == OrderStatus.COMPLETED) {
 
@@ -364,6 +381,9 @@ public class OrderServiceImpl implements OrderService {
                     NotificationType.ORDER_COMPLETED,
                     order.getId()
             );
+
+            // Best-effort completion email to the buyer
+            emailService.sendOrderCompletedEmail(order.getBuyer(), updatedOrder);
         }
 
         // Return response
