@@ -6,6 +6,7 @@ import com.farmbridge.dto.RatingStats;
 import com.farmbridge.entity.FarmerProfile;
 import com.farmbridge.entity.Product;
 import com.farmbridge.entity.User;
+import com.farmbridge.entity.VerificationStatus;
 import com.farmbridge.repository.FarmerProfileRepository;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.ReviewRepository;
@@ -58,6 +59,9 @@ public class ProductServiceImpl implements ProductService {
                         new RuntimeException("User not found")
                 );
 
+        // Only APPROVED farmers may list products for sale
+        assertFarmerVerified(email);
+
         // Create Product entity
         Product product = new Product();
 
@@ -101,6 +105,9 @@ public class ProductServiceImpl implements ProductService {
             Long id,
             ProductRequest request,
             String email) {
+
+        // Only APPROVED farmers may manage product listings
+        assertFarmerVerified(email);
 
         // Find the product
         Product product = productRepository
@@ -153,6 +160,9 @@ public class ProductServiceImpl implements ProductService {
             Long id,
             String email) {
 
+        // Only APPROVED farmers may manage product listings
+        assertFarmerVerified(email);
+
         // Find product
         Product product = productRepository
                 .findById(id)
@@ -186,6 +196,9 @@ public class ProductServiceImpl implements ProductService {
             Long id,
             MultipartFile file,
             String email) {
+
+        // Only APPROVED farmers may manage product listings
+        assertFarmerVerified(email);
 
         // Find the product
         Product product = productRepository
@@ -239,6 +252,9 @@ public class ProductServiceImpl implements ProductService {
             Long id,
             String email) {
 
+        // Only APPROVED farmers may manage product listings
+        assertFarmerVerified(email);
+
         // Find the product
         Product product = productRepository
                 .findById(id)
@@ -287,6 +303,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ==========================================
+    // GET PRODUCT BY ID (BUYER VIEW)
+    // Only products of APPROVED farmers are visible to buyers.
+    // ==========================================
+
+    @Override
+    public ProductResponse getBuyerProductById(Long id) {
+
+        Product product = productRepository
+                .findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Product not found")
+                );
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(List.of(product))
+                );
+
+        if (!isFromApprovedFarmer(product, profiles)) {
+            // Hidden from buyers — same 404 as a missing product
+            throw new RuntimeException("Product not found");
+        }
+
+        return toProductResponse(product);
+    }
+
+    // ==========================================
     // GET ALL PRODUCTS
     // ==========================================
 
@@ -296,19 +339,23 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products =
                 productRepository.findAll();
 
-        Map<Long, RatingStats> stats =
-                loadRatingStats(
-                        products.stream()
-                                .map(Product::getId)
-                                .toList()
-                );
-
         Map<String, FarmerProfile> profiles =
                 loadFarmerProfiles(
                         farmerEmailsOf(products)
                 );
 
-        return products.stream()
+        // Buyers only see products from APPROVED farmers
+        List<Product> approved =
+                filterApprovedProducts(products, profiles);
+
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        approved.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        return approved.stream()
                 .map(product ->
                         toProductResponse(product, stats, profiles)
                 )
@@ -356,19 +403,22 @@ public class ProductServiceImpl implements ProductService {
                 productRepository
                         .findByCategoryIgnoreCase(category);
 
-        Map<Long, RatingStats> stats =
-                loadRatingStats(
-                        products.stream()
-                                .map(Product::getId)
-                                .toList()
-                );
-
         Map<String, FarmerProfile> profiles =
                 loadFarmerProfiles(
                         farmerEmailsOf(products)
                 );
 
-        return products.stream()
+        List<Product> approved =
+                filterApprovedProducts(products, profiles);
+
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        approved.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        return approved.stream()
                 .map(product ->
                         toProductResponse(product, stats, profiles)
                 )
@@ -387,19 +437,22 @@ public class ProductServiceImpl implements ProductService {
                 productRepository
                         .findByNameContainingIgnoreCase(name);
 
-        Map<Long, RatingStats> stats =
-                loadRatingStats(
-                        products.stream()
-                                .map(Product::getId)
-                                .toList()
-                );
-
         Map<String, FarmerProfile> profiles =
                 loadFarmerProfiles(
                         farmerEmailsOf(products)
                 );
 
-        return products.stream()
+        List<Product> approved =
+                filterApprovedProducts(products, profiles);
+
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        approved.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        return approved.stream()
                 .map(product ->
                         toProductResponse(product, stats, profiles)
                 )
@@ -422,16 +475,24 @@ public class ProductServiceImpl implements ProductService {
         List<Product> products =
                 productRepository.findAllById(ids);
 
-        // Load rating stats for all requested products in one query
-        Map<Long, RatingStats> stats =
-                loadRatingStats(ids);
-
         Map<String, FarmerProfile> profiles =
                 loadFarmerProfiles(
                         farmerEmailsOf(products)
                 );
 
-        return products.stream()
+        // Wishlist lookups must not leak products of unverified farmers
+        List<Product> approved =
+                filterApprovedProducts(products, profiles);
+
+        // Load rating stats for all visible products in one query
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        approved.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        return approved.stream()
                 .map(product ->
                         toProductResponse(product, stats, profiles)
                 )
@@ -498,6 +559,56 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ==========================================
+    // HELPER — Assert the farmer is APPROVED (selling allowed)
+    // ==========================================
+
+    private void assertFarmerVerified(String email) {
+
+        FarmerProfile profile = farmerProfileRepository
+                .findByUserEmail(email)
+                .orElse(null);
+
+        if (profile == null || !profile.isApproved()) {
+            throw new RuntimeException(
+                    "Your farmer account has not been verified yet."
+            );
+        }
+    }
+
+    // ==========================================
+    // HELPER — Keep only products of APPROVED farmers
+    // ==========================================
+
+    private List<Product> filterApprovedProducts(
+            List<Product> products,
+            Map<String, FarmerProfile> profiles) {
+
+        return products.stream()
+                .filter(product ->
+                        isFromApprovedFarmer(product, profiles)
+                )
+                .toList();
+    }
+
+    private boolean isFromApprovedFarmer(
+            Product product,
+            Map<String, FarmerProfile> profiles) {
+
+        User farmer = product.getFarmer();
+
+        if (farmer == null) {
+            return false;
+        }
+
+        FarmerProfile profile =
+                profiles.get(farmer.getEmail());
+
+        return profile != null
+                && profile.getVerificationStatus()
+                == VerificationStatus.APPROVED;
+    }
+
+    // ==========================================
     // HELPER — Distinct farmer emails of a product list
     // ==========================================
 
@@ -534,8 +645,7 @@ public class ProductServiceImpl implements ProductService {
             if (profile != null) {
                 farmName = profile.getFarmName();
                 location = profile.getLocation();
-                farmerVerified =
-                        Boolean.TRUE.equals(profile.getVerified());
+                farmerVerified = profile.isApproved();
             }
         }
 

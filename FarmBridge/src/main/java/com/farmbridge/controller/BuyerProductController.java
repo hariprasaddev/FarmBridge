@@ -43,8 +43,9 @@ public class BuyerProductController {
     public ResponseEntity<ProductResponse> getProductById(
             @PathVariable Long id) {
 
+        // Buyer-visible lookup — products of unapproved farmers are hidden
         ProductResponse response =
-                productService.getProductById(id);
+                productService.getBuyerProductById(id);
 
         return ResponseEntity.ok(response);
     }

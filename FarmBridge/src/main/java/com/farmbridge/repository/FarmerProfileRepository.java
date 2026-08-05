@@ -1,6 +1,7 @@
 package com.farmbridge.repository;
 
 import com.farmbridge.entity.FarmerProfile;
+import com.farmbridge.entity.VerificationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -18,4 +19,9 @@ public interface FarmerProfileRepository
     // Batch lookup — used to avoid one query per product when
     // building ProductResponse lists (prevents N+1).
     List<FarmerProfile> findByUserEmailIn(Collection<String> emails);
+
+    // Verification workflow lookups
+    List<FarmerProfile> findByVerificationStatus(VerificationStatus status);
+
+    long countByVerificationStatus(VerificationStatus status);
 }

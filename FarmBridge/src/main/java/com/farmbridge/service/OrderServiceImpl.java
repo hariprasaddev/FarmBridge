@@ -3,11 +3,13 @@ package com.farmbridge.service;
 import com.farmbridge.dto.OrderRequest;
 import com.farmbridge.dto.OrderResponse;
 import com.farmbridge.dto.OrderStatusRequest;
+import com.farmbridge.entity.FarmerProfile;
 import com.farmbridge.entity.NotificationType;
 import com.farmbridge.entity.Order;
 import com.farmbridge.entity.OrderStatus;
 import com.farmbridge.entity.Product;
 import com.farmbridge.entity.User;
+import com.farmbridge.repository.FarmerProfileRepository;
 import com.farmbridge.repository.OrderRepository;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.UserRepository;
@@ -28,17 +30,20 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final FarmerProfileRepository farmerProfileRepository;
     private final NotificationService notificationService;
 
     public OrderServiceImpl(
             OrderRepository orderRepository,
             ProductRepository productRepository,
             UserRepository userRepository,
+            FarmerProfileRepository farmerProfileRepository,
             NotificationService notificationService) {
 
         this.orderRepository = orderRepository;
         this.productRepository = productRepository;
         this.userRepository = userRepository;
+        this.farmerProfileRepository = farmerProfileRepository;
         this.notificationService = notificationService;
     }
 
@@ -65,6 +70,9 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() ->
                         new RuntimeException("Product not found")
                 );
+
+        // Only APPROVED farmers may receive buyer orders
+        assertFarmerApproved(product.getFarmer().getEmail());
 
         // Buyers cannot order their own products
         if (product.getFarmer().getEmail().equals(buyerEmail)) {
@@ -125,6 +133,23 @@ public class OrderServiceImpl implements OrderService {
 
         // Return response
         return convertToResponse(savedOrder);
+    }
+
+    // ==========================================
+    // VERIFICATION HELPER
+    // ==========================================
+
+    private void assertFarmerApproved(String farmerEmail) {
+
+        FarmerProfile profile = farmerProfileRepository
+                .findByUserEmail(farmerEmail)
+                .orElse(null);
+
+        if (profile == null || !profile.isApproved()) {
+            throw new RuntimeException(
+                    "Your farmer account has not been verified yet."
+            );
+        }
     }
 
     // ==========================================
@@ -220,6 +245,9 @@ public class OrderServiceImpl implements OrderService {
             Long orderId,
             OrderStatusRequest request,
             String farmerEmail) {
+
+        // Only APPROVED farmers may manage received orders
+        assertFarmerApproved(farmerEmail);
 
         // Find the order
         Order order = orderRepository

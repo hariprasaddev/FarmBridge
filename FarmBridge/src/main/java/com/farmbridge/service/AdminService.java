@@ -29,6 +29,8 @@ public interface AdminService {
 
     FarmerVerificationResponse verifyFarmer(Long profileId);
 
+    FarmerVerificationResponse rejectFarmer(Long profileId, String reason);
+
     UserResponse updateUser(Long id, UserRequest request);
 
     void deleteUser(Long id);

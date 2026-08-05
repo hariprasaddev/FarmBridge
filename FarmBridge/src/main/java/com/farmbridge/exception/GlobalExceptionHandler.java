@@ -9,6 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -82,6 +83,26 @@ public class GlobalExceptionHandler {
     }
 
     // ==========================================
+    // HANDLE MISSING STATIC RESOURCES
+    // HTTP 404 — Not Found
+    // (Product images referenced in the DB but no longer
+    //  on disk must yield 404 so clients can fall back,
+    //  instead of being swallowed by the generic 500 handler.)
+    // ==========================================
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFound(
+            NoResourceFoundException ex) {
+
+        ErrorResponse response = new ErrorResponse(
+                HttpStatus.NOT_FOUND.value(),
+                "Resource not found"
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    // ==========================================
     // HANDLE OVERSIZED FILE UPLOADS
     // HTTP 413 — Payload Too Large
     // ==========================================
@@ -131,6 +152,11 @@ public class GlobalExceptionHandler {
         }
 
         String msg = message.toLowerCase();
+
+        // Unverified farmer blocked from selling → 403
+        if (msg.contains("not been verified")) {
+            return HttpStatus.FORBIDDEN;
+        }
 
         // Resource not found → 404
         if (msg.contains("not found")) {

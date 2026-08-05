@@ -2,6 +2,7 @@ package com.farmbridge.controller;
 
 import com.farmbridge.dto.AdminDashboardResponse;
 import com.farmbridge.dto.FarmerVerificationResponse;
+import com.farmbridge.dto.RejectVerificationRequest;
 import com.farmbridge.dto.OrderResponse;
 import com.farmbridge.dto.ProductResponse;
 import com.farmbridge.dto.UserRequest;
@@ -169,12 +170,27 @@ public class AdminController {
     }
 
     @PutMapping("/farmers/{profileId}/verify")
-    @Operation(summary = "Verify a farmer", description = "Marks a farmer profile as verified.")
+    @Operation(summary = "Approve a farmer", description = "Approves a farmer's verification request, unlocking product creation and order receiving.")
     public ResponseEntity<FarmerVerificationResponse> verifyFarmer(
             @PathVariable Long profileId) {
 
         FarmerVerificationResponse response =
                 adminService.verifyFarmer(profileId);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/farmers/{profileId}/reject")
+    @Operation(summary = "Reject a farmer", description = "Rejects a farmer's verification request with a mandatory reason stored on the profile.")
+    public ResponseEntity<FarmerVerificationResponse> rejectFarmer(
+            @PathVariable Long profileId,
+            @Valid @RequestBody RejectVerificationRequest request) {
+
+        FarmerVerificationResponse response =
+                adminService.rejectFarmer(
+                        profileId,
+                        request.getReason()
+                );
 
         return ResponseEntity.ok(response);
     }

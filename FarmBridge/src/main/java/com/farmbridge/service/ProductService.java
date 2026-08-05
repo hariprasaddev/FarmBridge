@@ -17,6 +17,9 @@ public interface ProductService {
 
     ProductResponse getProductById(Long id);
 
+    // Buyer-visible product lookup — 404 when the seller is not APPROVED
+    ProductResponse getBuyerProductById(Long id);
+
     List<ProductResponse> getAllProducts();
 
     List<ProductResponse> getMyProducts(String email);

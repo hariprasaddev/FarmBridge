@@ -10,6 +10,7 @@ import com.farmbridge.entity.FarmerProfile;
 import com.farmbridge.entity.Order;
 import com.farmbridge.entity.Role;
 import com.farmbridge.entity.User;
+import com.farmbridge.entity.VerificationStatus;
 import com.farmbridge.repository.FarmerProfileRepository;
 import com.farmbridge.repository.OrderRepository;
 import com.farmbridge.repository.ProductRepository;
@@ -52,10 +53,13 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public AdminDashboardResponse getStats() {
 
+        // Only PENDING requests count as "pending verification" —
+        // rejected requests need the farmer to resubmit first.
         long pendingVerifications =
-                farmerProfileRepository.findAll().stream()
-                        .filter(p -> !Boolean.TRUE.equals(p.getVerified()))
-                        .count();
+                farmerProfileRepository
+                        .countByVerificationStatus(
+                                VerificationStatus.PENDING
+                        );
 
         return new AdminDashboardResponse(
                 userRepository.count(),
@@ -140,8 +144,9 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public List<FarmerVerificationResponse> getUnverifiedFarmers() {
 
-        return farmerProfileRepository.findAll().stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getVerified()))
+        return farmerProfileRepository
+                .findByVerificationStatus(VerificationStatus.PENDING)
+                .stream()
                 .map(this::toVerificationResponse)
                 .toList();
     }
@@ -156,6 +161,29 @@ public class AdminServiceImpl implements AdminService {
                 );
 
         profile.setVerified(true);
+        profile.setVerificationStatus(VerificationStatus.APPROVED);
+        profile.setRejectionReason(null);
+
+        FarmerProfile savedProfile =
+                farmerProfileRepository.save(profile);
+
+        return toVerificationResponse(savedProfile);
+    }
+
+    @Override
+    public FarmerVerificationResponse rejectFarmer(
+            Long profileId,
+            String reason) {
+
+        FarmerProfile profile = farmerProfileRepository
+                .findById(profileId)
+                .orElseThrow(() ->
+                        new RuntimeException("Farmer profile not found")
+                );
+
+        profile.setVerified(false);
+        profile.setVerificationStatus(VerificationStatus.REJECTED);
+        profile.setRejectionReason(reason);
 
         FarmerProfile savedProfile =
                 farmerProfileRepository.save(profile);
@@ -201,9 +229,31 @@ public class AdminServiceImpl implements AdminService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
+                profile.getFullName(),
+                profile.getMobileNumber(),
+                profile.getAadhaarNumber(),
+                profile.getVillage(),
+                profile.getMandal(),
+                profile.getDistrict(),
+                profile.getState(),
                 profile.getFarmName(),
                 profile.getLocation(),
-                profile.getVerified()
+                profile.getFarmAddress(),
+                profile.getLandSize(),
+                profile.getSurveyNumber(),
+                profile.getCultivationMethod(),
+                profile.getCropsCultivated(),
+                profile.getFarmingExperience(),
+                profile.getFarmerPhotoUrl(),
+                profile.getLandCertificateUrl(),
+                profile.getFarmPhotoUrl(),
+                profile.getOrganicCertificateUrl(),
+                Boolean.TRUE.equals(profile.getVerified()),
+                profile.getVerificationStatus() != null
+                        ? profile.getVerificationStatus().name()
+                        : VerificationStatus.PENDING.name(),
+                profile.getRejectionReason(),
+                profile.getSubmittedAt()
         );
     }
 }
