@@ -24,19 +24,21 @@ Four complementary layers:
 
 ## 2. Backend Unit & Integration Tests (`./mvnw test`)
 
-**Current count: 60 test methods across 6 classes.**
+**Current count: 50 test methods across 6 classes.**
 
 | Test class | Methods | Coverage |
 |---|---|---|
-| `AnalyticsFlowIntegrationTest` | 10 | Admin/farmer/buyer analytics values + authorization matrix (403s) |
-| `EmailNotificationFlowIntegrationTest` | 15 | All 9 email flows (mocked `JavaMailSender`), audience filtering, SMTP-failure non-rollback, cleanup |
-| `FarmerVerificationFlowIntegrationTest` | 12 | Submit/resubmit, approve/reject-with-reason, 403 gates, document rules, buyer visibility |
-| `PasswordResetFlowIntegrationTest` | 9 | Forgot/reset lifecycle, enumeration safety, expiry, single-use tokens |
-| `SoftDeleteFlowIntegrationTest` | 13 | Deactivate → blocked everywhere → reactivate → restored; data preserved; admin guards |
+| `AnalyticsFlowIntegrationTest` | 8 | Admin/farmer/buyer analytics values + authorization matrix (403s) |
+| `EmailNotificationFlowIntegrationTest` | 13 | All 9 email flows (mocked `JavaMailSender`), audience filtering, SMTP-failure non-rollback, cleanup |
+| `FarmerVerificationFlowIntegrationTest` | 10 | Submit/resubmit, approve/reject-with-reason, 403 gates, document rules, buyer visibility |
+| `PasswordResetFlowIntegrationTest` | 7 | Forgot/reset lifecycle, enumeration safety, expiry, single-use tokens |
+| `SoftDeleteFlowIntegrationTest` | 11 | Deactivate → blocked everywhere → reactivate → restored; data preserved; admin guards |
 | `FramTrustApplicationTests` | 1 | Spring context loads |
 
-Historical progression (from DAY reports): 18 → 26 → 39 → 50 → **60**
-(methods were added beyond the counts reported on their milestone days).
+Historical progression (from the milestone reports in `docs/reports/`):
+18 → 26 → 39 → **50** (methods were added beyond the counts reported on
+their milestone days; the current total was verified as 50/50 in the
+Release Candidate validation).
 
 ---
 
@@ -44,8 +46,11 @@ Historical progression (from DAY reports): 18 → 26 → 39 → 50 → **60**
 
 - Runs against the running backend (`:8080`); asserts status codes, business
   rules, and data integrity via HTTP + DB reads.
-- **Last full run: 203 PASS / 0 FAIL** (Day 17 run, `backend_test_results_day17b.txt`);
-  the Day 16–21 milestones added more checks (verification +24, analytics +16,
+- **Last full run: 218 PASS / 0 FAIL** (Release Candidate validation run, 2026-08-06 —
+  [reports/ReleaseCandidateValidation.md](reports/ReleaseCandidateValidation.md));
+  the Day 17 run recorded 203 PASS / 0 FAIL
+  ([reports/AnalyticsDashboard.md](reports/AnalyticsDashboard.md)). The Day 16–21
+  milestones added more checks (verification +24, analytics +16,
   email/announcements, soft-delete lifecycle) — the suite has only grown.
 - Covers: authentication (21), farmer profile (6), farmer verification (25),
   products & images (25), orders (23), reviews (17), wishlist (11),
@@ -57,8 +62,8 @@ Historical progression (from DAY reports): 18 → 26 → 39 → 50 → **60**
 ## 4. Frontend Browser E2E Suite (`qa/uitest.js`)
 
 - Puppeteer browser automation against `:5173` (backend proxied to `:8080`).
-- **Last reported run: 56 PASS / 0 FAIL** (Day 20). Captures screenshots into
-  `qa/screenshots/`.
+- **Last reported run: 56 PASS / 0 FAIL** (Day 20 — [reports/EmailNotificationSystem.md](reports/EmailNotificationSystem.md)).
+  Captures screenshots into `qa/screenshots/`.
 - Covers: auth flows, buyer flows (browse, order, wishlist, reviews, dashboard),
   farmer flows (products, orders, verification), admin flows (users, products,
   orders, verification, announcements), analytics dashboards, protected routes.
@@ -109,7 +114,7 @@ Historical progression (from DAY reports): 18 → 26 → 39 → 50 → **60**
 
 - `./mvnw compile` — BUILD SUCCESS.
 - `./mvnw package -DskipTests` — jar built and runnable on `:8080`.
-- `./mvnw test` — 60/60 green (see §2).
+- `./mvnw test` — 50/50 green (see §2).
 
 ---
 

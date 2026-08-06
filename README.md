@@ -115,7 +115,7 @@ FarmBridge/                      # Repository root
   aggregated, real backend data served through single-payload endpoints.
 
 Interactive API documentation is available through Swagger UI
-(`http://localhost:8080/swagger-ui.html`) once the backend is running.
+(`http://localhost:8080/swagger-ui/index.html`) once the backend is running.
 
 ## Installation Steps
 
@@ -132,8 +132,9 @@ Interactive API documentation is available through Swagger UI
 3. Configure MySQL.
 
    - Create a database named `farmbridge`.
-   - Update the MySQL credentials in the application config
-     (`src/main/resources/application.properties`).
+   - Set the MySQL credentials via environment variables (`DB_URL`,
+     `DB_USERNAME`, `DB_PASSWORD`) or edit the defaults in
+     `src/main/resources/application.properties`.
 
 4. Run the Spring Boot application.
 
@@ -142,7 +143,7 @@ Interactive API documentation is available through Swagger UI
    ```
 
    The backend starts at `http://localhost:8080`. Swagger UI is available
-   at `http://localhost:8080/swagger-ui.html`.
+   at `http://localhost:8080/swagger-ui/index.html`.
 
 ### Frontend Setup
 
@@ -168,64 +169,44 @@ Interactive API documentation is available through Swagger UI
 
 ## Screenshots
 
-### Login Page
-
-![Login Page](screenshots/login-page.png)
-
-### Register Page
-
-![Register Page](screenshots/register-page.png)
+> Screenshots are captured by the automated browser E2E suite
+> (`qa/uitest.js`) and stored in `qa/screenshots/`.
 
 ### Farmer Dashboard
 
-![Farmer Dashboard](screenshots/farmer-dashboard.png)
+![Farmer Dashboard](qa/screenshots/farmer-dashboard.png)
 
 ### Buyer Products
 
-![Buyer Products](screenshots/buyer-products.png)
-
-### Add Product
-
-![Add Product](screenshots/add-product.png)
+![Buyer Products](qa/screenshots/buyer-verified-badge.png)
 
 ### Buyer Orders
 
-![Buyer Orders](screenshots/buyer-orders.png)
+![Buyer Orders](qa/screenshots/buyer-orders.png)
 
 ### Farmer Orders
 
-![Farmer Orders](screenshots/farmer-orders.png)
+![Farmer Orders](qa/screenshots/farmer-orders.png)
 
 ### Admin Dashboard
 
-![Admin Dashboard](screenshots/admin-dashboard.png)
-
-### Admin Users
-
-![Admin Users](screenshots/admin-users.png)
-
-### Swagger UI
-
-![Swagger UI](screenshots/swagger-ui.png)
+![Admin Dashboard](qa/screenshots/admin-dashboard.png)
 
 ### Admin Analytics Dashboard
 
-![Admin Analytics Dashboard](screenshots/admin-analytics.png)
+![Admin Analytics Dashboard](qa/screenshots/admin-analytics.png)
 
 ### Farmer Analytics Dashboard
 
-![Farmer Analytics Dashboard](screenshots/farmer-analytics.png)
+![Farmer Analytics Dashboard](qa/screenshots/farmer-analytics.png)
 
 ### Buyer Analytics Dashboard
 
-![Buyer Analytics Dashboard](screenshots/buyer-analytics.png)
+![Buyer Analytics Dashboard](qa/screenshots/buyer-analytics.png)
 
 ## Future Enhancements
 
-- Payment Gateway
-- Email Notifications
-- Image Upload
-- Reviews & Ratings
+- Payment Gateway / shopping cart
 - AI Crop Recommendation
 
 ## Author

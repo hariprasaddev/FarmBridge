@@ -1,4 +1,8 @@
-# Day 21 — Enterprise Soft Delete (User Deactivation / Reactivation) — Final Report
+# Enterprise Soft Delete — Milestone Report
+
+> **Day:** Day 21 · **Date:** 2026-08-06
+> **Report:** `docs/reports/SoftDelete.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 21
 
 ## Overview
 
@@ -13,7 +17,7 @@ FarmBridge now uses **enterprise soft delete**: deactivating a user **never remo
 | File | Purpose |
 |---|---|
 | `src/test/java/com/farmbridge/SoftDeleteFlowIntegrationTest.java` | 11 end-to-end tests proving the full lifecycle: deactivate → blocked everywhere → reactivate → access restored (see §6) |
-| `docs/DAY21_SOFT_DELETE_REPORT.md` | This report |
+| `docs/reports/SoftDelete.md` | This report |
 
 ---
 

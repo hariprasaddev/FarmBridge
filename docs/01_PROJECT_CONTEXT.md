@@ -3,7 +3,7 @@
 > **Document Version:** 2.0
 > **Last Updated:** 2026-08-06
 > **Framework:** TrainingMug AI Development Framework (ADF) v1.0
-> **Status:** ✅ Fully aligned with the current source code (Day 22 ADF compliance pass)
+> **Status:** ✅ Fully aligned with the current source code (Day 22 ADF compliance pass — see [reports/ADFCompliance.md](reports/ADFCompliance.md))
 
 ---
 
@@ -156,7 +156,8 @@ Self-registration cannot create ADMIN accounts (admins are seeded manually).
 
 ```
 FarmBridge/
-├── docs/                          # ADF documentation (01–11 + day reports)
+├── docs/                          # ADF documentation (01–11)
+│   └── reports/                   # Milestone reports (Day 16 → latest)
 ├── qa/                            # QA scripts, results, screenshots
 ├── FarmBridge/                    # Backend (Spring Boot / Maven)
 │   ├── src/main/java/com/farmbridge/
@@ -170,7 +171,7 @@ FarmBridge/
 │   │   ├── service/               # Business logic (interface + impl per module)
 │   │   └── FarmBridgeApplication.java
 │   ├── src/main/resources/application.properties
-│   ├── src/test/java/com/farmbridge/   # 6 test classes (60 test methods)
+│   ├── src/test/java/com/farmbridge/   # 6 test classes (50 test methods)
 │   ├── pom.xml
 │   └── frontend/                  # React SPA (Vite)
 │       └── src/
@@ -269,18 +270,18 @@ Understand Requirement
 
 AI tools are used as engineering assistants. All AI-generated code is
 reviewed, understood, tested, and verified before inclusion. Each working day
-ends with a **DAY report** in `docs/` capturing files created/modified,
-business rules, test results, and bugs found & fixed.
+ends with a milestone report in `docs/reports/` capturing files
+created/modified, business rules, test results, and bugs found & fixed.
 
 ---
 
 ## 13. Current Project Status
 
 - **Backend:** complete — all major modules implemented, `./mvnw compile` and
-  `./mvnw test` green (60 test methods across 6 classes).
+  `./mvnw test` green (50 test methods across 6 classes).
 - **Frontend:** complete — production build clean (`npm run build`), browser
   E2E suite green (56 checks).
-- **QA:** `qa/backend_test.sh` E2E suite green (203+ checks), `qa/uitest.js`
+- **QA:** `qa/backend_test.sh` E2E suite green (218+ checks), `qa/uitest.js`
   green (56 checks).
 - **Documentation:** ADF docs 01–11 present and aligned (this compliance pass).
 - **Remaining:** Docker & Docker Compose (Phase 12), CI/CD, cloud deployment,

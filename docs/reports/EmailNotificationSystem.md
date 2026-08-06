@@ -1,4 +1,8 @@
-# Day 20 — Enterprise Email Notification System — Final Report
+# Email Notification System — Milestone Report
+
+> **Day:** Day 20 · **Date:** 2026-08-06
+> **Report:** `docs/reports/EmailNotificationSystem.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 20
 
 ## Overview
 

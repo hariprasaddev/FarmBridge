@@ -116,11 +116,11 @@ Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 | ID | Requirement | Status | Evidence |
 |---|---|---|---|
 | FR-AUTH-01 | Register with name, email, password, role (ADMIN/FARMER/BUYER) | ✅ | `AuthController.register()` |
-| FR-AUTH-02 | Duplicate email handled ("Email already exists", 200) | ✅ | `userRepository.existsByEmail()` |
+| FR-AUTH-02 | Duplicate email handled ("Email already exists", 409 Conflict) | ✅ | `userRepository.existsByEmail()` |
 | FR-AUTH-03 | Passwords hashed with BCrypt | ✅ | `BCryptPasswordEncoder` |
 | FR-AUTH-04 | Login with email + password returns JWT | ✅ | `AuthController.login()` |
 | FR-AUTH-05 | JWT contains email + role, expires after 1 hour | ✅ | `JwtUtil.generateToken()` |
-| FR-AUTH-06 | Invalid/expired JWT → 401 | ✅ | `JwtAuthFilter` |
+| FR-AUTH-06 | Missing/invalid/expired JWT → 403 (401 + `WWW-Authenticate` planned as production hardening) | ✅ | `JwtAuthFilter` |
 | FR-AUTH-07 | Self-registration of ADMIN blocked | ✅ | `AuthServiceImpl` |
 | FR-AUTH-08 | Forgot password → enumeration-safe generic response + reset email | ✅ | `PasswordResetService` |
 | FR-AUTH-09 | Reset password with single-use 15-minute token | ✅ | `PasswordResetServiceImpl` |
@@ -228,7 +228,7 @@ Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 | FR-SYS-02 | Jakarta validation on all request DTOs | ✅ | `@Valid` everywhere |
 | FR-SYS-03 | Structured error responses | ✅ | `GlobalExceptionHandler` |
 | FR-SYS-04 | Health/test endpoint | ✅ | `GET /api/test` |
-| FR-SYS-05 | Sensitive config via env vars | ⚠️ | SMTP fully env-based; DB password + JWT secret still hardcoded |
+| FR-SYS-05 | Sensitive config via env vars | ✅ | SMTP, DB and JWT secrets read from env vars (local dev defaults for convenience) |
 | FR-SYS-06 | Swagger/OpenAPI docs | ✅ | `/swagger-ui`, `/v3/api-docs` |
 
 ---
@@ -248,7 +248,7 @@ Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 | NFR-SEC-07 | No stack traces exposed to clients | ✅ (generic 500 via handler) |
 | NFR-SEC-08 | Enumeration-safe forgot-password | ✅ |
 | NFR-SEC-09 | Admin self/last-admin lockout protection | ✅ |
-| NFR-SEC-10 | Credentials not hardcoded | ⚠️ SMTP ✅; DB password + JWT secret hardcoded locally |
+| NFR-SEC-10 | Credentials not hardcoded | ✅ SMTP, DB and JWT secrets read from env vars (local dev defaults) |
 
 ### 7.2 Performance (NFR-PERF)
 
@@ -276,7 +276,7 @@ Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 | NFR-MAINT-01 | Consistent layered architecture | ✅ |
 | NFR-MAINT-02 | Business logic in services, not controllers | ✅ |
 | NFR-MAINT-03 | DTO-level validation | ✅ |
-| NFR-MAINT-04 | Unit + integration tests | ✅ 60 backend test methods |
+| NFR-MAINT-04 | Unit + integration tests | ✅ 50 backend test methods |
 | NFR-MAINT-05 | API documentation (Swagger + docs) | ✅ |
 | NFR-MAINT-06 | Schema managed via JPA `ddl-auto` | ✅ |
 
@@ -334,7 +334,7 @@ Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 | AC-NOTIF-01 | Notifications appear on order events; read/unread, mark-read, delete, clear-all work; isolation enforced. |
 | AC-ADMIN-01 | Admin stats, user/product/order lists, verification approve/reject, announcements, and soft-delete/reactivate all work; self/last-admin protection returns 400. |
 | AC-ANALYTICS-01 | Each role sees only its own analytics payload; 403 for wrong roles; revenue = COMPLETED orders. |
-| AC-SYS-01 | `./mvnw test` green (60 methods); `npm run build` clean; `qa/backend_test.sh` and `qa/uitest.js` green. |
+| AC-SYS-01 | `./mvnw test` green (50 methods); `npm run build` clean; `qa/backend_test.sh` and `qa/uitest.js` green. |
 
 ---
 

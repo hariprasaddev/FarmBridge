@@ -3,11 +3,11 @@
 > **Document Version:** 1.3  
 > **Last Updated:** 2026-08-06  
 > **Framework:** TrainingMug ADF v1.0  
-> **Status:** ✅ Based on actual source code inspection (Day 22 ADF compliance pass)  
-> **Day 16 update:** Added the Farmer Verification Workflow (submit / resubmit, approve, reject-with-reason, product gating, buyer visibility filtering).  
-> **Day 17 update:** Added the Analytics module — 10 role-scoped dashboard endpoints with server-side aggregation (cards, charts and tables) for ADMIN, FARMER and BUYER dashboards. Revenue is defined as COMPLETED-order value.  
-> **Day 20 update:** Added the Email Notification System — admin announcements (send + history) and the optional `reason` on order status updates.  
-> **Day 21 update:** Added Enterprise Soft Delete — `DELETE /api/admin/users/{id}` / `/api/users/{id}` now deactivate (`active=false`) and `PUT .../reactivate` restores.  
+> **Status:** ✅ Based on actual source code inspection (Day 22 ADF compliance pass — [reports/ADFCompliance.md](reports/ADFCompliance.md))  
+> **Day 16 update:** Added the Farmer Verification Workflow (submit / resubmit, approve, reject-with-reason, product gating, buyer visibility filtering) — [reports/FarmerVerification.md](reports/FarmerVerification.md).  
+> **Day 17 update:** Added the Analytics module — 10 role-scoped dashboard endpoints with server-side aggregation (cards, charts and tables) for ADMIN, FARMER and BUYER dashboards. Revenue is defined as COMPLETED-order value — [reports/AnalyticsDashboard.md](reports/AnalyticsDashboard.md).  
+> **Day 20 update:** Added the Email Notification System — admin announcements (send + history) and the optional `reason` on order status updates — [reports/EmailNotificationSystem.md](reports/EmailNotificationSystem.md).  
+> **Day 21 update:** Added Enterprise Soft Delete — `DELETE /api/admin/users/{id}` / `/api/users/{id}` now deactivate (`active=false`) and `PUT .../reactivate` restores — [reports/SoftDelete.md](reports/SoftDelete.md).  
 > **Day 22 update:** Full audit — every endpoint in the source code is now documented (74 total), including Reviews, Wishlist, Notifications, Password Reset, Product Images and category filtering.
 
 ---
@@ -76,9 +76,15 @@ The JWT token contains:
 |---|---|
 | `200 OK` | Request succeeded |
 | `400 Bad Request` | Validation failed (missing or invalid fields) |
-| `401 Unauthorized` | No JWT or invalid/expired JWT |
-| `403 Forbidden` | Authenticated but wrong role |
+| `403 Forbidden` | Missing, invalid, or expired JWT; authenticated but wrong role |
+| `409 Conflict` | Duplicate / already-in-use (e.g. duplicate email, duplicate wishlist entry) |
 | `500 Internal Server Error` | Server-side error (exception thrown) |
+
+> **Note on missing / invalid / expired JWTs:** these currently return **403**
+> (Spring Security's default entry point — no `AuthenticationEntryPoint` is
+> configured). Returning **401** with a `WWW-Authenticate: Bearer` header is
+> documented as a **Docker / Production hardening task** and is deliberately
+> not implemented in this sprint.
 
 > **Note:** A global exception handler (`@ControllerAdvice` via `GlobalExceptionHandler`) maps business errors and validation failures to structured `ErrorResponse` bodies — see [§7 Error Response Format](#7-error-response-format).
 
@@ -98,7 +104,7 @@ This section documents every REST endpoint that is actually implemented in the s
 |---|---|
 | **Endpoint** | `/api/auth/register` |
 | **HTTP Method** | `POST` |
-| **Description** | Creates a new user account. Supports ADMIN, FARMER, and BUYER roles. |
+| **Description** | Creates a new user account. FARMER and BUYER roles only — ADMIN self-registration is blocked (400). |
 | **Authentication** | Public (no JWT required) |
 
 **Request Body:**
@@ -117,7 +123,7 @@ This section documents every REST endpoint that is actually implemented in the s
 | `name` | String | ✅ Yes | Cannot be blank |
 | `email` | String | ✅ Yes | Valid email format, cannot be blank |
 | `password` | String | ✅ Yes | Cannot be blank |
-| `role` | String (enum) | No | `ADMIN`, `FARMER`, or `BUYER`. If omitted, defaults to `null` (will cause DB error) |
+| `role` | String (enum) | No | `FARMER` or `BUYER`. If omitted (or set to `ADMIN`), registration is rejected with **400** `"Only FARMER and BUYER accounts can be created through registration"` |
 
 **Success Response (200 OK):**
 
@@ -127,11 +133,9 @@ User Registered Successfully
 
 **Error Responses:**
 
-- **400 Bad Request** — Validation errors (missing fields, invalid email)
-- **200 OK** — Returns the string `"Email already exists"` if the email is already registered (returned as a 200 success response, not an error — see note below)
-- **500 Internal Server Error** — Role is null (database constraint violation), or other server errors
-
-> ⚠️ **Note on duplicate email:** The current implementation returns `200 OK` with body `"Email already exists"` rather than throwing an error. The `role` field has no `@NotNull` validation annotation; if omitted it defaults to `null` and causes a database constraint violation (`500`).
+- **400 Bad Request** — Validation errors (missing fields, invalid email), or role omitted / set to `ADMIN`
+- **409 Conflict** — `"Email already exists"` when the email is already registered (structured `ErrorResponse` body)
+- **500 Internal Server Error** — Other server errors
 
 **Sample cURL:**
 
@@ -191,8 +195,9 @@ curl -X POST http://localhost:8080/api/auth/register \
 
 **Error Responses:**
 
-- **400 Bad Request** — Validation errors
-- **500 Internal Server Error** — Invalid email or password (returns `RuntimeException` message)
+- **400 Bad Request** — Validation errors, or invalid email/password (identical `"Invalid email or password"` for unknown email and wrong password — no account enumeration)
+- **403 Forbidden** — Account deactivated (soft delete): `"Your account has been deactivated…"`
+- **500 Internal Server Error** — Other server errors
 
 **Sample cURL:**
 

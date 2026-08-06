@@ -1,6 +1,8 @@
-# Day 16 — Farmer Verification Workflow (End-to-End) — Milestone Report
+# Farmer Verification — Milestone Report
 
-> **Date:** 2026-08-05
+> **Day:** Day 16 · **Date:** 2026-08-05
+> **Report:** `docs/reports/FarmerVerification.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 16
 > **Module:** Farmer Verification (registration → submission → admin approval → selling)
 > **Status:** ✅ Complete — all builds and test suites green
 

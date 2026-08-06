@@ -1,4 +1,8 @@
-# Day 17 — Professional Analytics Dashboards (End-to-End)
+# Analytics Dashboards — Milestone Report
+
+> **Day:** Day 17 · **Date:** 2026-08-05
+> **Report:** `docs/reports/AnalyticsDashboard.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 17
 
 **Milestone:** Convert the CRUD dashboards into production-grade business
 dashboards — every card, chart, and table fed by **real backend data** via
@@ -44,7 +48,7 @@ aggregated, single-payload analytics APIs. No dummy values, no fake charts.
 | `src/test/java/com/farmbridge/AnalyticsFlowIntegrationTest.java` | 8 integration tests — values + authorization matrix |
 | `qa/backend_test.sh` *(extended)* | +16 backend E2E analytics checks |
 | `qa/uitest.js` *(extended)* | +13 browser E2E dashboard checks + 3 screenshots |
-| `docs/DAY17_ANALYTICS_DASHBOARD_REPORT.md` | This report |
+| `docs/reports/AnalyticsDashboard.md` | This report |
 
 ---
 

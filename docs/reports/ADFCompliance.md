@@ -1,6 +1,8 @@
-# Day 22 — ADF Documentation Compliance — Final Report
+# ADF Documentation Compliance — Milestone Report
 
-> **Date:** 2026-08-06
+> **Day:** Day 22 · **Date:** 2026-08-06
+> **Report:** `docs/reports/ADFCompliance.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 22
 > **Scope:** Documentation only. **No code, API, database, or frontend
 > behavior changes.** The project is now aligned with the TrainingMug AI
 > Development Framework (ADF) documentation process, ready for Phase 12
@@ -22,12 +24,12 @@
 
 | File | Content |
 |---|---|
-| `docs/07_TASKS.md` | Day-by-day project history (Day 1–21 + Day 22), git-log reconstruction, completed workstreams, remaining phases |
+| `docs/07_TASKS.md` | Master project timeline — concise day-by-day history (Day 1–24) with links to the detailed milestone reports in `docs/reports/` |
 | `docs/08_CODING_STANDARDS.md` | Naming, DTO/repository/service/controller rules, validation, exceptions, logging, security, testing rules, git commit style |
-| `docs/09_TESTING.md` | Test strategy, 60 backend test methods, QA suites (203+ / 56), Swagger + Postman verification, builds, known limitations |
+| `docs/09_TESTING.md` | Test strategy, 50 backend test methods, QA suites (218+ / 56), Swagger + Postman verification, builds, known limitations |
 | `docs/10_DEPLOYMENT.md` | **Documentation-only** deployment plan: Docker, Compose, env vars, CI/CD, Azure/Vercel, health checks, rollback |
 | `docs/11_PROMPTS.md` | AI prompt history organized by day (Days 1–22) |
-| `docs/DAY22_ADF_COMPLIANCE_REPORT.md` | This report |
+| `docs/reports/ADFCompliance.md` | This report |
 
 ## 3. Files Updated (TASKS 3–8)
 
@@ -61,8 +63,8 @@
 | 10 Deployment | ✅ Created (documentation only) |
 | 11 Prompts | ✅ Created |
 
-All docs cross-reference each other and the Day 16–21 reports; no duplicate
-documentation was created.
+All docs cross-reference each other and the Day 16–21 milestone reports in
+`docs/reports/`; no duplicate documentation was created.
 
 ## 6. Remaining ADF Phases
 
@@ -77,7 +79,7 @@ documentation was created.
 | Dimension | Score | Notes |
 |---|---|---|
 | Completeness (docs 01–11) | **100%** | All 11 ADF documents present and aligned |
-| Accuracy vs. code | **96%** | 74/74 endpoints, 9/9 tables, 60/60 test methods audited; only open item is the documented product-search endpoint gap (a real code gap, correctly marked) |
+| Accuracy vs. code | **96%** | 74/74 endpoints, 9/9 tables, 50/50 test methods audited; only open item is the documented product-search endpoint gap (a real code gap, correctly marked) |
 | Consistency | **High** | Shared terminology, cross-references, DAY-report reuse |
 | Verification | **Pass** | `git status` → **no code changes** (working tree clean for source); only `docs/` modified |
 

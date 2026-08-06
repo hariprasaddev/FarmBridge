@@ -1,4 +1,8 @@
-# Day 18 — Enterprise UI/UX Redesign · Phase 1 (Global Design System)
+# Enterprise UI · Phase 1 (Global Design System) — Milestone Report
+
+> **Day:** Day 18 · **Date:** 2026-08-05
+> **Report:** `docs/reports/EnterpriseUIPhase1.md`
+> **Master timeline:** [`docs/07_TASKS.md`](../07_TASKS.md) — Day 18
 
 **Scope:** Create a production-grade, reusable design system and a unified
 enterprise app shell (sidebar + top navbar) — **without touching any backend

@@ -176,7 +176,7 @@ domain needs dedicated handling (e.g. `NotificationAccessDeniedException`).
 - QA: `qa/backend_test.sh` (live HTTP E2E, assert + note based) and
   `qa/uitest.js` (Puppeteer browser E2E with screenshots).
 - New features are not "done" until backend tests + QA suites + `npm run build`
-  are green and the DAY report is written.
+  are green and the milestone report is written in `docs/reports/`.
 
 ---
 
