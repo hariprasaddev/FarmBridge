@@ -1,394 +1,349 @@
-# FarmBridge - Database Design
+# FarmBridge — Database Design
+
+> **Document Version:** 2.0
+> **Last Updated:** 2026-08-06
+> **Framework:** TrainingMug ADF v1.0
+> **Status:** ✅ Aligned with the current JPA entities (9 tables)
+
+---
 
 ## 1. Database Technology
 
-FarmBridge uses MySQL as the relational database.
+- **MySQL 8+** relational database (`farmbridge` schema, local dev).
+- **Spring Data JPA + Hibernate**; schema managed by JPA entities with
+  `spring.jpa.hibernate.ddl-auto=update`.
+- All entity relationships are JPA-mapped; foreign keys are enforced by
+  Hibernate-generated DDL.
 
-The backend uses:
-
-- Spring Data JPA
-- Hibernate
-- Jakarta Persistence API (JPA)
-
-Database tables are mapped to Java entities using JPA annotations.
-
----
-
-## 2. Database Tables
-
-The current system contains the following main entities:
-
-- users
-- farmer_profiles
-- products
-- orders
+> **Note on table naming:** FarmBridge has **no** separate `order_items` or
+> `farmer_verification` tables. Orders reference a single product directly
+> (`orders.product_id`), and all verification data lives on the
+> `farmer_profiles` row. The tables below are the complete set.
 
 ---
 
-## 3. Users Table
+## 2. Table Inventory
 
-The `users` table stores information about all registered users.
+| # | Table | Purpose | Mapped entity |
+|---|---|---|---|
+| 1 | `users` | Registered accounts (all roles) | `User` |
+| 2 | `farmer_profiles` | Farmer details + verification data | `FarmerProfile` |
+| 3 | `products` | Product listings (incl. image) | `Product` |
+| 4 | `orders` | Buyer orders | `Order` |
+| 5 | `reviews` | Product reviews & ratings | `Review` |
+| 6 | `wishlist` | Saved products per buyer | `Wishlist` |
+| 7 | `notifications` | In-app notifications | `Notification` |
+| 8 | `password_reset_tokens` | Password-reset tokens | `PasswordResetToken` |
+| 9 | `announcements` | Admin email-announcement history | `Announcement` |
 
-### Columns
+Enums (stored as strings, `EnumType.STRING`):
 
-| Column | Type | Description |
-|---|---|---|
-| id | BIGINT | Primary key |
-| name | VARCHAR | User's name |
-| email | VARCHAR | Unique user email |
-| password | VARCHAR | Encrypted password |
-| role | VARCHAR | User role |
-
-### Roles
-
-The supported roles are:
-
-- ADMIN
-- FARMER
-- BUYER
-
-The role is stored as a string using JPA EnumType.STRING.
-
----
-
-## 4. Farmer Profiles Table
-
-The `farmer_profiles` table stores additional information about farmers.
-
-### Columns
-
-| Column | Type | Description |
-|---|---|---|
-| id | BIGINT | Primary key |
-| farmName | VARCHAR | Name of the farm |
-| location | VARCHAR | Farm location |
-| landSize | DOUBLE | Size of agricultural land |
-| cultivationMethod | VARCHAR | Method used for cultivation |
-| cropsCultivated | VARCHAR | Crops cultivated by the farmer |
-| farmingType | VARCHAR | Type of farming |
-| user_id | BIGINT | Reference to users table |
-
-### Relationship
-
-A FarmerProfile has a one-to-one relationship with User.
-
-Relationship:
-
-User
-1
-│
-│
-1
-│
-FarmerProfile
-
-The `user_id` column connects the farmer profile with the corresponding user.
+- `Role`: `ADMIN`, `FARMER`, `BUYER`
+- `OrderStatus`: `PENDING`, `ACCEPTED`, `REJECTED`, `COMPLETED`
+- `VerificationStatus`: `PENDING`, `APPROVED`, `REJECTED`
+- `NotificationType`: `NEW_ORDER`, `ORDER_ACCEPTED`, `ORDER_REJECTED`,
+  `ORDER_COMPLETED`, `ADMIN_MESSAGE`
+- `AnnouncementAudience`: `ALL`, `BUYERS`, `FARMERS`
 
 ---
 
-## 5. Products Table
+## 3. users
 
-The `products` table stores agricultural products listed by farmers.
+**Purpose:** Every registered account — admin, farmer, and buyer. Includes the
+enterprise soft-delete flag.
 
-### Columns
+**Columns**
 
-| Column | Type | Description |
-|---|---|---|
-| id | BIGINT | Primary key |
-| name | VARCHAR | Product name |
-| description | VARCHAR | Product description |
-| price | DOUBLE | Product price |
-| quantity | INTEGER | Available quantity |
-| category | VARCHAR | Product category |
-| farmer_id | BIGINT | Farmer who owns the product |
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK, IDENTITY) | No | Primary key |
+| `name` | VARCHAR(255) | No | Display name |
+| `email` | VARCHAR(255) | No | Login email — **unique** |
+| `password` | VARCHAR(255) | No | BCrypt hash |
+| `role` | VARCHAR (enum) | No | `ADMIN` / `FARMER` / `BUYER` |
+| `created_at` | DATETIME | Yes | Registration time (`@PrePersist`); legacy rows NULL |
+| `active` | BOOLEAN | No | Soft-delete flag; default `TRUE` (`BOOLEAN DEFAULT TRUE`) |
 
-### Relationship
+**Indexes:** unique index on `email`.
 
-Many products can belong to one farmer.
+**Constraints:** `name`, `email`, `password`, `role`, `active` NOT NULL; email
+unique.
 
-Relationship:
+**Relationships:** 1:1 → `farmer_profiles` (via `user_id`); 1:N → `products`
+(farmer), `orders` (buyer & farmer), `reviews` (buyer), `wishlist` (buyer),
+`notifications` (recipient), `password_reset_tokens` (user).
 
-Farmer
-1
-│
-│
-├── Product
-├── Product
-└── Product
-
-The `farmer_id` column connects each product to the farmer who created it.
+**Used by:** Authentication, admin user management, analytics (registration
+trends, active/inactive counts), soft delete.
 
 ---
 
-## 6. Orders Table
+## 4. farmer_profiles
 
-The `orders` table stores orders placed by buyers.
+**Purpose:** Additional farmer information and the full verification workflow
+(personal, farm, cultivation details, documents, status).
 
-### Columns
+**Columns**
 
-| Column | Type | Description |
-|---|---|---|
-| id | BIGINT | Primary key |
-| product_id | BIGINT | Product being ordered |
-| buyer_id | BIGINT | Buyer who placed the order |
-| farmer_id | BIGINT | Farmer who owns the product |
-| quantity | INTEGER | Quantity ordered |
-| totalPrice | DOUBLE | Total order price |
-| status | VARCHAR | Current order status |
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `full_name` | VARCHAR(255) | Yes | Verified full name |
+| `mobile_number` | VARCHAR(255) | Yes | 10-digit mobile |
+| `aadhaar_number` | VARCHAR(255) | Yes | Optional Aadhaar |
+| `village`, `mandal`, `district`, `state` | VARCHAR(255) | Yes | Address parts |
+| `farm_name` | VARCHAR(255) | Yes | Farm display name |
+| `location` | VARCHAR(255) | Yes | Human-readable location (compat) |
+| `farm_address` | VARCHAR(255) | Yes | Farm address |
+| `land_size` | DOUBLE | Yes | Farm size (acres; legacy name kept) |
+| `survey_number` | VARCHAR(255) | Yes | Optional survey number |
+| `cultivation_method` | VARCHAR(255) | Yes | `ORGANIC`/`NATURAL`/`CHEMICAL`/`MIXED` |
+| `crops_cultivated` | VARCHAR(255) | Yes | Main crops (legacy name kept) |
+| `farming_experience` | VARCHAR(255) | Yes | Years of experience |
+| `farming_type` | VARCHAR(255) | Yes | Farming type (legacy) |
+| `farmer_photo_url`, `land_certificate_url`, `farm_photo_url`, `organic_certificate_url` | VARCHAR(255) | Yes | Public `/uploads/...` document URLs |
+| `verified` | BOOLEAN | Yes | `TRUE` only when APPROVED (kept in sync) |
+| `verification_status` | VARCHAR (enum) | No | `PENDING`/`APPROVED`/`REJECTED`; default PENDING |
+| `rejection_reason` | VARCHAR(1000) | Yes | Admin reason (only when REJECTED) |
+| `submitted_at` | DATETIME | Yes | Last (re)submission time |
+| `user_id` | BIGINT (FK) | No | → `users.id` (1:1) |
 
----
+**Indexes:** FK index on `user_id`.
 
-## 7. Order Status
+**Constraints:** `user_id` NOT NULL + unique (1:1); `verification_status` NOT
+NULL.
 
-The order status is stored as a string enum.
+**Relationships:** 1:1 with `users`.
 
-Available statuses:
-
-- PENDING
-- ACCEPTED
-- REJECTED
-- COMPLETED
-
-Order flow:
-
-PENDING
-│
-├── ACCEPTED
-│      │
-│      ▼
-│   COMPLETED
-│
-└── REJECTED
-
----
-
-## 8. Entity Relationships
-
-### User and FarmerProfile
-
-Relationship:
-
-One User
-↓
-One FarmerProfile
-
-Purpose:
-
-Stores additional farmer information for a farmer user.
+**Used by:** Farmer profile pages, verification workflow (submit/get/approve/
+reject), product responses (verified flag), analytics (verified farmers,
+pending list).
 
 ---
 
-### User and Product
+## 5. products
 
-Relationship:
+**Purpose:** Agricultural product listings created by farmers.
 
-One Farmer
-↓
-Many Products
+**Columns**
 
-Purpose:
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `name` | VARCHAR(255) | Yes | Product name |
+| `description` | VARCHAR(255) | Yes | Description |
+| `price` | DOUBLE | Yes | Unit price |
+| `quantity` | INTEGER | Yes | Available stock |
+| `category` | VARCHAR(255) | Yes | Category (e.g. Grains) |
+| `image_url` | VARCHAR(255) | Yes | Public image URL |
+| `farmer_id` | BIGINT (FK) | Yes | → `users.id` (owner) |
 
-A farmer can create and manage multiple agricultural products.
+**Indexes:** FK index on `farmer_id`.
 
----
+**Constraints:** logical NOT NULL via service/DTO validation (name, price ≥ 1,
+quantity ≥ 1, category).
 
-### Product and Order
+**Relationships:** N:1 → `users` (farmer); 1:N → `orders`, `reviews`,
+`wishlist`.
 
-Relationship:
-
-One Product
-↓
-Many Orders
-
-Purpose:
-
-A product can be ordered by buyers through multiple orders.
-
----
-
-### User and Order - Buyer
-
-Relationship:
-
-One Buyer
-↓
-Many Orders
-
-Purpose:
-
-A buyer can place multiple orders.
+**Used by:** Farmer product CRUD + images, buyer browse/details/category,
+admin oversight, wishlist, reviews, analytics (top products, low stock,
+category counts, sales per product).
 
 ---
 
-### User and Order - Farmer
+## 6. orders
 
-Relationship:
+**Purpose:** Buyer orders; each order references one product, one buyer, and
+one farmer, with the order status lifecycle.
 
-One Farmer
-↓
-Many Orders
+**Columns**
 
-Purpose:
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `product_id` | BIGINT (FK) | No | → `products.id` |
+| `buyer_id` | BIGINT (FK) | No | → `users.id` |
+| `farmer_id` | BIGINT (FK) | No | → `users.id` |
+| `quantity` | INTEGER | No | Quantity ordered |
+| `total_price` | DOUBLE | No | price × quantity |
+| `status` | VARCHAR (enum) | No | `PENDING`/`ACCEPTED`/`REJECTED`/`COMPLETED` |
+| `created_at` | DATETIME | Yes | Placed time (`@PrePersist`); legacy rows NULL |
 
-A farmer can receive multiple orders for products they own.
+**Indexes:** FK indexes on `product_id`, `buyer_id`, `farmer_id`.
 
----
+**Constraints:** all FKs NOT NULL; `quantity`, `total_price`, `status` NOT NULL.
 
-## 9. Overall Entity Relationship
+**Relationships:** N:1 → `products`, N:1 → `users` (buyer), N:1 → `users`
+(farmer).
 
-The overall relationship is:
-
-User
-│
-├── FarmerProfile
-│
-├── Products (when User is a Farmer)
-│
-└── Orders (when User is a Buyer or Farmer)
-
-Product
-│
-└── Orders
-
-Order
-│
-├── Buyer → User
-├── Farmer → User
-└── Product → Product
+**Used by:** Order placement/status management, buyer & farmer order lists,
+admin oversight, notifications/emails, analytics (revenue, status donut,
+monthly series, top products/farmers/buyers).
 
 ---
 
-## 10. Foreign Keys
+## 7. reviews
 
-The main foreign key relationships are:
+**Purpose:** Buyer reviews (1–5 stars + optional comment) for purchased
+products.
 
-### Farmer Profile
+**Columns**
 
-farmer_profiles.user_id
-→ users.id
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `rating` | INTEGER | No | 1–5 (DTO-validated) |
+| `comment` | VARCHAR(1000) | Yes | Optional text |
+| `product_id` | BIGINT (FK) | No | → `products.id` |
+| `buyer_id` | BIGINT (FK) | No | → `users.id` |
+| `created_at` | DATETIME | No | Creation time (`@PrePersist`) |
+| `updated_at` | DATETIME | Yes | Last edit (`@PreUpdate`) |
 
-### Product
+**Indexes:** unique constraint `uk_reviews_buyer_product` (`buyer_id`,
+`product_id`) → one review per buyer per product.
 
-products.farmer_id
-→ users.id
+**Constraints:** rating/product/buyer NOT NULL; unique buyer+product pair.
 
-### Order Product
+**Relationships:** N:1 → `products`, N:1 → `users` (buyer).
 
-orders.product_id
-→ products.id
-
-### Order Buyer
-
-orders.buyer_id
-→ users.id
-
-### Order Farmer
-
-orders.farmer_id
-→ users.id
+**Used by:** Product rating display (avg + star counts), review CRUD, farmer
+review lists, analytics (rating trend, latest reviews).
 
 ---
 
-## 11. Database Constraints
+## 8. wishlist
 
-The current entity design includes:
+**Purpose:** Products a buyer saves for later.
 
-- User email must be unique.
-- User name is required.
-- User email is required.
-- User password is required.
-- User role is required.
-- Farmer profile must have a user reference.
-- Order product is required.
-- Order buyer is required.
-- Order farmer is required.
-- Order quantity is required.
-- Order total price is required.
-- Order status is required.
+**Columns**
 
----
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `buyer_id` | BIGINT (FK) | No | → `users.id` |
+| `product_id` | BIGINT (FK) | No | → `products.id` |
+| `created_at` | DATETIME | No | Creation time (`@PrePersist`) |
 
-## 12. Database Flow
+**Indexes:** unique constraint `uk_wishlist_buyer_product` (`buyer_id`,
+`product_id`).
 
-### Farmer Product Flow
+**Constraints:** buyer/product NOT NULL; unique buyer+product pair.
 
-Farmer registers
-↓
-User record created
-↓
-Farmer logs in
-↓
-JWT generated
-↓
-Farmer creates product
-↓
-Product is linked to farmer
-↓
-Product stored in products table
+**Relationships:** N:1 → `users` (buyer), N:1 → `products`.
+
+**Used by:** Wishlist page, wishlist badge/check, buyer analytics (wishlist
+count), product "add to wishlist" flow.
 
 ---
 
-### Buyer Order Flow
+## 9. notifications
 
-Buyer logs in
-↓
-Buyer views products
-↓
-Buyer selects product
-↓
-Buyer places order
-↓
-Order is linked to:
-- Buyer
-- Product
-- Farmer
-  ↓
-  Order stored in orders table
-  ↓
-  Status = PENDING
+**Purpose:** In-app notifications per recipient.
 
----
+**Columns**
 
-### Farmer Order Management
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `recipient_id` | BIGINT (FK, LAZY) | No | → `users.id` |
+| `title` | VARCHAR(255) | No | Short title ("New Order") |
+| `message` | VARCHAR(1000) | No | Full message |
+| `type` | VARCHAR (enum) | No | `NEW_ORDER`, `ORDER_ACCEPTED`, `ORDER_REJECTED`, `ORDER_COMPLETED`, `ADMIN_MESSAGE` |
+| `is_read` | BOOLEAN | No | Read state; default `false` |
+| `reference_id` | BIGINT | Yes | Related record id (e.g. order id) |
+| `created_at` | DATETIME | No | Creation time (`@PrePersist`) |
 
-Farmer logs in
-↓
-Farmer views received orders
-↓
-Farmer updates order status
-↓
-ACCEPTED / REJECTED
-↓
-If accepted
-↓
-COMPLETED
+**Indexes:** FK index on `recipient_id`.
+
+**Constraints:** recipient/title/message/type/is_read NOT NULL.
+
+**Relationships:** N:1 → `users` (recipient, lazy-loaded inside transactions).
+
+**Used by:** Notification bell + page (list/unread/count/read/delete), order &
+announcement event flows.
 
 ---
 
-## 13. Current Database Status
+## 10. password_reset_tokens
 
-Completed:
+**Purpose:** Single-use, 15-minute password-reset tokens.
 
-- Users table
-- Farmer profiles table
-- Products table
-- Orders table
-- User roles
-- Farmer-product relationship
-- Farmer profile relationship
-- Buyer-order relationship
-- Farmer-order relationship
-- Product-order relationship
-- Order status management
+**Columns**
 
-Planned database changes may be required for future modules such as:
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `token` | VARCHAR(64) | No | UUID — **unique** |
+| `user_id` | BIGINT (FK, LAZY) | No | → `users.id` |
+| `expiry_time` | DATETIME | No | now + 15 minutes |
+| `used` | BOOLEAN | No | Consumed flag; default `false` |
+| `created_at` | DATETIME | No | Creation time (`@PrePersist`) |
 
-- Admin management
-- Farmer verification
-- Cart
-- Wishlist
-- Payment
-- Notifications
+**Indexes:** unique index on `token`.
 
-These tables should only be added when the corresponding features are approved
-as part of the FarmBridge requirements.next
+**Constraints:** token/user/expiry/used NOT NULL; token unique.
+
+**Relationships:** N:1 → `users`.
+
+**Used by:** Forgot-password + reset-password flows.
+
+---
+
+## 11. announcements
+
+**Purpose:** History of admin email announcements (emails themselves are sent
+via SMTP; this is the audit record).
+
+**Columns**
+
+| Column | Type | Nullable | Description |
+|---|---|---|---|
+| `id` | BIGINT (PK) | No | Primary key |
+| `audience` | VARCHAR (enum) | No | `ALL` / `BUYERS` / `FARMERS` |
+| `subject` | VARCHAR(255) | No | Email subject |
+| `message` | VARCHAR(5000) | No | Email body |
+| `button_text` | VARCHAR(255) | Yes | Optional CTA label |
+| `button_url` | VARCHAR(1000) | Yes | Optional CTA URL (validated `^https?://`) |
+| `recipient_count` | INTEGER | No | Addressed recipients |
+| `sent_by` | VARCHAR(255) | No | Admin email |
+| `created_at` | DATETIME | No | Sent time (`@PrePersist`) |
+
+**Indexes:** none beyond the PK.
+
+**Constraints:** audience/subject/message/recipient_count/sent_by NOT NULL.
+
+**Relationships:** none (standalone audit table).
+
+**Used by:** Admin announcement compose + history page.
+
+---
+
+## 12. Entity Relationship Overview
+
+```
+users ──1:1── farmer_profiles
+  │
+  ├──1:N── products (farmer)
+  ├──1:N── orders (buyer)        ──N:1── products
+  ├──1:N── orders (farmer)
+  ├──1:N── reviews (buyer)       ──N:1── products
+  ├──1:N── wishlist (buyer)      ──N:1── products
+  ├──1:N── notifications (recipient)
+  └──1:N── password_reset_tokens
+
+announcements  (standalone)
+```
+
+### Key flows
+
+- **Farmer product flow:** register → profile → verification → APPROVED →
+  create product (`products.farmer_id` = user).
+- **Buyer order flow:** browse → place order → `orders` row links buyer,
+  product, farmer; stock deducted; status PENDING.
+- **Order management:** farmer transitions status; REJECTED restores stock.
+- **Soft delete:** `users.active = false`; no rows are ever removed.
+
+---
+
+*End of Database Document*

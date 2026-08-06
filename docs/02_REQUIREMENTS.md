@@ -1,16 +1,22 @@
-# FarmBridge - Requirements Document
+# FarmBridge — Requirements Document
+
+> **Document Version:** 2.0
+> **Last Updated:** 2026-08-06
+> **Framework:** TrainingMug ADF v1.0
+> **Status:** ✅ Aligned with the current source code (all features implemented)
+
+---
 
 ## 1. Purpose
 
-The purpose of this document is to define the complete set of requirements
-for the FarmBridge application. FarmBridge is a direct digital agricultural
-marketplace that connects farmers with buyers, reducing the need for
-unnecessary intermediaries.
+This document defines the complete set of requirements for the FarmBridge
+application — a direct digital agricultural marketplace that connects farmers
+with buyers, reducing the need for unnecessary intermediaries.
 
-This document serves as the single source of truth for what the system must
-do, how it must behave, and what is explicitly out of scope. It is aligned
-with the existing source code, architecture, database design, and project
-context documents.
+It serves as the single source of truth for what the system must do, how it
+must behave, and what is explicitly out of scope. It is aligned with the
+source code, architecture, database design, API contract, and UI flow
+documents (docs 01, 03–06).
 
 ---
 
@@ -18,104 +24,46 @@ context documents.
 
 Farmers often depend on intermediaries to sell their agricultural products.
 This reliance on middlemen can reduce the farmer's profit margin and make it
-difficult for buyers to directly identify the farmer, verify the source of
-the products, and establish a transparent trust relationship.
+difficult for buyers to directly identify the farmer, verify the source of the
+products, and establish a transparent trust relationship.
 
-Existing agricultural marketplaces may not provide:
-- Direct farmer-to-buyer connections
-- Transparent product sourcing information
-- Role-specific features tailored to farmers and buyers
-- Simple, secure authentication and authorization
-
-FarmBridge aims to solve these problems by providing a direct digital
-marketplace platform.
+FarmBridge solves this by providing a direct digital marketplace platform
+with verified farmers, transparent product information, and role-specific
+features for farmers, buyers, and administrators.
 
 ---
 
 ## 3. Business Objective
 
-The main business objectives of FarmBridge are:
-
 1. Connect farmers directly with buyers without unnecessary middlemen.
 2. Allow farmers to list their agricultural products and manage orders.
 3. Allow buyers to discover, search, and purchase agricultural products.
-4. Improve trust between farmers and buyers through farmer profiles and
-   transparent product information.
+4. Improve trust through farmer verification and transparent product
+   information.
 5. Provide a secure platform with role-based access control.
-6. Build a foundation that can be extended with future features such as
-   farmer verification, admin management, and payment processing.
+6. Provide data-driven analytics dashboards for all roles.
+7. Keep users informed via in-app + email notifications.
+8. Never lose historical data (soft delete).
 
 ---
 
 ## 4. Scope
 
-### In Scope
+### In Scope (all implemented)
 
-The FarmBridge project includes:
-
-#### Currently Implemented (Backend)
-
-- User registration and login with JWT-based authentication
-- Role-based authorization with three roles: ADMIN, FARMER, BUYER
-- Farmer profile creation (farm name, location, land size, cultivation
-  method, crops cultivated, farming type)
-- Product management for farmers (create, read, update, delete owned
-  products)
-- Product browsing for buyers (view all listed products)
-- Order placement by buyers with stock validation and quantity deduction
-- Order viewing for both buyers (their orders) and farmers (received
-  orders)
-- Order status management by farmers (PENDING → ACCEPTED → COMPLETED,
-  or PENDING → REJECTED)
-- MySQL database with JPA/Hibernate ORM
-- Layered architecture: Controller → Service → Repository → Database
-- Input validation on all API request DTOs
-- Password encryption using BCrypt
-
-#### Required for MVP
-
-- Global exception handling with meaningful error responses
-- Expose product search by name API for buyers
-- Expose product category filtering API for buyers
-- Refactor BuyerProductController to use Service layer
-- Farmer profile retrieval and update endpoints
-- Prevent duplicate farmer profile creation per user
-- Move hardcoded database credentials and JWT secret to environment
-  variables
-- React frontend with authentication, farmer dashboard, buyer product
-  browsing, and order management
-- Swagger/OpenAPI documentation
-- Unit and integration tests for backend services and controllers
-- Admin module with user and product management
-- Postman collection for API testing
-
-#### Planned for Future
-
-- Farmer verification (verified badge/status)
-- Shopping cart functionality
-- Wishlist functionality
-- Payment processing integration
-- Order notifications (email or in-app)
-- Docker containerization
-- CI/CD pipeline
-- Cloud deployment
-- Advanced admin analytics and reporting
+- Authentication & JWT-based authorization (ADMIN, FARMER, BUYER)
+- Farmer profiles + farmer verification workflow
+- Product management (CRUD + image upload) and buyer browsing / category filter
+- Orders with stock validation and status lifecycle
+- Reviews & ratings, wishlist, in-app notifications
+- Email notifications, password reset, admin announcements
+- Analytics dashboards (admin / farmer / buyer)
+- Enterprise soft delete (deactivate / reactivate)
+- Enterprise UI, Swagger, Postman, unit + integration + E2E tests
 
 ### Out of Scope
 
-The following features are explicitly out of scope for the current project:
-
-- Mobile native applications (iOS/Android) — only web-based React
-  frontend
-- Real-time chat or messaging between farmers and buyers
-- Multi-language support
-- Product rating and review system
-- Shipping and logistics management
-- Returns and refunds processing
-- Subscription or membership models
-- Integration with external agricultural databases or APIs
-- Machine learning or recommendation engine
-- Digital wallet or cryptocurrency payments
+See §12.
 
 ---
 
@@ -123,133 +71,165 @@ The following features are explicitly out of scope for the current project:
 
 ### 5.1 Farmer
 
-A farmer is a user who registers with the FARMER role to list agricultural
-products and manage orders.
+A farmer registers with the FARMER role to list agricultural products and
+manage orders.
 
-**Responsibilities:**
-- Register and login to the platform
-- Create and manage a farmer profile with farm details
-- List agricultural products with pricing and quantity
-- Update and delete their own products
-- View orders received from buyers
-- Accept, reject, and complete orders
+**Responsibilities:** register/login, create & manage farmer profile, submit
+verification documents, list/update/delete products, upload product images,
+manage received orders (accept / reject / complete), view reviews of own
+products, view analytics.
 
-**Permissions:**
-- Access to `/api/farmer/**` endpoints
-- Can only modify their own products and profiles
-- Can only manage orders that belong to their products
+**Permissions:** `/api/farmer/**`; may only modify own products/profile/orders.
+**Selling is gated** until verification is APPROVED.
 
 ### 5.2 Buyer
 
-A buyer is a user who registers with the BUYER role to discover and
-purchase agricultural products.
+A buyer registers with the BUYER role to discover and purchase products.
 
-**Responsibilities:**
-- Register and login to the platform
-- Browse all available products
-- Search products by name
-- Filter products by category
-- Place orders for products
-- View their order history
-- Track order status
+**Responsibilities:** browse products, filter by category, view product
+details, place orders, track order status, write reviews for purchased
+products, manage a wishlist, view analytics.
 
-**Permissions:**
-- Access to `/api/buyer/**` endpoints
-- Can only view their own orders
-- Cannot modify products or manage other users' orders
+**Permissions:** `/api/buyer/**`; may only view own orders and manage own
+reviews/wishlist.
 
 ### 5.3 Admin
 
-An admin is a user with the ADMIN role who manages the platform.
+An admin has the ADMIN role and manages the platform.
 
-**Responsibilities:**
-- View all registered users
-- Manage farmer and buyer accounts
-- Oversee all products listed on the platform
-- Monitor all orders across the platform
-- Verify farmer profiles and identities
+**Responsibilities:** view users/products/orders, update users, soft-delete and
+reactivate users, verify/reject farmer verification requests, send email
+announcements, view platform analytics.
 
-**Permissions:**
-- Access to `/api/admin/**` endpoints
-- Can view and manage all users, products, and orders
+**Permissions:** `/api/admin/**` and `/api/users/**`. Self-registration of
+ADMIN is blocked; admins are seeded manually. An admin cannot deactivate
+their own account or the last active ADMIN.
 
 ---
 
 ## 6. Functional Requirements
 
-### 6.1 Authentication (FR-AUTH)
+Legend: ✅ Implemented · ⚠️ Partial · ❌ Missing
 
-| ID | Requirement | Status | Verified in Code |
+### 6.1 Authentication & Accounts (FR-AUTH)
+
+| ID | Requirement | Status | Evidence |
 |---|---|---|---|
-| FR-AUTH-01 | The system shall allow a user to register with name, email, password, and role. | ✅ Implemented | `AuthController.register()`, `AuthServiceImpl.register()` |
-| FR-AUTH-02 | The system shall respond when a user attempts to register with an already-existing email, returning HTTP 200 OK with the message "Email already exists". | ⚠️ Implemented (returns 200 OK, not an HTTP error) | `userRepository.existsByEmail()` in `AuthServiceImpl` returns 200 OK string via `AuthController.register()` |
-| FR-AUTH-03 | The system shall encrypt passwords using BCrypt before storing. | ✅ Implemented | `BCryptPasswordEncoder` in `AuthServiceImpl` |
-| FR-AUTH-04 | The system shall allow a user to login with email and password. | ✅ Implemented | `AuthController.login()`, `AuthServiceImpl.login()` |
-| FR-AUTH-05 | The system shall return a JWT token on successful login. | ✅ Implemented | `JwtUtil.generateToken()` with 1-hour expiry |
-| FR-AUTH-06 | The JWT token shall contain the user's email and role. | ✅ Implemented | `JwtUtil.generateToken()` includes `subject=email` and claim `role` |
-| FR-AUTH-07 | The system shall validate JWT tokens on protected API requests. | ✅ Implemented | `JwtAuthFilter.doFilterInternal()` |
-| FR-AUTH-08 | The system shall return 401 for invalid or expired JWT tokens. | ✅ Implemented | `JwtAuthFilter` does not set authentication for invalid tokens |
-| FR-AUTH-09 | The system shall return meaningful error messages for invalid login. | ✅ Implemented | `RuntimeException("Invalid email or password")` |
-| FR-AUTH-10 | The system shall validate request inputs (email format, required fields). | ✅ Implemented | Jakarta validation annotations on `LoginRequest` and `RegisterRequest` |
+| FR-AUTH-01 | Register with name, email, password, role (ADMIN/FARMER/BUYER) | ✅ | `AuthController.register()` |
+| FR-AUTH-02 | Duplicate email handled ("Email already exists", 200) | ✅ | `userRepository.existsByEmail()` |
+| FR-AUTH-03 | Passwords hashed with BCrypt | ✅ | `BCryptPasswordEncoder` |
+| FR-AUTH-04 | Login with email + password returns JWT | ✅ | `AuthController.login()` |
+| FR-AUTH-05 | JWT contains email + role, expires after 1 hour | ✅ | `JwtUtil.generateToken()` |
+| FR-AUTH-06 | Invalid/expired JWT → 401 | ✅ | `JwtAuthFilter` |
+| FR-AUTH-07 | Self-registration of ADMIN blocked | ✅ | `AuthServiceImpl` |
+| FR-AUTH-08 | Forgot password → enumeration-safe generic response + reset email | ✅ | `PasswordResetService` |
+| FR-AUTH-09 | Reset password with single-use 15-minute token | ✅ | `PasswordResetServiceImpl` |
+| FR-AUTH-10 | Deactivated account cannot log in (403) | ✅ | `AuthServiceImpl.login()` |
 
-### 6.2 Farmer Features (FR-FARMER)
+### 6.2 Farmer Profile & Verification (FR-FARMER)
 
-| ID | Requirement | Status | Verified in Code |
+| ID | Requirement | Status | Evidence |
 |---|---|---|---|
-| FR-FARMER-01 | A farmer shall be able to create a farmer profile with farm details. | ✅ Implemented | `FarmerProfileController.createProfile()`, `FarmerProfileService.createProfile()` |
-| FR-FARMER-02 | The farmer profile shall include farm name, location, land size, cultivation method, crops cultivated, and farming type. | ✅ Implemented | `FarmerProfileRequest` DTO with all fields |
-| FR-FARMER-03 | A farmer shall be able to retrieve their own profile. | ✅ Implemented | `FarmerProfileController.getProfile()` via `GET /api/farmer/profile` |
-| FR-FARMER-04 | A farmer shall be able to update their own profile. | ✅ Implemented | `FarmerProfileController.updateProfile()` via `PUT /api/farmer/profile` |
-| FR-FARMER-05 | A farmer shall not be able to create multiple profiles. | ✅ Implemented | Duplicate check in `FarmerProfileService.createProfile()` throws "Farmer profile already exists" |
-| FR-FARMER-06 | A farmer shall be able to create a product with name, description, price, quantity, and category. | ✅ Implemented | `ProductController.createProduct()`, `ProductService.createProduct()` |
-| FR-FARMER-07 | A farmer shall be able to view all their own products. | ✅ Implemented | `ProductController.getMyProducts()` |
-| FR-FARMER-08 | A farmer shall be able to update their own products. | ✅ Implemented | `ProductController.updateProduct()` with ownership check |
-| FR-FARMER-09 | A farmer shall be able to delete their own products. | ✅ Implemented | `ProductController.deleteProduct()` with ownership check |
-| FR-FARMER-10 | A farmer shall not be able to update or delete another farmer's products. | ✅ Implemented | Ownership verification via email match in `ProductService` |
-| FR-FARMER-11 | A farmer shall be able to view orders received for their products. | ✅ Implemented | `OrderController.getFarmerOrders()` |
-| FR-FARMER-12 | A farmer shall be able to change order status. | ✅ Implemented | `OrderController.updateOrderStatus()` |
-| FR-FARMER-13 | A farmer shall only be able to change status of orders belonging to their products. | ✅ Implemented | Ownership check in `OrderService.updateOrderStatus()` |
-| FR-FARMER-14 | The order status flow shall be: PENDING → ACCEPTED/REJECTED, ACCEPTED → COMPLETED. REJECTED and COMPLETED orders shall not be changed. | ✅ Implemented | State machine validation in `OrderService.updateOrderStatus()` |
+| FR-FARMER-01 | Create / view / update farmer profile (GET/POST/PUT `/api/farmer/profile`) | ✅ | `FarmerProfileController` |
+| FR-FARMER-02 | No duplicate profiles per user | ✅ | "Farmer profile already exists" |
+| FR-FARMER-03 | Submit verification with personal/farm/cultivation details + 3 required documents (multipart) | ✅ | `POST /api/farmer/profile/verification` |
+| FR-FARMER-04 | See own verification status + rejection reason | ✅ | `GET /api/farmer/profile/verification` |
+| FR-FARMER-05 | Resubmit after rejection resets to PENDING and keeps documents | ✅ | `submitVerification()` |
+| FR-FARMER-06 | Product create/update/delete + order receiving blocked (403) until APPROVED | ✅ | `ProductServiceImpl`, `OrderServiceImpl` |
+| FR-FARMER-07 | Only image uploads (JPG/PNG/WEBP/GIF, ≤5 MB) accepted | ✅ | `FileStorageService` |
 
-### 6.3 Buyer Features (FR-BUYER)
+### 6.3 Products & Images (FR-PROD)
 
-| ID | Requirement | Status | Verified in Code |
+| ID | Requirement | Status | Evidence |
 |---|---|---|---|
-| FR-BUYER-01 | A buyer shall be able to browse all available products. | ✅ Implemented | `BuyerProductController.getAllProducts()` |
-| FR-BUYER-02 | A buyer shall be able to search products by name. | ⚠️ Partially Implemented | Logic exists in `ProductRepository.findByNameContainingIgnoreCase()` but no controller endpoint exposes it |
-| FR-BUYER-03 | A buyer shall be able to filter products by category. | ⚠️ Partially Implemented | Logic exists in `ProductService.getProductsByCategory()` but no controller endpoint exposes it |
-| FR-BUYER-04 | A buyer shall be able to place an order for a product. | ✅ Implemented | `OrderController.placeOrder()` |
-| FR-BUYER-05 | The system shall validate product stock before placing an order. | ✅ Implemented | Quantity check in `OrderService.placeOrder()` |
-| FR-BUYER-06 | The system shall reduce product quantity when an order is placed. | ✅ Implemented | `product.setQuantity(product.getQuantity() - request.getQuantity())` |
-| FR-BUYER-07 | The system shall calculate the total order price. | ✅ Implemented | `totalPrice = product.getPrice() * request.getQuantity()` |
-| FR-BUYER-08 | A buyer shall be able to view all their own orders. | ✅ Implemented | `OrderController.getMyOrders()` |
-| FR-BUYER-09 | A buyer shall be able to track the status of their orders. | ✅ Implemented | Status is included in `OrderResponse` |
-| FR-BUYER-10 | A buyer shall not be able to view other buyers' orders. | ✅ Implemented | `OrderRepository.findByBuyerEmail()` filters by authenticated user |
+| FR-PROD-01 | Farmer CRUD on own products (`/api/farmer/products`) | ✅ | `ProductController` |
+| FR-PROD-02 | Ownership enforced (cannot edit/delete another's product) | ✅ | `ProductServiceImpl` |
+| FR-PROD-03 | Upload / delete product image (owner only) | ✅ | `POST/DELETE /{id}/image` |
+| FR-PROD-04 | Buyers browse all products of APPROVED farmers | ✅ | `GET /api/buyer/products` |
+| FR-PROD-05 | Product details with rating + farm info | ✅ | `GET /api/buyer/products/{id}` |
+| FR-PROD-06 | Category filter (case-insensitive) | ✅ | `GET /api/buyer/products/category/{c}` |
+| FR-PROD-07 | Search by name | ⚠️ | Repository support exists; no controller endpoint yet |
+| FR-PROD-08 | Products of unverified / deactivated farmers hidden from buyers, visible to admins | ✅ | `ProductServiceImpl` |
 
-### 6.4 Admin Features (FR-ADMIN)
+### 6.4 Orders (FR-ORD)
 
-| ID | Requirement | Status | Verified in Code |
+| ID | Requirement | Status | Evidence |
 |---|---|---|---|
-| FR-ADMIN-01 | An admin shall be able to view a dashboard. | ✅ Implemented | `AdminController.getStats()` returns platform-wide counts via `GET /api/admin/stats` |
-| FR-ADMIN-02 | An admin shall be able to view all registered users. | ✅ Implemented | `AdminController.getAllUsers()` via `GET /api/admin/users` |
-| FR-ADMIN-03 | An admin shall be able to manage farmer accounts. | ✅ Implemented | `AdminController.getFarmers()` via `GET /api/admin/farmers`, plus user update/delete via `/api/admin/users/{id}` |
-| FR-ADMIN-04 | An admin shall be able to manage buyer accounts. | ✅ Implemented | `AdminController.getBuyers()` via `GET /api/admin/buyers`, plus user update/delete via `/api/admin/users/{id}` |
-| FR-ADMIN-05 | An admin shall be able to view all products. | ✅ Implemented | `AdminController.getAllProducts()` via `GET /api/admin/products` |
-| FR-ADMIN-06 | An admin shall be able to view all orders. | ✅ Implemented | `AdminController.getAllOrders()` via `GET /api/admin/orders` |
-| FR-ADMIN-07 | An admin shall be able to verify farmers. | ✅ Implemented | `FarmerProfile.verified` field, `GET /api/admin/farmers/unverified`, `PUT /api/admin/farmers/{profileId}/verify` |
+| FR-ORD-01 | Buyer places order with stock validation + deduction | ✅ | `OrderServiceImpl.placeOrder()` |
+| FR-ORD-02 | Total price = price × quantity; new order is PENDING | ✅ | `placeOrder()` |
+| FR-ORD-03 | Buyers see only own orders | ✅ | `findByBuyerEmail` |
+| FR-ORD-04 | Farmers see orders for own products | ✅ | `getFarmerOrders()` |
+| FR-ORD-05 | State machine PENDING→ACCEPTED/REJECTED, ACCEPTED→COMPLETED; REJECTED/COMPLETED locked | ✅ | `updateOrderStatus()` |
+| FR-ORD-06 | Rejecting a PENDING order restores reserved stock | ✅ | `updateOrderStatus()` |
+| FR-ORD-07 | Order events fire in-app notifications + emails | ✅ | `NotificationService`, `EmailService` |
 
-### 6.5 System Features (FR-SYS)
+### 6.5 Reviews & Wishlist (FR-ENGAGE)
 
-| ID | Requirement | Status | Verified in Code |
+| ID | Requirement | Status | Evidence |
 |---|---|---|---|
-| FR-SYS-01 | The system shall use a layered architecture (Controller → Service → Repository → Database). | ✅ Implemented | All modules follow this pattern except `BuyerProductController` |
-| FR-SYS-02 | The system shall use DTOs for API requests and responses, not entities. | ✅ Implemented | 8 DTOs used across all endpoints |
-| FR-SYS-03 | The system shall use constructor injection. | ✅ Implemented | All services and controllers use constructor injection |
-| FR-SYS-04 | The system shall validate all API request inputs. | ✅ Implemented | Jakarta `@Valid` + validation annotations on all request DTOs |
-| FR-SYS-05 | The system shall return appropriate HTTP status codes. | ⚠️ Partial | Returns 200 OK for all success cases; errors throw exceptions (no `@ControllerAdvice`) |
-| FR-SYS-06 | The system shall provide meaningful error messages for validation failures. | ✅ Implemented | `GlobalExceptionHandler` (`@RestControllerAdvice`) returns structured `ErrorResponse` with field errors |
-| FR-SYS-07 | The system shall use environment variables for sensitive configuration. | ❌ Missing | Database password and JWT secret are hardcoded in `application.properties` |
-| FR-SYS-08 | The system shall have a health-check endpoint. | ✅ Implemented | `TestController` at `GET /api/test` |
+| FR-ENGAGE-01 | Buyer reviews only purchased products (order ACCEPTED/COMPLETED), 1–5 stars | ✅ | `ReviewServiceImpl` |
+| FR-ENGAGE-02 | One review per buyer per product (unique constraint + 409) | ✅ | `uk_reviews_buyer_product` |
+| FR-ENGAGE-03 | Review update/delete by author only | ✅ | `ReviewServiceImpl` |
+| FR-ENGAGE-04 | Product rating aggregation (avg + star counts) in responses | ✅ | `RatingStats` |
+| FR-ENGAGE-05 | Wishlist add / remove / list / check | ✅ | `WishlistController` |
+| FR-ENGAGE-06 | Duplicate wishlist entry → 409 | ✅ | `uk_wishlist_buyer_product` |
+
+### 6.6 Notifications (FR-NOTIF)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| FR-NOTIF-01 | In-app notifications for NEW_ORDER, ORDER_ACCEPTED, ORDER_REJECTED, ORDER_COMPLETED, ADMIN_MESSAGE | ✅ | `NotificationType`, `NotificationServiceImpl` |
+| FR-NOTIF-02 | List, unread list, unread count | ✅ | `GET /api/notifications…` |
+| FR-NOTIF-03 | Mark one / all as read | ✅ | `PUT /{id}/read`, `PUT /read-all` |
+| FR-NOTIF-04 | Delete one / clear all | ✅ | `DELETE /{id}`, `DELETE /api/notifications` |
+| FR-NOTIF-05 | Users only see own notifications (403 otherwise) | ✅ | `NotificationServiceImpl` |
+
+### 6.7 Email Notifications (FR-EMAIL)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| FR-EMAIL-01 | Welcome email on registration | ✅ | `EmailService.sendWelcomeEmail` |
+| FR-EMAIL-02 | Verification approved / rejected (+reason + resubmit button) | ✅ | `AdminServiceImpl` |
+| FR-EMAIL-03 | New order → farmer; accepted/rejected/completed → buyer | ✅ | `OrderServiceImpl` |
+| FR-EMAIL-04 | HTML password-reset email (15-min expiry) | ✅ | `PasswordResetServiceImpl` |
+| FR-EMAIL-05 | Admin announcements to ALL/BUYERS/FARMERS + history | ✅ | `AnnouncementServiceImpl` |
+| FR-EMAIL-06 | Fail-safe: SMTP failure never rolls back business logic | ✅ | `EmailService.sendHtml()` catches all |
+| FR-EMAIL-07 | All user content HTML-escaped; `buttonUrl` validated `^https?://` | ✅ | `EmailService`, `AnnouncementRequest` |
+
+### 6.8 Admin Management (FR-ADMIN)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| FR-ADMIN-01 | Dashboard stats (`/api/admin/stats`) | ✅ | `AdminController` |
+| FR-ADMIN-02 | List/get/update users; role-filtered farmer/buyer lists | ✅ | `AdminController` |
+| FR-ADMIN-03 | Soft-delete (deactivate) user; record + history preserved | ✅ | `UserServiceImpl.deleteUser()` |
+| FR-ADMIN-04 | Reactivate user | ✅ | `PUT /{id}/reactivate` |
+| FR-ADMIN-05 | Self-deactivation + last-active-admin protected (400) | ✅ | `UserServiceImpl` guards |
+| FR-ADMIN-06 | Oversee all products/orders (unfiltered) | ✅ | `AdminController` |
+| FR-ADMIN-07 | Approve / reject pending verification requests | ✅ | `PUT /farmers/{id}/verify`, `/reject` |
+| FR-ADMIN-08 | Send announcements + view history | ✅ | `AdminController` |
+
+### 6.9 Analytics (FR-ANALYTICS)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| FR-ANALYTICS-01 | Admin dashboard payload (13 cards, 6 charts, 7 tables) | ✅ | `GET /api/admin/analytics` |
+| FR-ANALYTICS-02 | Farmer dashboard payload, scoped to own data | ✅ | `GET /api/farmer/analytics` |
+| FR-ANALYTICS-03 | Buyer dashboard payload, scoped to own data | ✅ | `GET /api/buyer/analytics` |
+| FR-ANALYTICS-04 | Drill-down series endpoints (revenue/orders/sales/spending/top-*) | ✅ | `AnalyticsController` |
+| FR-ANALYTICS-05 | Revenue = COMPLETED-order value; aggregation in DB (no N+1) | ✅ | `AnalyticsServiceImpl` |
+| FR-ANALYTICS-06 | Role-scoped access (403 for wrong role) | ✅ | SecurityConfig + tests |
+
+### 6.10 System (FR-SYS)
+
+| ID | Requirement | Status | Evidence |
+|---|---|---|---|
+| FR-SYS-01 | Layered architecture, DTOs, constructor injection | ✅ | All modules |
+| FR-SYS-02 | Jakarta validation on all request DTOs | ✅ | `@Valid` everywhere |
+| FR-SYS-03 | Structured error responses | ✅ | `GlobalExceptionHandler` |
+| FR-SYS-04 | Health/test endpoint | ✅ | `GET /api/test` |
+| FR-SYS-05 | Sensitive config via env vars | ⚠️ | SMTP fully env-based; DB password + JWT secret still hardcoded |
+| FR-SYS-06 | Swagger/OpenAPI docs | ✅ | `/swagger-ui`, `/v3/api-docs` |
 
 ---
 
@@ -259,320 +239,143 @@ An admin is a user with the ADMIN role who manages the platform.
 
 | ID | Requirement | Status |
 |---|---|---|
-| NFR-SEC-01 | All passwords must be hashed using BCrypt before storage. | ✅ Implemented |
-| NFR-SEC-02 | All API endpoints except authentication must require a valid JWT token. | ✅ Implemented |
-| NFR-SEC-03 | JWT tokens must expire after a configured period. | ✅ Implemented (1 hour) |
-| NFR-SEC-04 | Role-based access must be enforced on all protected endpoints. | ✅ Implemented |
-| NFR-SEC-05 | Users must only be able to access their own data (products, orders, profile). | ✅ Implemented (ownership checks) |
-| NFR-SEC-06 | Sensitive credentials (database password, JWT secret) must not be hardcoded in source code. | ❌ Not Implemented |
-| NFR-SEC-07 | Cross-Site Request Forgery (CSRF) protection must be disabled for REST APIs. | ✅ Implemented (`.csrf(csrf -> csrf.disable())`) |
-| NFR-SEC-08 | The server must not expose stack traces to clients on errors. | ❌ Not Implemented |
+| NFR-SEC-01 | BCrypt password hashing | ✅ |
+| NFR-SEC-02 | All endpoints except auth/static/swagger require JWT | ✅ |
+| NFR-SEC-03 | JWT expiry (1 hour) | ✅ |
+| NFR-SEC-04 | Role-based access on `/api/admin`, `/api/farmer`, `/api/buyer` | ✅ |
+| NFR-SEC-05 | Ownership checks on own data (products, orders, reviews, notifications) | ✅ |
+| NFR-SEC-06 | CSRF disabled for stateless REST | ✅ |
+| NFR-SEC-07 | No stack traces exposed to clients | ✅ (generic 500 via handler) |
+| NFR-SEC-08 | Enumeration-safe forgot-password | ✅ |
+| NFR-SEC-09 | Admin self/last-admin lockout protection | ✅ |
+| NFR-SEC-10 | Credentials not hardcoded | ⚠️ SMTP ✅; DB password + JWT secret hardcoded locally |
 
 ### 7.2 Performance (NFR-PERF)
 
-| ID | Requirement | Target |
+| ID | Requirement | Status |
 |---|---|---|
-| NFR-PERF-01 | API response time should be under 500ms for typical requests. | Not tested |
-| NFR-PERF-02 | The system should support up to 100 concurrent users. | Not tested |
-| NFR-PERF-03 | Database queries should use indexes for frequently searched columns. | Partially (email indexed via `unique = true`) |
+| NFR-PERF-01 | <500 ms typical API response | Not load-tested |
+| NFR-PERF-02 | Support ~100 concurrent users | Not load-tested |
+| NFR-PERF-03 | Indexed frequently-queried columns | ✅ unique email, token; unique review/wishlist pairs |
+| NFR-PERF-04 | No N+1 in dashboards/lists | ✅ batched `IN` queries, JPQL aggregation |
 
 ### 7.3 Scalability (NFR-SCAL)
 
-| ID | Requirement |
-|---|---|
-| NFR-SCAL-01 | The backend should be stateless to allow horizontal scaling. (JWT tokens are stateless) |
-| NFR-SCAL-02 | The database should be the only stateful component. |
-| NFR-SCAL-03 | New backend instances should be addable without reconfiguration. |
+- Stateless backend (JWT) → horizontal scaling possible ✅
+- Database is the only stateful component ✅
 
 ### 7.4 Availability (NFR-AVAIL)
 
-| ID | Requirement | Notes |
-|---|---|---|
-| NFR-AVAIL-01 | The system should have 99.9% uptime during business hours. | Target for production |
-| NFR-AVAIL-02 | Scheduled maintenance should be communicated in advance. | Future operational requirement |
+- 99.9% uptime target for production (operational, not yet measured)
+- Fail-safe email sends (never break business flows) ✅
 
 ### 7.5 Maintainability (NFR-MAINT)
 
 | ID | Requirement | Status |
 |---|---|---|
-| NFR-MAINT-01 | The codebase must follow a consistent layered architecture. | ✅ Implemented |
-| NFR-MAINT-02 | Business logic must reside in Service layer, not Controllers. | ⚠️ Violated by `BuyerProductController` |
-| NFR-MAINT-03 | All API inputs must be validated at the DTO level. | ✅ Implemented |
-| NFR-MAINT-04 | The project must have unit and integration tests. | ❌ Not Implemented |
-| NFR-MAINT-05 | The project must have API documentation. | ❌ Not Implemented (truncated draft exists) |
-| NFR-MAINT-06 | Database schema must be managed through JPA entities with `ddl-auto`. | ✅ Implemented |
+| NFR-MAINT-01 | Consistent layered architecture | ✅ |
+| NFR-MAINT-02 | Business logic in services, not controllers | ✅ |
+| NFR-MAINT-03 | DTO-level validation | ✅ |
+| NFR-MAINT-04 | Unit + integration tests | ✅ 60 backend test methods |
+| NFR-MAINT-05 | API documentation (Swagger + docs) | ✅ |
+| NFR-MAINT-06 | Schema managed via JPA `ddl-auto` | ✅ |
 
 ---
 
 ## 8. User Stories
 
-### 8.1 Farmer User Stories
+### 8.1 Farmer
 
 | ID | Story |
 |---|---|
-| US-FARMER-01 | As a farmer, I want to register an account so that I can access the platform. |
-| US-FARMER-02 | As a registered farmer, I want to log in so that I can manage my products and orders. |
-| US-FARMER-03 | As a farmer, I want to create my farmer profile with farm details so that buyers can learn about my farm. |
-| US-FARMER-04 | As a farmer, I want to view and update my profile so that my information stays current. |
-| US-FARMER-05 | As a farmer, I want to add new products so that buyers can discover and purchase them. |
-| US-FARMER-06 | As a farmer, I want to view all my listed products so that I can manage my inventory. |
-| US-FARMER-07 | As a farmer, I want to update my product details so that I can change prices or descriptions. |
-| US-FARMER-08 | As a farmer, I want to remove products that are no longer available. |
-| US-FARMER-09 | As a farmer, I want to view orders placed for my products so that I can fulfill them. |
-| US-FARMER-10 | As a farmer, I want to accept or reject pending orders so that buyers know the status. |
-| US-FARMER-11 | As a farmer, I want to mark accepted orders as completed after fulfillment. |
+| US-FARMER-01 | As a farmer, I want to register and log in so that I can access the platform. |
+| US-FARMER-02 | As a farmer, I want to create my profile so buyers can learn about my farm. |
+| US-FARMER-03 | As a farmer, I want to submit verification documents and see my status so I can become a Verified Farmer. |
+| US-FARMER-04 | As a verified farmer, I want to add/update/delete products and upload images. |
+| US-FARMER-05 | As a farmer, I want to accept, reject (with reason), or complete received orders. |
+| US-FARMER-06 | As a farmer, I want email + in-app notifications when orders arrive and to see reviews of my products. |
+| US-FARMER-07 | As a farmer, I want analytics of my revenue, sales, and customers. |
 
-### 8.2 Buyer User Stories
+### 8.2 Buyer
 
 | ID | Story |
 |---|---|
-| US-BUYER-01 | As a buyer, I want to register an account so that I can purchase products. |
-| US-BUYER-02 | As a registered buyer, I want to log in so that I can browse and order products. |
-| US-BUYER-03 | As a buyer, I want to browse all available products so that I can see what farmers are offering. |
-| US-BUYER-04 | As a buyer, I want to search products by name so that I can quickly find specific items. |
-| US-BUYER-05 | As a buyer, I want to filter products by category so that I can find relevant products. |
-| US-BUYER-06 | As a buyer, I want to place an order for a product with a specific quantity. |
-| US-BUYER-07 | As a buyer, I want to see the total price before confirming my order. |
-| US-BUYER-08 | As a buyer, I want to view my order history so that I can track my purchases. |
-| US-BUYER-09 | As a buyer, I want to see the status of my orders so that I know if they are accepted or completed. |
+| US-BUYER-01 | As a buyer, I want to register and log in so that I can shop. |
+| US-BUYER-02 | As a buyer, I want to browse products, filter by category, and view details (incl. verified badge). |
+| US-BUYER-03 | As a buyer, I want to place an order and track its status. |
+| US-BUYER-04 | As a buyer, I want to review purchased products and save products to my wishlist. |
+| US-BUYER-05 | As a buyer, I want email + in-app notifications for order status changes. |
+| US-BUYER-06 | As a buyer, I want a dashboard showing my spending, orders, and recommendations. |
 
-### 8.3 Admin User Stories
+### 8.3 Admin
 
 | ID | Story |
 |---|---|
-| US-ADMIN-01 | As an admin, I want to view all users so that I can manage the platform. |
-| US-ADMIN-02 | As an admin, I want to view all products so that I can monitor listings. |
-| US-ADMIN-03 | As an admin, I want to view all orders so that I can oversee transactions. |
-| US-ADMIN-04 | As an admin, I want to verify farmers so that buyers can trust listings. |
+| US-ADMIN-01 | As an admin, I want dashboard analytics across users, products, orders, and revenue. |
+| US-ADMIN-02 | As an admin, I want to manage users (update, deactivate, reactivate). |
+| US-ADMIN-03 | As an admin, I want to approve or reject farmer verification with a reason. |
+| US-ADMIN-04 | As an admin, I want to send announcements to selected audiences. |
 
 ---
 
 ## 9. Acceptance Criteria
 
-### 9.1 Authentication
-
 | ID | Criteria |
 |---|---|
-| AC-AUTH-01 | A user can register with a valid name, email, password, and role. |
-| AC-AUTH-02 | Registration with an existing email returns HTTP 200 OK with the message "Email already exists". |
-| AC-AUTH-03 | A user can log in with valid credentials and receive a JWT token. |
-| AC-AUTH-04 | Login with invalid credentials returns an error. |
-| AC-AUTH-05 | Accessing a protected endpoint without a JWT returns 401. |
-| AC-AUTH-06 | Accessing a protected endpoint with an expired JWT returns 401. |
-| AC-AUTH-07 | Accessing a farmer endpoint with a buyer JWT returns 403. |
-| AC-AUTH-08 | Accessing a buyer endpoint with a farmer JWT returns 403. |
-
-### 9.2 Farmer Profile
-
-| ID | Criteria |
-|---|---|
-| AC-FP-01 | A farmer can create a profile with all required fields. |
-| AC-FP-02 | A farmer cannot create more than one profile. |
-| AC-FP-03 | A farmer can view their own profile. |
-| AC-FP-04 | A farmer can update their own profile. |
-
-### 9.3 Products
-
-| ID | Criteria |
-|---|---|
-| AC-PROD-01 | A farmer can create a product with name, description, price, quantity, and category. |
-| AC-PROD-02 | A farmer can view all their own products. |
-| AC-PROD-03 | A farmer can update their own products. |
-| AC-PROD-04 | A farmer can delete their own products. |
-| AC-PROD-05 | A farmer cannot update or delete another farmer's products. |
-| AC-PROD-06 | A buyer can view all available products. |
-| AC-PROD-07 | A buyer can search products by name. |
-| AC-PROD-08 | A buyer can filter products by category. |
-
-### 9.4 Orders
-
-| ID | Criteria |
-|---|---|
-| AC-ORD-01 | A buyer can place an order for a product with a valid quantity. |
-| AC-ORD-02 | Placing an order for more than available stock returns an error. |
-| AC-ORD-03 | Product quantity decreases after a successful order. |
-| AC-ORD-04 | A new order has status PENDING. |
-| AC-ORD-05 | A buyer can view all their own orders. |
-| AC-ORD-06 | A farmer can view orders for their products. |
-| AC-ORD-07 | A farmer can change a PENDING order to ACCEPTED. |
-| AC-ORD-08 | A farmer can change a PENDING order to REJECTED. |
-| AC-ORD-09 | A farmer can change an ACCEPTED order to COMPLETED. |
-| AC-ORD-10 | A farmer cannot change REJECTED or COMPLETED orders. |
-| AC-ORD-11 | A farmer cannot change orders for another farmer's products. |
+| AC-AUTH-01 | User registers and logs in with a JWT; wrong credentials rejected; wrong role → 403. |
+| AC-AUTH-02 | Deactivated user cannot log in; reactivated user can. |
+| AC-VER-01 | Farmer submits verification → PENDING; admin approve → APPROVED; reject stores reason → REJECTED; resubmit → PENDING. |
+| AC-VER-02 | Unverified farmer blocked (403) from product CRUD, image upload, and order receiving. |
+| AC-PROD-01 | Farmer CRUD own products + images; buyer sees only APPROVED farmers' products; category filter works; details show ratings. |
+| AC-ORD-01 | Order placed deducts stock; exceeding stock → 400; rejection restores stock; status transitions follow the state machine. |
+| AC-ORD-02 | New-order email → farmer; status-change emails → buyer; notification records created. |
+| AC-REV-01 | Only purchased buyers can review; one review per product; author-only edit/delete; rating aggregates in product responses. |
+| AC-WL-01 | Wishlist add/remove/list/check; duplicate → 409; FARMER → 403. |
+| AC-NOTIF-01 | Notifications appear on order events; read/unread, mark-read, delete, clear-all work; isolation enforced. |
+| AC-ADMIN-01 | Admin stats, user/product/order lists, verification approve/reject, announcements, and soft-delete/reactivate all work; self/last-admin protection returns 400. |
+| AC-ANALYTICS-01 | Each role sees only its own analytics payload; 403 for wrong roles; revenue = COMPLETED orders. |
+| AC-SYS-01 | `./mvnw test` green (60 methods); `npm run build` clean; `qa/backend_test.sh` and `qa/uitest.js` green. |
 
 ---
 
-## 10. MVP Features
+## 10. Out of Scope
 
-The Minimum Viable Product (MVP) includes all currently implemented features
-plus the following additions to make the system complete and usable:
-
-### Backend MVP Requirements
-
-| Priority | Feature | Current Status |
-|---|---|---|
-| P0 | Authentication (Register, Login, JWT) | ✅ Implemented |
-| P0 | Role-based authorization | ✅ Implemented |
-| P0 | Farmer profile creation | ✅ Implemented |
-| P0 | Product CRUD (Create, Read, Update, Delete) | ✅ Implemented |
-| P0 | Order placement with stock validation | ✅ Implemented |
-| P0 | Order status management | ✅ Implemented |
-| P0 | Product browsing for buyers | ✅ Implemented |
-| P1 | Global exception handler | ✅ Implemented |
-| P1 | Product search by name (expose API) | ⚠️ Partially done |
-| P1 | Product category filter (expose API) | ⚠️ Partially done |
-| P1 | Farmer profile get/update endpoints | ✅ Implemented |
-| P1 | Prevent duplicate farmer profiles | ✅ Implemented |
-| P1 | Environment variables for credentials | ❌ Missing |
-| P1 | Refactor BuyerProductController to use Service layer | ❌ Missing |
-| P2 | Admin user management | ✅ Implemented |
-| P2 | Admin product and order oversight | ✅ Implemented |
-
-### Frontend MVP Requirements
-
-| Priority | Feature |
-|---|---|
-| P0 | Login and Registration pages |
-| P0 | Farmer Dashboard |
-| P0 | Farmer product management UI (list, create, edit, delete) |
-| P0 | Buyer product browsing UI |
-| P0 | Buyer order placement flow |
-| P1 | Order tracking for buyers |
-| P1 | Farmer order management UI |
-| P2 | Admin dashboard |
-
----
-
-## 11. Future Features
-
-The following features are planned for post-MVP releases:
-
-| Feature | Description | Priority |
-|---|---|---|
-| Farmer Verification Badge | Display a public verified badge on farmer profiles (backend `verified` flag already exists) | Medium |
-| Shopping Cart | Allow buyers to collect multiple items before placing an order | Medium |
-| Wishlist | Allow buyers to save products for future purchase | Low |
-| Payment Integration | Online payment processing (credit card, UPI, etc.) | High |
-| Order Notifications | Email or in-app notifications when order status changes | Medium |
-| Swagger Documentation | Interactive API documentation | High (pre-MVP) |
-| Postman Collection | Curated API test collection | Medium |
-| Docker Configuration | Containerize the application for consistent deployment | High |
-| CI/CD Pipeline | Automated testing and deployment | Medium |
-| Cloud Deployment | Host the application on a cloud platform | High |
-
----
-
-## 12. Out of Scope
-
-The following features are explicitly excluded from the FarmBridge project:
-
-- Mobile native applications (iOS/Android)
-- Real-time messaging or chat between users
-- Multi-language / internationalization support
-- Product ratings and reviews
-- Shipping and logistics management
-- Returns and refunds processing
+- Mobile native applications (web-only React SPA)
+- Real-time chat/messaging between users
+- Multi-language / internationalization
+- Shipping, logistics, returns, refunds
+- Payment processing (credit card / UPI / wallet / crypto)
 - Subscription or membership models
-- Integration with external agricultural databases
-- Machine learning or recommendation systems
-- Cryptocurrency or digital wallet payments
+- External agricultural databases / ML recommendations
 - Social features (follow, share, comment)
+- Real-time websockets (notifications are polled via REST)
 
 ---
 
-## 13. Assumptions
+## 11. Assumptions & Constraints
 
-1. **Technical Assumptions:**
-   - Java 25 is available and configured (per `pom.xml` properties).
-   - MySQL 8+ is installed and running locally for development.
-   - Maven is available for building the project.
-   - The development environment has IntelliJ IDEA (or equivalent IDE).
-   - Node.js and npm will be available for React frontend development.
-
-2. **Business Assumptions:**
-   - Farmers have basic digital literacy to use the platform.
-   - Buyers are interested in purchasing directly from farmers.
-   - Products are priced in a single currency (no multi-currency support).
-   - Farmers are responsible for product availability and accuracy of
-     listings.
-   - The platform does not handle physical delivery of products.
-
-3. **Operational Assumptions:**
-   - The database will be backed up regularly in production.
-   - SSL/TLS will be configured for the production deployment.
-   - Admin users will be manually created (no self-registration for ADMIN
-     role).
-   - The `ddl-auto=update` setting is acceptable for development but a
-     migration tool (like Flyway) would be preferred for production.
+- Java 25 + Spring Boot 4.1.0, MySQL 8+, Maven; React 18 + Vite for frontend.
+- `ddl-auto=update` acceptable for development; a migration tool (e.g.
+  Flyway) is preferred before production (noted in `10_DEPLOYMENT.md`).
+- Admin accounts are seeded manually; no ADMIN self-registration.
+- Single currency; physical delivery handled by farmers off-platform.
+- Sensitive config must be provided through environment variables in any
+  non-local environment.
 
 ---
 
-## 14. Constraints
+## 12. Dependencies (summary)
 
-1. **Technology Constraints:**
-   - Backend must use Java with Spring Boot 4.1.0.
-   - Database must be MySQL with JPA/Hibernate.
-   - Frontend must use React.
-   - Authentication must use JWT (no OAuth2, no session-based auth).
-   - The project uses Maven for build management.
+**Backend:** Spring Boot 4.1.0 starters (web, data-jpa, security, validation,
+mail), jjwt 0.12.6, MySQL connector, Lombok (optional), springdoc-openapi
+3.0.3, spring-boot-starter-test.
 
-2. **Design Constraints:**
-   - Must follow layered architecture (Controller → Service → Repository).
-   - Must use DTOs for API communication.
-   - Must use constructor injection (no field injection).
-   - Must use role-based authorization via Spring Security.
-   - API endpoints must follow RESTful conventions.
+**Frontend:** react 18.3, react-router-dom 6.26, axios, react-icons, recharts,
+vite 5.4.
 
-3. **Development Constraints:**
-   - Must follow the TrainingMug ADF v1.0 development lifecycle.
-   - All AI-generated code must be reviewed before inclusion.
-   - Feature branches should be used for development.
-
-4. **Deployment Constraints:**
-   - Frontend will be deployed separately from the backend.
-   - Database will be a managed MySQL service in production.
-   - Docker and CI/CD must be configured before production deployment.
+**Tools:** Postman collection (`docs/FarmBridge_API.postman_collection.json`,
+41 requests), Swagger UI, `qa/backend_test.sh`, `qa/uitest.js`.
 
 ---
 
-## 15. Dependencies
-
-### External Dependencies (Already Configured)
-
-| Dependency | Version | Purpose |
-|---|---|---|
-| Spring Boot Starter Web | 4.1.0 (managed) | REST API framework |
-| Spring Boot Starter Data JPA | 4.1.0 (managed) | Database access |
-| Spring Boot Starter Security | 4.1.0 (managed) | Authentication and authorization |
-| Spring Boot Starter Validation | 4.1.0 (managed) | Input validation |
-| MySQL Connector-J | Runtime | MySQL database driver |
-| Project Lombok | Optional | Boilerplate code reduction |
-| jjwt-api | 0.12.6 | JWT token creation and parsing |
-| jjwt-impl | 0.12.6 (runtime) | JWT implementation |
-| jjwt-jackson | 0.12.6 (runtime) | JWT JSON serialization |
-| Spring Boot Starter Test | 4.1.0 (test) | Testing framework |
-
-### External Dependencies (Needed for Future)
-
-| Dependency | Purpose |
-|---|---|
-| springdoc-openapi-starter-webmvc-ui | Swagger/OpenAPI documentation |
-| React + React Router | Frontend UI framework |
-| Axios or Fetch | Frontend HTTP client |
-| Docker + docker-compose | Containerization |
-
-### Internal Dependencies
-
-| Component | Depends On |
-|---|---|
-| Controllers | Services |
-| Services | Repositories |
-| Repositories | Entities and Database |
-| Security Config | JwtAuthFilter, JwtUtil |
-| Frontend | All backend APIs |
-
----
-
-*Document Version: 1.0*
-*Last Updated: 2026-07-28*
-*Framework: TrainingMug ADF v1.0*
+*End of Requirements Document*

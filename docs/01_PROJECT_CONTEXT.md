@@ -1,325 +1,258 @@
-# FarmBridge - Project Context
+# FarmBridge — Project Context
+
+> **Document Version:** 2.0
+> **Last Updated:** 2026-08-06
+> **Framework:** TrainingMug AI Development Framework (ADF) v1.0
+> **Status:** ✅ Fully aligned with the current source code (Day 22 ADF compliance pass)
+
+---
 
 ## 1. Project Name
 
-FarmBridge
+**FarmBridge**
 
-## 2. Problem Statement
+---
+
+## 2. Project Vision
+
+FarmBridge's vision is to become the trusted direct digital marketplace that
+connects farmers with buyers — eliminating unnecessary intermediaries, giving
+farmers a fair share of the selling price, and giving buyers transparent,
+traceable access to fresh agricultural produce straight from the source.
+
+The platform is built as an **enterprise-grade** web application: role-based
+dashboards, farmer identity verification, analytics, in-app and email
+notifications, and a professional UI — ready to be containerized and deployed
+to the cloud (the next ADF phase).
+
+---
+
+## 3. Problem Statement
 
 Farmers often depend on intermediaries to sell their agricultural products.
-This can reduce the farmer's profit and make it difficult for buyers to
+This can reduce the farmer's profit margin and make it difficult for buyers to
 directly identify the farmer and understand the source of the products.
 
-FarmBridge aims to provide a direct digital marketplace that connects farmers
-with buyers without unnecessary middlemen.
+FarmBridge addresses this by providing a direct digital marketplace that
+connects farmers with buyers without unnecessary middlemen, supported by:
 
-## 3. Business Objective
+- Direct farmer-to-buyer connections
+- Transparent product sourcing information (farmer profiles, verification)
+- Role-specific features for farmers, buyers, and administrators
+- Simple, secure JWT-based authentication and authorization
 
-The main objective of FarmBridge is to connect farmers directly with buyers,
-allow farmers to list their agricultural products, and allow buyers to
-discover and purchase products through the platform.
+---
 
-The project also aims to improve trust between farmers and buyers through
-farmer profiles, verification, and product information.
+## 4. Business Objective
 
-## 4. Project Scope
+The main objective of FarmBridge is to:
 
-FarmBridge currently focuses on:
+1. Connect farmers directly with buyers.
+2. Allow farmers to list their agricultural products and manage incoming orders.
+3. Allow buyers to discover, search, and purchase agricultural products.
+4. Improve trust through **farmer verification** (admin-approved identity and
+   farm documents) and transparent product information.
+5. Provide a secure platform with role-based access control (ADMIN, FARMER,
+   BUYER).
+6. Provide **data-driven dashboards** (analytics) so admins, farmers, and
+   buyers can make informed decisions.
+7. Keep all parties informed through **in-app notifications** and
+   **professional email notifications** (orders, verification, announcements,
+   password reset).
+8. Preserve all historical data through **enterprise soft delete**
+   (deactivation/reactivation) — never lose data.
 
-- User registration and login
-- JWT-based authentication
-- Role-based authorization
-- Farmer profiles
-- Product management
-- Product search
-- Product category filtering
-- Buyer order placement
-- Farmer order management
-- Order status management
+---
 
-Planned features include:
+## 5. Project Scope
 
-- Admin management
-- Farmer verification
-- Frontend integration
-- API documentation
-- Automated testing
-- Containerization
-- CI/CD
-- Cloud deployment
+### Currently Implemented (complete and tested)
 
-## 5. User Roles
+- User registration and login with JWT-based authentication
+- Role-based authorization (ADMIN, FARMER, BUYER) via Spring Security
+- Farmer profile management (create / view / update)
+- **Farmer verification workflow** (submit/resubmit documents → admin approve
+  / reject-with-reason → verified badge → gated selling)
+- Product management (create / view / update / delete / image upload)
+- Buyer product browsing, **category filtering**, and product details
+- Order placement with stock validation and deduction, plus order status
+  lifecycle (PENDING → ACCEPTED → COMPLETED / REJECTED)
+- **Reviews & ratings** (buyer reviews purchased products; star aggregation)
+- **Wishlist** (save / remove / check products)
+- **In-app notifications** (read/unread, mark read, delete, clear all)
+- **Email notification system** (welcome, verification approved/rejected,
+  order events, password reset, admin announcements — all fail-safe)
+- **Password reset** (forgot password + token-based reset, enumeration-safe)
+- **Analytics dashboards** for ADMIN / FARMER / BUYER (server-side aggregation)
+- **Enterprise soft delete** (deactivate/reactivate accounts, data preserved)
+- **Enterprise UI** — design-system components, role-based app shell, analytics
+  charts, floating-label forms, responsive and accessible
+- Swagger/OpenAPI documentation, Postman collection, unit + integration tests,
+  QA scripts (backend E2E + browser E2E)
 
-### Farmer
+### Planned for Future
 
-A farmer can:
+- Docker & Docker Compose (next phase)
+- CI/CD pipeline
+- Cloud deployment (Azure / Vercel)
+- Payment processing
+- Product search by name (backend support exists; controller endpoint pending)
+- Shopping cart
 
-- Register and login
-- Create a farmer profile
-- Create products
-- View products
-- Update products
-- Delete products
-- View received orders
-- Accept orders
-- Reject orders
-- Complete orders
+---
 
-### Buyer
+## 6. User Roles
 
-A buyer can:
+| Role | Description |
+|---|---|
+| **ADMIN** | Platform administrator — manages users (incl. soft delete/reactivate), products, orders, farmer verification, sends email announcements, views platform analytics |
+| **FARMER** | Lists agricultural products, manages received orders, submits verification to become a "Verified Farmer" |
+| **BUYER** | Browses products, places orders, writes reviews, builds a wishlist, tracks orders, views personal analytics |
 
-- Register and login
-- Browse products
-- Search products
-- Filter products by category
-- Place orders
-- View orders
-- Track order status
+Self-registration cannot create ADMIN accounts (admins are seeded manually).
 
-### Admin
+---
 
-The Admin role manages the platform (users, products, orders, and farmer verification).
-
-Planned responsibilities include:
-
-- View users
-- Manage farmers
-- Manage buyers
-- Manage products
-- Manage orders
-- Verify farmers
-
-## 6. Technology Stack
+## 7. Technology Stack
 
 ### Backend
 
-- Java
-- Spring Boot
-- Spring Security
-- JWT Authentication
-- Spring Data JPA
-- Hibernate
-- Maven
+| Technology | Version / Detail |
+|---|---|
+| Java | 25 |
+| Spring Boot | 4.1.0 |
+| Spring Web, Data JPA, Security, Validation, Mail | Boot starters |
+| JWT (jjwt) | 0.12.6 (api / impl / jackson) |
+| Hibernate / Jakarta Persistence | ORM, `ddl-auto=update` |
+| Maven | Build tool (`./mvnw`) |
+| springdoc-openapi | 3.0.3 (Swagger UI at `/swagger-ui`), OpenAPI version 1.2.0 |
 
 ### Database
 
-- MySQL
+- **MySQL 8+** — schema managed by JPA entities (`ddl-auto=update`)
 
 ### Frontend
 
-- React
+| Technology | Version / Detail |
+|---|---|
+| React | 18.3 |
+| React Router | 6.26 |
+| Axios | 1.7 |
+| Vite | 5.4 (dev server on `:5173`, proxy → backend `:8080`) |
+| react-icons | 5.7 |
+| recharts | 3.10 (analytics charts) |
+| CSS | Custom design-system tokens (`--fb-*`), CSS Modules per component |
 
-Frontend development is planned and will be integrated with the Spring Boot
-REST APIs.
+### Development & QA Tools
 
-### Development Tools
+- IntelliJ IDEA, MySQL Workbench, Postman, Git / GitHub
+- `qa/backend_test.sh` (live backend E2E suite)
+- `qa/uitest.js` (Puppeteer browser E2E suite + screenshots)
+- Swagger UI
 
-- IntelliJ IDEA
-- MySQL Workbench
-- Postman
-- Git
-- GitHub
+---
 
-## 7. Backend Architecture
+## 8. Folder Structure
 
-FarmBridge follows a layered architecture.
+```
+FarmBridge/
+├── docs/                          # ADF documentation (01–11 + day reports)
+├── qa/                            # QA scripts, results, screenshots
+├── FarmBridge/                    # Backend (Spring Boot / Maven)
+│   ├── src/main/java/com/farmbridge/
+│   │   ├── config/                # SecurityConfig, OpenApiConfig, WebConfig
+│   │   ├── controller/            # REST controllers (15)
+│   │   ├── dto/                   # Request/response DTOs (30+)
+│   │   ├── entity/                # JPA entities + enums (9 tables)
+│   │   ├── exception/             # GlobalExceptionHandler + ErrorResponse
+│   │   ├── repository/            # Spring Data JPA repositories (9)
+│   │   ├── security/              # JwtAuthFilter, JwtUtil
+│   │   ├── service/               # Business logic (interface + impl per module)
+│   │   └── FarmBridgeApplication.java
+│   ├── src/main/resources/application.properties
+│   ├── src/test/java/com/farmbridge/   # 6 test classes (60 test methods)
+│   ├── pom.xml
+│   └── frontend/                  # React SPA (Vite)
+│       └── src/
+│           ├── components/        # Shared components + ui/ design system
+│           ├── config/navigation.jsx  # Role-based nav config
+│           ├── context/           # AuthContext, NotificationContext, WishlistContext
+│           ├── pages/             # 23 pages (role-scoped)
+│           ├── services/api.js    # Axios API layer
+│           ├── styles/phase2.css  # Global polish layer
+│           ├── utils/             # notifications, productImages, recentlyViewed, …
+│           ├── App.jsx            # Routing (role-protected)
+│           └── main.jsx
+├── farmbridge-orders-2026-08-03.csv   # Sample analytics export
+└── README.md
+```
 
-The main layers are:
+---
 
-- Controller
-- Service
-- Repository
-- Entity
-- DTO
-- Security
-- Configuration
+## 9. Coding Standards
 
-The general request flow is:
+FarmBridge follows the conventions documented in
+**[`08_CODING_STANDARDS.md`](08_CODING_STANDARDS.md)**:
 
-Client
-→ Controller
-→ Service
-→ Repository
-→ MySQL Database
+- Layered architecture: Controller → Service (interface + impl) → Repository → DB
+- DTO pattern for all API requests/responses (entities never exposed)
+- Constructor injection everywhere (no field injection)
+- Jakarta Bean Validation on all request DTOs
+- Centralized exception handling via `GlobalExceptionHandler`
+- Enum-based statuses stored as strings (`EnumType.STRING`)
+- BCrypt password hashing; JWT stateless security
+- Meaningful conventional commit messages (`feat:`, `fix:`, `docs:`, `test:`)
 
-The response follows the reverse flow:
+---
 
-MySQL Database
-→ Repository
-→ Service
-→ Controller
-→ Client
+## 10. Git Workflow
 
-## 8. Authentication and Authorization
+- Repository hosted on **GitHub**; default branch **`main`**.
+- Milestones committed on `main` with meaningful messages; larger features
+  should use feature branches:
 
-FarmBridge uses JWT-based authentication.
-
-The supported roles are:
-
-- ADMIN
-- FARMER
-- BUYER
-
-Authentication flow:
-
-1. User registers.
-2. User logs in.
-3. Server validates the credentials.
-4. Server generates a JWT token.
-5. Client sends the JWT token with protected API requests.
-6. JWT authentication filter validates the token.
-7. Spring Security checks the user's role.
-8. The user can access authorized endpoints.
-
-## 9. Current Backend Modules
-
-The current backend includes:
-
-### Authentication
-
-- Registration
-- Login
-- Password encryption
-- JWT token generation
-- JWT validation
-
-### Farmer
-
-- Farmer profile
-- Product management
-- Farmer order management
-
-### Buyer
-
-- Product browsing
-- Product search
-- Category filtering
-- Order placement
-- Order viewing
-
-### Orders
-
-- Order creation
-- Product and farmer association
-- Buyer association
-- Quantity management
-- Total price
-- Order status management
-
-### Order Status
-
-The current order lifecycle supports:
-
-PENDING
-→ ACCEPTED
-→ COMPLETED
-
-or
-
-PENDING
-→ REJECTED
-
-## 10. Current Project Status
-
-The core Spring Boot backend is currently functional.
-
-Completed areas include:
-
-- Authentication
-- JWT security
-- Role-based authorization
-- Farmer profile
-- Product management
-- Buyer order placement
-- Farmer order management
-- Order status management
-- MySQL database integration
-- GitHub repository
-
-Partially implemented items (backend support exists, controller integration pending):
-
-- Product search — `ProductRepository.findByNameContainingIgnoreCase()` exists, but no service method or controller endpoint exposes it yet
-- Product category filtering — `ProductService.getProductsByCategory()` exists, but no buyer controller endpoint calls it yet
-
-Remaining project work includes:
-
-- Admin module
-- Farmer verification
-- React frontend
-- Postman collection
-- Swagger API documentation
-- Unit testing
-- Integration testing
-- Docker configuration
-- CI/CD pipeline
-- Cloud deployment
-- Final project documentation
-
-## 11. Coding Approach
-
-The project follows a layered architecture and uses:
-
-- DTO Pattern
-- Repository Pattern
-- Service Layer
-- Constructor Injection
-- Role-based Security
-- JWT Authentication
-
-Business logic should be maintained in service classes rather than controllers.
-
-## 12. Git Strategy
-
-The project source code is maintained in GitHub.
-
-The main branch is:
-
-main
-
-Feature development should use separate feature branches where possible.
-
-Example:
-
+```
 feature/admin
 feature/farmer-verification
-feature/frontend
-feature/swagger
-feature/docker
+feature/analytics
+feature/frontend-ui
+feature/email-notifications
+feature/docker        # upcoming
+```
 
-Meaningful commit messages should be used.
+- Commit message style: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
+- Every milestone includes documentation updates + test/QA verification before
+  commit.
 
-Examples:
+---
 
-feat: add admin user management
-feat: add farmer verification
-docs: update project context
-test: add order service tests
-fix: resolve JWT validation issue
+## 11. Deployment Strategy
 
-## 13. Deployment Strategy
+Current state: the application runs in a **local development environment**
+(backend `:8080`, frontend `:5173`).
 
-The application is currently running in a local development environment.
+Planned production strategy (documented in detail in
+[`10_DEPLOYMENT.md`](10_DEPLOYMENT.md) — **documentation only**, no
+implementation yet):
 
-The planned deployment strategy is:
+```
+React Frontend (Vercel)   →   Spring Boot Backend (Azure)   →   MySQL (managed cloud)
+```
 
-Frontend
-→ Cloud deployment platform
+- **Docker** images for backend + frontend, orchestrated with **Docker Compose**.
+- Environment-variable configuration for all secrets (DB credentials, JWT
+  secret, SMTP).
+- **CI/CD** via GitHub Actions (build → test → QA → deploy).
+- Health checks and a documented rollback strategy.
+- Docker & Docker Compose are the next ADF phase (Phase 12).
 
-Backend
-→ Cloud deployment platform
+---
 
-Database
-→ Cloud MySQL
+## 12. Development Process
 
-Docker and CI/CD will be configured before production deployment.
+FarmBridge follows the **TrainingMug AI Development Framework (ADF)**:
 
-## 14. Development Methodology
-
-FarmBridge follows the TrainingMug AI Development Framework (ADF) approach.
-
-The development process is:
-
+```
 Understand Requirement
 → Design
 → Document
@@ -332,8 +265,23 @@ Understand Requirement
 → Review
 → Merge
 → Deploy
+```
 
-AI tools are used as engineering assistants.
+AI tools are used as engineering assistants. All AI-generated code is
+reviewed, understood, tested, and verified before inclusion. Each working day
+ends with a **DAY report** in `docs/` capturing files created/modified,
+business rules, test results, and bugs found & fixed.
 
-All AI-generated code must be reviewed, understood, tested, and verified before
-being included in the project.
+---
+
+## 13. Current Project Status
+
+- **Backend:** complete — all major modules implemented, `./mvnw compile` and
+  `./mvnw test` green (60 test methods across 6 classes).
+- **Frontend:** complete — production build clean (`npm run build`), browser
+  E2E suite green (56 checks).
+- **QA:** `qa/backend_test.sh` E2E suite green (203+ checks), `qa/uitest.js`
+  green (56 checks).
+- **Documentation:** ADF docs 01–11 present and aligned (this compliance pass).
+- **Remaining:** Docker & Docker Compose (Phase 12), CI/CD, cloud deployment,
+  optional product-search endpoint.

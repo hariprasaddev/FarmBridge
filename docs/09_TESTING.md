@@ -1,0 +1,131 @@
+# FarmBridge — Testing & QA Document
+
+> **Document Version:** 1.0
+> **Last Updated:** 2026-08-06
+> **Framework:** TrainingMug ADF v1.0
+> **Status:** ✅ Counts audited against the repository on 2026-08-06
+
+---
+
+## 1. Testing Strategy
+
+Four complementary layers:
+
+1. **Backend integration tests** (`./mvnw test`) — real Spring context,
+   real MySQL stack, mock only for SMTP.
+2. **Backend live E2E** (`qa/backend_test.sh`) — boots against the running
+   app on `:8080`, exercises every API contract over HTTP.
+3. **Frontend browser E2E** (`qa/uitest.js`, Puppeteer) — full user journeys
+   in Chrome against `:5173`, with screenshots.
+4. **Builds & static verification** — `./mvnw compile` / `./mvnw package` and
+   `npm run build` (clean output required).
+
+---
+
+## 2. Backend Unit & Integration Tests (`./mvnw test`)
+
+**Current count: 60 test methods across 6 classes.**
+
+| Test class | Methods | Coverage |
+|---|---|---|
+| `AnalyticsFlowIntegrationTest` | 10 | Admin/farmer/buyer analytics values + authorization matrix (403s) |
+| `EmailNotificationFlowIntegrationTest` | 15 | All 9 email flows (mocked `JavaMailSender`), audience filtering, SMTP-failure non-rollback, cleanup |
+| `FarmerVerificationFlowIntegrationTest` | 12 | Submit/resubmit, approve/reject-with-reason, 403 gates, document rules, buyer visibility |
+| `PasswordResetFlowIntegrationTest` | 9 | Forgot/reset lifecycle, enumeration safety, expiry, single-use tokens |
+| `SoftDeleteFlowIntegrationTest` | 13 | Deactivate → blocked everywhere → reactivate → restored; data preserved; admin guards |
+| `FramTrustApplicationTests` | 1 | Spring context loads |
+
+Historical progression (from DAY reports): 18 → 26 → 39 → 50 → **60**
+(methods were added beyond the counts reported on their milestone days).
+
+---
+
+## 3. Backend Live E2E Suite (`qa/backend_test.sh`)
+
+- Runs against the running backend (`:8080`); asserts status codes, business
+  rules, and data integrity via HTTP + DB reads.
+- **Last full run: 203 PASS / 0 FAIL** (Day 17 run, `backend_test_results_day17b.txt`);
+  the Day 16–21 milestones added more checks (verification +24, analytics +16,
+  email/announcements, soft-delete lifecycle) — the suite has only grown.
+- Covers: authentication (21), farmer profile (6), farmer verification (25),
+  products & images (25), orders (23), reviews (17), wishlist (11),
+  notifications (17), password reset (15), admin (23), analytics (28).
+- Historical results archived in `qa/backend_test_results*.txt`.
+
+---
+
+## 4. Frontend Browser E2E Suite (`qa/uitest.js`)
+
+- Puppeteer browser automation against `:5173` (backend proxied to `:8080`).
+- **Last reported run: 56 PASS / 0 FAIL** (Day 20). Captures screenshots into
+  `qa/screenshots/`.
+- Covers: auth flows, buyer flows (browse, order, wishlist, reviews, dashboard),
+  farmer flows (products, orders, verification), admin flows (users, products,
+  orders, verification, announcements), analytics dashboards, protected routes.
+
+---
+
+## 5. Manual QA Checklist
+
+- Register FARMER + BUYER (duplicate email → friendly message; no ADMIN via UI).
+- Login → role-based redirect; wrong-role access → 403; invalid token → 401.
+- Farmer: profile → verification (PENDING) → admin approve → create product +
+  image → buyer sees Verified badge.
+- Admin: reject without reason → 400; reject with reason → farmer sees it.
+- Orders: place → farmer accepts → completes; buyer receives notification +
+  email; stock deducted; rejection restores stock.
+- Soft delete: deactivate buyer → login blocked (403); reactivate → access
+  restored; self-deactivation blocked (400).
+- Notifications: unread badge, mark read, clear all.
+- Announcements: send to BUYERS → buyers receive email; history recorded;
+  non-admin → 403.
+
+---
+
+## 6. Swagger Verification
+
+- UI: `http://localhost:8080/swagger-ui` — all 74 endpoints listed, grouped
+  by `@Tag` (Admin, Farmer Products, Orders, Reviews, Wishlist, Notifications,
+  Analytics, Password Reset, …).
+- JSON: `http://localhost:8080/v3/api-docs`.
+- Use the **Authorize** button with a JWT from `POST /api/auth/login` to test
+  protected endpoints interactively.
+
+## 7. Postman Testing
+
+- Collection: `docs/FarmBridge_API.postman_collection.json` (**41 requests**)
+  with environment `docs/FarmBridge_Environment.postman_environment.json`
+  (base URL + tokens).
+- Covers auth, profiles, products, orders, reviews, wishlist, notifications,
+  password reset, admin, verification, analytics, announcements.
+
+## 8. Frontend Build
+
+- `npm run build` (Vite) — clean, 0 errors / 0 warnings.
+- Vendor chunk splitting (`vendor-react`, `vendor-charts` [recharts],
+  `vendor-icons`) keeps the main bundle small (~211 kB after split).
+
+## 9. Backend Build
+
+- `./mvnw compile` — BUILD SUCCESS.
+- `./mvnw package -DskipTests` — jar built and runnable on `:8080`.
+- `./mvnw test` — 60/60 green (see §2).
+
+---
+
+## 10. Known Limitations
+
+| # | Limitation | Impact / Note |
+|---|---|---|
+| 1 | No load/performance testing yet | NFR-PERF targets (<500 ms, ~100 users) unverified |
+| 2 | Product search by name has no endpoint | Repository support exists; UI search is not wired server-side |
+| 3 | DB password + JWT secret hardcoded in `application.properties` | Local dev only; env-var hardening planned for Phase 12 |
+| 4 | No CI/CD pipeline yet | Tests are run manually / locally |
+| 5 | Email delivery is best-effort (no retry queue) | Fail-safe by design; deliveries depend on SMTP provider |
+| 6 | No dedicated unit tests for every service method | Integration + E2E suites cover the main paths |
+| 7 | Notifications use REST polling, not websockets | Acceptable for the current scale |
+| 8 | No migration tool (Flyway) | `ddl-auto=update` used; production migration planned |
+
+---
+
+*End of Testing Document*

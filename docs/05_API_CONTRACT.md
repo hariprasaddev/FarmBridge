@@ -1,11 +1,14 @@
 # FarmBridge - API Contract
 
-> **Document Version:** 1.2  
-> **Last Updated:** 2026-08-05  
+> **Document Version:** 1.3  
+> **Last Updated:** 2026-08-06  
 > **Framework:** TrainingMug ADF v1.0  
-> **Status:** ✅ Based on actual source code inspection  
+> **Status:** ✅ Based on actual source code inspection (Day 22 ADF compliance pass)  
 > **Day 16 update:** Added the Farmer Verification Workflow (submit / resubmit, approve, reject-with-reason, product gating, buyer visibility filtering).  
-> **Day 17 update:** Added the Analytics module — 10 role-scoped dashboard endpoints with server-side aggregation (cards, charts and tables) for ADMIN, FARMER and BUYER dashboards. Revenue is defined as COMPLETED-order value.
+> **Day 17 update:** Added the Analytics module — 10 role-scoped dashboard endpoints with server-side aggregation (cards, charts and tables) for ADMIN, FARMER and BUYER dashboards. Revenue is defined as COMPLETED-order value.  
+> **Day 20 update:** Added the Email Notification System — admin announcements (send + history) and the optional `reason` on order status updates.  
+> **Day 21 update:** Added Enterprise Soft Delete — `DELETE /api/admin/users/{id}` / `/api/users/{id}` now deactivate (`active=false`) and `PUT .../reactivate` restores.  
+> **Day 22 update:** Full audit — every endpoint in the source code is now documented (74 total), including Reviews, Wishlist, Notifications, Password Reset, Product Images and category filtering.
 
 ---
 
@@ -823,9 +826,8 @@ curl -X GET http://localhost:8080/api/buyer \
 
 > Returns empty array `[]` if no products exist.
 
-> ⚠️ **Known Issue:** `BuyerProductController` directly uses `ProductRepository` instead of `ProductService`, breaking the layered architecture pattern. This will be refactored.
-
-> ❌ **Missing Endpoints:** Product search by name and category filtering are **not exposed** through any buyer API endpoint, even though the logic exists in `ProductService` and `ProductRepository`.
+> ✅ **Category filtering is implemented** — see §3.11 (`GET /api/buyer/products/category/{category}`).
+> ❌ **Remaining gap:** Product search by name is still **not exposed** as an endpoint (repository support exists) — see §6.1.
 
 **Sample cURL:**
 
@@ -1443,59 +1445,358 @@ curl -X GET http://localhost:8080/api/test \
 
 ---
 
+### 3.7 Reviews & Ratings
+
+#### 3.7.1 Submit a Review
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/products/{productId}/reviews` |
+| **HTTP Method** | `POST` |
+| **Description** | Buyer reviews a product they purchased (their order for it is `ACCEPTED` or `COMPLETED`). One review per buyer per product — a duplicate returns an error. |
+| **Authentication** | JWT required · Role BUYER |
+
+**Request Body:**
+
+```json
+{
+  "rating": 5,
+  "comment": "Excellent quality rice!"
+}
+```
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `rating` | Integer | ✅ | Must be 1–5 |
+| `comment` | String | ❌ | Optional, max 1000 chars |
+
+**Success (201 Created):** `ReviewResponse` (see §5.19).
+
+**Errors:** 400 validation / not purchased · 409 duplicate review · 404 product not found.
+
+---
+
+#### 3.7.2 Get Reviews of a Product
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/products/{productId}/reviews` | `GET` |
+| **Description** | All reviews for a product, newest first. |
+| **Authentication** | JWT required · Role BUYER |
+
+**Success (200 OK):** `[ReviewResponse]` (empty array when none).
+
+---
+
+#### 3.7.3 Get My Review of a Product
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/products/{productId}/reviews/mine` | `GET` |
+| **Description** | The logged-in buyer's own review of the product; empty body if they have not reviewed it. |
+| **Authentication** | JWT required · Role BUYER |
+
+---
+
+#### 3.7.4 Update My Review
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/reviews/{reviewId}` |
+| **HTTP Method** | `PUT` |
+| **Description** | Buyer edits their own review. Only the author can update. |
+| **Authentication** | JWT required · Role BUYER |
+
+**Request body:** same as 3.7.1. **Errors:** 400 validation · 403 not the author · 404 not found.
+
+---
+
+#### 3.7.5 Delete My Review
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/buyer/reviews/{reviewId}` |
+| **HTTP Method** | `DELETE` |
+| **Description** | Buyer deletes their own review. |
+| **Authentication** | JWT required · Role BUYER |
+
+**Success:** `"Review deleted successfully"` · **Errors:** 403 not the author · 404 not found.
+
+---
+
+#### 3.7.6 Get Reviews of My Product (Farmer)
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/farmer/products/{productId}/reviews` |
+| **HTTP Method** | `GET` |
+| **Description** | Reviews for one of the farmer's own products. Only the product owner can view. |
+| **Authentication** | JWT required · Role FARMER |
+
+**Success:** `[ReviewResponse]` · **Errors:** 403 not the owner · 404 product not found.
+
+---
+
+### 3.8 Wishlist
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `POST` | `/api/buyer/wishlist/{productId}` | Add a product to the wishlist → **201** `WishlistResponse`; duplicate → 409; missing product → 404 | JWT · BUYER |
+| `DELETE` | `/api/buyer/wishlist/{productId}` | Remove from wishlist (idempotent) → `"Product removed from wishlist"` | JWT · BUYER |
+| `GET` | `/api/buyer/wishlist` | List the buyer's saved products (newest first) → `[ProductResponse]` | JWT · BUYER |
+| `GET` | `/api/buyer/wishlist/check/{productId}` | `true`/`false` whether the product is wishlisted | JWT · BUYER |
+
+**Example — add:** `POST /api/buyer/wishlist/1` → **201**
+
+```json
+{
+  "id": 4,
+  "productId": 1,
+  "productName": "Organic Rice",
+  "buyerName": "Jane Buyer",
+  "createdAt": "2026-08-05T10:00:00"
+}
+```
+
+---
+
+### 3.9 Notifications
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/notifications` | All notifications of the logged-in user, newest first → `[NotificationResponse]` | JWT · any role |
+| `GET` | `/api/notifications/unread` | Only unread notifications → `[NotificationResponse]` | JWT · any role |
+| `GET` | `/api/notifications/unread/count` | Unread count (badge) → number | JWT · any role |
+| `PUT` | `/api/notifications/{id}/read` | Mark one notification as read → `NotificationResponse` (403 if another user's, 404 if missing) | JWT · any role |
+| `PUT` | `/api/notifications/read-all` | Mark all as read → number marked | JWT · any role |
+| `DELETE` | `/api/notifications/{id}` | Delete one notification → `"Notification deleted successfully"` | JWT · any role |
+| `DELETE` | `/api/notifications` | Delete all of the user's notifications → number deleted | JWT · any role |
+
+**Example notification:**
+
+```json
+{
+  "id": 12,
+  "title": "New Order",
+  "message": "Jane Buyer placed an order for Organic Rice",
+  "type": "NEW_ORDER",
+  "isRead": false,
+  "referenceId": 1,
+  "createdAt": "2026-08-05T10:00:00"
+}
+```
+
+---
+
+### 3.10 Password Reset
+
+#### 3.10.1 Forgot Password
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/auth/forgot-password` | `POST` · **Public** |
+| **Description** | Sends an HTML reset link if the email exists. Always returns the same generic response whether or not the email exists (enumeration-safe). Inactive accounts receive the identical response and no token. |
+
+**Request:**
+
+```json
+{
+  "email": "john@farm.com"
+}
+```
+
+**Success (200 OK):** `"Password reset link sent to your email if the account exists."`
+**Errors:** 400 invalid email format.
+
+---
+
+#### 3.10.2 Reset Password
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/auth/reset-password` | `POST` · **Public** |
+| **Description** | Validates the token (exists, unexpired, unused) and updates the password with BCrypt. The token is then consumed (cannot be reused). |
+
+**Request:**
+
+```json
+{
+  "token": "550e8400-e29b-41d4-a716-446655440000",
+  "newPassword": "NewSecurePassword123"
+}
+```
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `token` | String | ✅ | NotBlank |
+| `newPassword` | String | ✅ | Min 6 chars |
+
+**Success (200 OK):** `"Password reset successfully"` · **Errors:** 400 invalid/expired/used token or short password.
+
+---
+
+### 3.11 Product Details, Category & Images
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `GET` | `/api/buyer/products/{id}` | Full product details (buyer view) — seller farm info, rating breakdown, verified flag; 404 when the seller is not APPROVED | JWT · BUYER |
+| `GET` | `/api/buyer/products/category/{category}` | Products in a category, case-insensitive (related products) → `[ProductResponse]` | JWT · BUYER |
+| `GET` | `/api/farmer/products/{id}` | A farmer fetches one of their own products by ID | JWT · FARMER |
+| `POST` | `/api/farmer/products/{id}/image` | Upload/replace product image. `multipart/form-data`, part name `file` (JPG/PNG/WEBP/GIF ≤ 5 MB). Owner only → updated `ProductResponse` | JWT · FARMER |
+| `DELETE` | `/api/farmer/products/{id}/image` | Remove the product image → updated `ProductResponse` | JWT · FARMER |
+
+**Example — category filter:** `GET /api/buyer/products/category/Grains` →
+
+```json
+[
+  {
+    "id": 1, "name": "Organic Rice", "price": 50.0, "quantity": 100,
+    "category": "Grains", "farmerName": "John Farmer",
+    "imageUrl": "/uploads/products/abc.png", "farmerVerified": true,
+    "averageRating": 4.5, "reviewCount": 8
+  }
+]
+```
+
+---
+
+### 3.12 Announcements
+
+#### 3.12.1 Send Announcement
+
+| Property | Value |
+|---|---|
+| **Endpoint** | `/api/admin/announcements` | `POST` |
+| **Description** | Emails every user matching the audience (`ALL` / `BUYERS` / `FARMERS`). A delivery failure for one recipient never stops the rest; the announcement is stored in history. |
+| **Authentication** | JWT required · Role ADMIN |
+
+**Request Body:**
+
+```json
+{
+  "audience": "FARMERS",
+  "subject": "New harvest season update",
+  "message": "<p>Dear farmers, please update your crop listings.</p>",
+  "buttonText": "Visit Dashboard",
+  "buttonUrl": "https://farmbridge.app/farmer/dashboard"
+}
+```
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `audience` | String (enum) | ✅ | `ALL`, `BUYERS`, or `FARMERS` |
+| `subject` | String | ✅ | NotBlank, max 255 |
+| `message` | String | ✅ | NotBlank, max 5000 |
+| `buttonText` | String | ❌ | Optional |
+| `buttonUrl` | String | ❌ | Must match `^https?://` when present |
+
+**Success (200 OK):** `AnnouncementResponse` (id, audience, subject, message, buttonText, buttonUrl, sentBy, recipientCount, createdAt).
+**Errors:** 400 validation (e.g. `javascript:` URL rejected).
+
+---
+
+#### 3.12.2 Get Announcement History
+
+| **Endpoint** | `/api/admin/announcements` | `GET` |
+|---|---|---|
+| **Description** | Every announcement sent, newest first → `[AnnouncementResponse]`. |
+| **Authentication** | JWT required · Role ADMIN |
+
+---
+
+### 3.13 Soft Delete & Reactivate
+
+| Method | Endpoint | Description | Auth |
+|---|---|---|---|
+| `DELETE` | `/api/admin/users/{id}` | **Soft delete** — sets `active=false`. The record and all historical data are preserved. Guards: an admin cannot deactivate their own account; the last active ADMIN can never be deactivated (400). → `"User deactivated successfully"` | JWT · ADMIN |
+| `PUT` | `/api/admin/users/{id}/reactivate` | Sets `active=true`, restoring login and full access → `"User activated successfully"` | JWT · ADMIN |
+| `DELETE` | `/api/users/{id}` | Same soft-delete contract via the User module | JWT · ADMIN |
+| `PUT` | `/api/users/{id}/reactivate` | Same reactivate contract via the User module | JWT · ADMIN |
+
+**Errors (both routes):** 400 self-deactivation / last-active-admin · 404 user not found.
+
+---
+
 ## 4. Complete API Endpoint Summary
 
 | # | Method | Endpoint | Auth | Role | Description |
 |---|---|---|---|---|---|
 | 1 | `POST` | `/api/auth/register` | Public | — | Register a new user |
 | 2 | `POST` | `/api/auth/login` | Public | — | Login and get JWT token |
-| 3 | `GET` | `/api/farmer` | JWT | FARMER | Farmer dashboard (stub) |
-| 4 | `GET` | `/api/buyer` | JWT | BUYER | Buyer dashboard (stub) |
-| 5 | `GET` | `/api/admin` | JWT | ADMIN | Admin dashboard (stub) |
-| 6 | `POST` | `/api/farmer/profile` | JWT | FARMER | Create farmer profile |
-| 7 | `POST` | `/api/farmer/products` | JWT | FARMER | Create a new product |
-| 8 | `GET` | `/api/farmer/products/my-products` | JWT | FARMER | Get my products |
-| 9 | `PUT` | `/api/farmer/products/{id}` | JWT | FARMER | Update my product |
-| 10 | `DELETE` | `/api/farmer/products/{id}` | JWT | FARMER | Delete my product |
-| 11 | `GET` | `/api/buyer/products` | JWT | BUYER | Browse all products |
-| 12 | `POST` | `/api/buyer/orders` | JWT | BUYER | Place an order (201 Created) |
-| 13 | `GET` | `/api/buyer/orders` | JWT | BUYER | Get my orders |
-| 14 | `GET` | `/api/farmer/orders` | JWT | FARMER | Get received orders |
-| 15 | `PUT` | `/api/farmer/orders/{orderId}/status` | JWT | FARMER | Update order status |
-| 16 | `GET` | `/api/farmer/profile` | JWT | FARMER | Get my farmer profile |
-| 17 | `PUT` | `/api/farmer/profile` | JWT | FARMER | Update my farmer profile |
-| 18 | `GET` | `/api/admin` | JWT | ADMIN | Admin greeting (stub) |
-| 19 | `GET` | `/api/admin/stats` | JWT | ADMIN | Get dashboard stats |
-| 20 | `GET` | `/api/admin/users` | JWT | ADMIN | Get all users |
-| 21 | `GET` | `/api/admin/users/{id}` | JWT | ADMIN | Get user by ID |
-| 22 | `PUT` | `/api/admin/users/{id}` | JWT | ADMIN | Update user |
-| 23 | `DELETE` | `/api/admin/users/{id}` | JWT | ADMIN | Delete user |
-| 24 | `GET` | `/api/admin/farmers` | JWT | ADMIN | Get all farmers |
-| 25 | `GET` | `/api/admin/buyers` | JWT | ADMIN | Get all buyers |
-| 26 | `GET` | `/api/admin/products` | JWT | ADMIN | Get all products |
-| 27 | `GET` | `/api/admin/orders` | JWT | ADMIN | Get all orders |
-| 28 | `GET` | `/api/admin/farmers/unverified` | JWT | ADMIN | Get unverified farmers |
-| 29 | `PUT` | `/api/admin/farmers/{profileId}/verify` | JWT | ADMIN | Verify a farmer profile |
-| 30 | `GET` | `/api/users` | JWT | ADMIN | Get all users (User module) |
-| 31 | `GET` | `/api/users/{id}` | JWT | ADMIN | Get user by ID (User module) |
-| 32 | `PUT` | `/api/users/{id}` | JWT | ADMIN | Update user (User module) |
-| 33 | `DELETE` | `/api/users/{id}` | JWT | ADMIN | Delete user (User module) |
-| 34 | `GET` | `/api/test` | JWT | Any | Health check / test |
-| 35 | `GET` | `/api/farmer/profile/verification` | JWT | FARMER | Get my verification status |
-| 36 | `POST` | `/api/farmer/profile/verification` | JWT | FARMER | Submit / resubmit verification (multipart) |
-| 37 | `PUT` | `/api/admin/farmers/{profileId}/reject` | JWT | ADMIN | Reject a pending verification with reason |
-| 38 | `GET` | `/api/admin/analytics` | JWT | ADMIN | Full admin analytics dashboard |
-| 39 | `GET` | `/api/admin/analytics/revenue` | JWT | ADMIN | Revenue per month series |
-| 40 | `GET` | `/api/admin/analytics/orders` | JWT | ADMIN | Orders per month series |
-| 41 | `GET` | `/api/admin/top-products` | JWT | ADMIN | Top selling products |
-| 42 | `GET` | `/api/admin/top-farmers` | JWT | ADMIN | Top farmers by order value |
-| 43 | `GET` | `/api/admin/top-buyers` | JWT | ADMIN | Top buyers by order value |
-| 44 | `GET` | `/api/farmer/analytics` | JWT | FARMER | Full farmer analytics dashboard |
-| 45 | `GET` | `/api/farmer/analytics/sales` | JWT | FARMER | Sales per product |
-| 46 | `GET` | `/api/buyer/analytics` | JWT | BUYER | Full buyer analytics dashboard |
-| 47 | `GET` | `/api/buyer/analytics/spending` | JWT | BUYER | Monthly spending series |
+| 3 | `POST` | `/api/auth/forgot-password` | Public | — | Request a password reset email |
+| 4 | `POST` | `/api/auth/reset-password` | Public | — | Reset password with token |
+| 5 | `GET` | `/api/farmer` | JWT | FARMER | Farmer dashboard (stub) |
+| 6 | `GET` | `/api/buyer` | JWT | BUYER | Buyer dashboard (stub) |
+| 7 | `GET` | `/api/admin` | JWT | ADMIN | Admin dashboard (stub) |
+| 8 | `POST` | `/api/farmer/profile` | JWT | FARMER | Create farmer profile |
+| 9 | `GET` | `/api/farmer/profile` | JWT | FARMER | Get my farmer profile |
+| 10 | `PUT` | `/api/farmer/profile` | JWT | FARMER | Update my farmer profile |
+| 11 | `GET` | `/api/farmer/profile/verification` | JWT | FARMER | Get my verification status |
+| 12 | `POST` | `/api/farmer/profile/verification` | JWT | FARMER | Submit / resubmit verification (multipart) |
+| 13 | `POST` | `/api/farmer/products` | JWT | FARMER | Create a new product (201 Created) |
+| 14 | `GET` | `/api/farmer/products/my-products` | JWT | FARMER | Get my products |
+| 15 | `GET` | `/api/farmer/products/{id}` | JWT | FARMER | Get one of my products |
+| 16 | `PUT` | `/api/farmer/products/{id}` | JWT | FARMER | Update my product |
+| 17 | `DELETE` | `/api/farmer/products/{id}` | JWT | FARMER | Delete my product |
+| 18 | `POST` | `/api/farmer/products/{id}/image` | JWT | FARMER | Upload / replace product image (multipart) |
+| 19 | `DELETE` | `/api/farmer/products/{id}/image` | JWT | FARMER | Delete product image |
+| 20 | `GET` | `/api/buyer/products` | JWT | BUYER | Browse all products |
+| 21 | `GET` | `/api/buyer/products/{id}` | JWT | BUYER | Product details (buyer view) |
+| 22 | `GET` | `/api/buyer/products/category/{category}` | JWT | BUYER | Filter products by category |
+| 23 | `POST` | `/api/buyer/orders` | JWT | BUYER | Place an order (201 Created) |
+| 24 | `GET` | `/api/buyer/orders` | JWT | BUYER | Get my orders |
+| 25 | `GET` | `/api/farmer/orders` | JWT | FARMER | Get received orders |
+| 26 | `PUT` | `/api/farmer/orders/{orderId}/status` | JWT | FARMER | Update order status |
+| 27 | `POST` | `/api/buyer/wishlist/{productId}` | JWT | BUYER | Add to wishlist (201 Created) |
+| 28 | `DELETE` | `/api/buyer/wishlist/{productId}` | JWT | BUYER | Remove from wishlist |
+| 29 | `GET` | `/api/buyer/wishlist` | JWT | BUYER | Get my wishlist |
+| 30 | `GET` | `/api/buyer/wishlist/check/{productId}` | JWT | BUYER | Check if a product is wishlisted |
+| 31 | `POST` | `/api/buyer/products/{productId}/reviews` | JWT | BUYER | Submit a review (201 Created) |
+| 32 | `GET` | `/api/buyer/products/{productId}/reviews` | JWT | BUYER | Get product reviews |
+| 33 | `GET` | `/api/buyer/products/{productId}/reviews/mine` | JWT | BUYER | Get my review of a product |
+| 34 | `PUT` | `/api/buyer/reviews/{reviewId}` | JWT | BUYER | Update my review |
+| 35 | `DELETE` | `/api/buyer/reviews/{reviewId}` | JWT | BUYER | Delete my review |
+| 36 | `GET` | `/api/farmer/products/{productId}/reviews` | JWT | FARMER | Get reviews of my product |
+| 37 | `GET` | `/api/notifications` | JWT | Any | Get my notifications |
+| 38 | `GET` | `/api/notifications/unread` | JWT | Any | Get unread notifications |
+| 39 | `GET` | `/api/notifications/unread/count` | JWT | Any | Get unread count |
+| 40 | `PUT` | `/api/notifications/{id}/read` | JWT | Any | Mark one notification as read |
+| 41 | `PUT` | `/api/notifications/read-all` | JWT | Any | Mark all notifications as read |
+| 42 | `DELETE` | `/api/notifications/{id}` | JWT | Any | Delete one notification |
+| 43 | `DELETE` | `/api/notifications` | JWT | Any | Clear all notifications |
+| 44 | `GET` | `/api/admin/stats` | JWT | ADMIN | Get dashboard stats |
+| 45 | `GET` | `/api/admin/users` | JWT | ADMIN | Get all users |
+| 46 | `GET` | `/api/admin/users/{id}` | JWT | ADMIN | Get user by ID |
+| 47 | `PUT` | `/api/admin/users/{id}` | JWT | ADMIN | Update user |
+| 48 | `DELETE` | `/api/admin/users/{id}` | JWT | ADMIN | Deactivate user (soft delete) |
+| 49 | `PUT` | `/api/admin/users/{id}/reactivate` | JWT | ADMIN | Reactivate user |
+| 50 | `GET` | `/api/admin/farmers` | JWT | ADMIN | Get all farmers |
+| 51 | `GET` | `/api/admin/buyers` | JWT | ADMIN | Get all buyers |
+| 52 | `GET` | `/api/admin/products` | JWT | ADMIN | Get all products (unfiltered) |
+| 53 | `GET` | `/api/admin/orders` | JWT | ADMIN | Get all orders |
+| 54 | `GET` | `/api/admin/farmers/unverified` | JWT | ADMIN | Get unverified farmers (PENDING) |
+| 55 | `PUT` | `/api/admin/farmers/{profileId}/verify` | JWT | ADMIN | Approve farmer verification |
+| 56 | `PUT` | `/api/admin/farmers/{profileId}/reject` | JWT | ADMIN | Reject verification with reason |
+| 57 | `POST` | `/api/admin/announcements` | JWT | ADMIN | Send announcement email |
+| 58 | `GET` | `/api/admin/announcements` | JWT | ADMIN | Get announcement history |
+| 59 | `GET` | `/api/users` | JWT | ADMIN | Get all users (User module) |
+| 60 | `GET` | `/api/users/{id}` | JWT | ADMIN | Get user by ID (User module) |
+| 61 | `PUT` | `/api/users/{id}` | JWT | ADMIN | Update user (User module) |
+| 62 | `DELETE` | `/api/users/{id}` | JWT | ADMIN | Deactivate user (soft delete, User module) |
+| 63 | `PUT` | `/api/users/{id}/reactivate` | JWT | ADMIN | Reactivate user (User module) |
+| 64 | `GET` | `/api/admin/analytics` | JWT | ADMIN | Full admin analytics dashboard |
+| 65 | `GET` | `/api/admin/analytics/revenue` | JWT | ADMIN | Revenue per month series |
+| 66 | `GET` | `/api/admin/analytics/orders` | JWT | ADMIN | Orders per month series |
+| 67 | `GET` | `/api/admin/top-products` | JWT | ADMIN | Top selling products |
+| 68 | `GET` | `/api/admin/top-farmers` | JWT | ADMIN | Top farmers by order value |
+| 69 | `GET` | `/api/admin/top-buyers` | JWT | ADMIN | Top buyers by order value |
+| 70 | `GET` | `/api/farmer/analytics` | JWT | FARMER | Full farmer analytics dashboard |
+| 71 | `GET` | `/api/farmer/analytics/sales` | JWT | FARMER | Sales per product |
+| 72 | `GET` | `/api/buyer/analytics` | JWT | BUYER | Full buyer analytics dashboard |
+| 73 | `GET` | `/api/buyer/analytics/spending` | JWT | BUYER | Monthly spending series |
+| 74 | `GET` | `/api/test` | JWT | Any | Health check / test |
 
-**Total Implemented Endpoints: 47**
+**Total Implemented Endpoints: 74** (audited against controllers on 2026-08-06)
 
 ---
 
@@ -1596,6 +1897,7 @@ curl -X GET http://localhost:8080/api/test \
 | Field | Type | Required | Validation |
 |---|---|---|---|
 | `status` | String (enum) | ✅ | NotNull. Valid values: `PENDING`, `ACCEPTED`, `REJECTED`, `COMPLETED` |
+| `reason` | String | ❌ | Optional (Day 20) — flows into the rejection email when rejecting an order; max 500 chars |
 
 ### 5.11 FarmerVerificationRequest (multipart form fields)
 
@@ -1680,7 +1982,98 @@ curl -X GET http://localhost:8080/api/test \
 | `latestOrders` | `OrderMetric[]` | Latest 5 orders |
 | `favoriteFarmers` | `UserMetric[]` | Top 5 farmers by spend |
 
-### 5.17 Analytics metric DTOs
+### 5.17 ReviewRequest
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `rating` | Integer | ✅ | NotNull, Min(1), Max(5) |
+| `comment` | String | ❌ | Max 1000 chars |
+
+### 5.18 ReviewResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | Long | Review ID |
+| `productId` | Long | Reviewed product |
+| `productName` | String | Product name |
+| `buyerName` | String | Reviewer name |
+| `rating` | Integer | 1–5 stars |
+| `comment` | String | Optional text |
+| `createdAt`, `updatedAt` | String (ISO datetime) | Timestamps |
+
+### 5.19 WishlistResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | Long | Wishlist row ID |
+| `productId` | Long | Saved product |
+| `productName` | String | Product name |
+| `buyerName` | String | Buyer name |
+| `createdAt` | String (ISO datetime) | When saved |
+
+### 5.20 NotificationResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | Long | Notification ID |
+| `title` | String | Short title |
+| `message` | String | Full message |
+| `type` | String | `NEW_ORDER`, `ORDER_ACCEPTED`, `ORDER_REJECTED`, `ORDER_COMPLETED`, `ADMIN_MESSAGE` |
+| `isRead` | Boolean | Read state |
+| `referenceId` | Long | Related record id (e.g. order) |
+| `createdAt` | String (ISO datetime) | Created time |
+
+### 5.21 ForgotPasswordRequest
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `email` | String | ✅ | NotBlank, Email |
+
+### 5.22 ResetPasswordRequest
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `token` | String | ✅ | NotBlank |
+| `newPassword` | String | ✅ | NotBlank, Min(6) |
+
+### 5.23 AnnouncementRequest
+
+| Field | Type | Required | Validation |
+|---|---|---|---|
+| `audience` | String (enum) | ✅ | `ALL`, `BUYERS`, or `FARMERS` |
+| `subject` | String | ✅ | NotBlank, max 255 |
+| `message` | String | ✅ | NotBlank, max 5000 |
+| `buttonText` | String | ❌ | Optional |
+| `buttonUrl` | String | ❌ | Pattern `^https?://` |
+
+### 5.24 AnnouncementResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | Long | Announcement ID |
+| `audience` | String | `ALL` / `BUYERS` / `FARMERS` |
+| `subject` | String | Subject |
+| `message` | String | Body |
+| `buttonText`, `buttonUrl` | String | Optional CTA |
+| `sentBy` | String | Admin email |
+| `recipientCount` | Integer | Addressed recipients |
+| `createdAt` | String (ISO datetime) | Sent time |
+
+### 5.25 UserResponse
+
+| Field | Type | Description |
+|---|---|---|
+| `id` | Long | User ID |
+| `name` | String | Name |
+| `email` | String | Email |
+| `role` | String | `ADMIN`/`FARMER`/`BUYER` |
+| `active` | Boolean | Soft-delete status (`true` = active) |
+
+> **ProductResponse** (used by browse/details/wishlist/category) additionally exposes `imageUrl`, `farmName`, `location`, `farmerVerified`, `averageRating`, `reviewCount`, and `fiveStarCount`…`oneStarCount` — see §3.11 example.
+
+---
+
+### 5.26 Analytics metric DTOs
 
 | DTO | Fields | Used by |
 |---|---|---|
@@ -1695,48 +2088,29 @@ curl -X GET http://localhost:8080/api/test \
 
 ---
 
-## 6. Planned APIs (Not Yet Implemented)
+## 6. Remaining Planned APIs
 
-The following APIs are planned but **not yet implemented**. They are documented here for future reference.
+Almost every API is implemented (74 endpoints — see §4). The only remaining gap:
 
-### 6.1 Farmer Profile (Implemented)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/farmer/profile` | ✅ Implemented — retrieve the logged-in farmer's profile |
-| `PUT` | `/api/farmer/profile` | ✅ Implemented — update the logged-in farmer's profile |
-
-### 6.2 Buyer Product Search & Filter (Planned)
+### 6.1 Buyer Product Search by Name (Not Yet Implemented)
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/api/buyer/products/search?name={name}` | Search products by name (logic exists in `ProductRepository` but no controller endpoint) |
-| `GET` | `/api/buyer/products/category/{category}` | Filter products by category (logic exists in `ProductService` but no controller endpoint) |
+| `GET` | `/api/buyer/products/search?name={name}` | Search products by name. Repository support exists (`ProductRepository.findByNameContainingIgnoreCase()`) but no controller endpoint exposes it yet. |
 
-### 6.3 Admin Management (Implemented)
+> ✅ Category filtering **is** implemented — `GET /api/buyer/products/category/{category}` (see §3.11).
 
-All admin endpoints are now implemented — see [§3.4 Admin APIs](#34-admin-apis).
+### 6.2 Tooling (Implemented)
 
-| Method | Endpoint | Description |
+| Tool | Location | Status |
 |---|---|---|
-| `GET` | `/api/admin/stats` | ✅ Implemented — dashboard stats |
-| `GET` | `/api/admin/users` | ✅ Implemented — view all registered users |
-| `GET` | `/api/admin/users/{id}` | ✅ Implemented — view a user |
-| `PUT` | `/api/admin/users/{id}` | ✅ Implemented — update a user |
-| `DELETE` | `/api/admin/users/{id}` | ✅ Implemented — delete a user |
-| `GET` | `/api/admin/farmers` | ✅ Implemented — view all farmers |
-| `GET` | `/api/admin/buyers` | ✅ Implemented — view all buyers |
-| `GET` | `/api/admin/products` | ✅ Implemented — view all products |
-| `GET` | `/api/admin/orders` | ✅ Implemented — view all orders |
-| `GET` | `/api/admin/farmers/unverified` | ✅ Implemented — unverified farmers |
-| `PUT` | `/api/admin/farmers/{profileId}/verify` | ✅ Implemented — verify a farmer's identity |
+| Swagger UI | `/swagger-ui` (backend :8080) | ✅ Implemented |
+| OpenAPI JSON | `/v3/api-docs` | ✅ Implemented |
+| Postman collection | `docs/FarmBridge_API.postman_collection.json` (41 requests) | ✅ |
 
-### 6.4 System (Planned)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| Various | `/v3/api-docs` | Swagger/OpenAPI documentation |
-| Various | `/swagger-ui/**` | Swagger UI |
+> **Cross-reference:** the interactive Swagger UI is the canonical, live API
+> reference; this document is the human-maintained contract. Keep the two in
+> sync when endpoints change.
 
 ---
 
@@ -1757,7 +2131,7 @@ When request validation fails (Jakarta `@Valid`), Spring Boot returns a default 
 
 > ✅ **Implemented:** `GlobalExceptionHandler` (`@RestControllerAdvice`) handles:
 > - `MethodArgumentNotValidException` → 400 with field-specific error map
-> - `RuntimeException` → status mapped from the message (403 for "not been verified", 404 for "not found", 409 for "already exists"/"already in use", else 400)
+> - `RuntimeException` → status mapped from the message (403 for "not been verified" and "deactivated", 404 for "not found", 409 for "already exists"/"already in use", else 400)
 > - `DataIntegrityViolationException` → 400 with a friendly message
 > - `NoResourceFoundException` → 404 (missing static files, e.g. deleted product images)
 > - Any other exception → 500 with a generic message
@@ -1800,14 +2174,20 @@ When request validation fails (Jakarta `@Valid`), Spring Boot returns a default 
 | JWT Expiration | 1 hour from issuance |
 | JWT Secret | Configured in `application.properties` (`jwt.secret`) |
 
-### 8.2 Current Hardcoded Configuration
+### 8.2 Configuration Sources
 
-The following values are currently **hardcoded** in `application.properties` and should be moved to environment variables:
+**Environment variables (already in use):** SMTP (MAIL_HOST / MAIL_PORT /
+MAIL_USERNAME / MAIL_PASSWORD), `APP_BASE_URL`, `APP_RESET_PASSWORD_URL`,
+`APP_SUPPORT_EMAIL` — nothing sensitive for email is hardcoded.
 
-| Key | Current Value |
-|---|---|
-| `spring.datasource.password` | `Hari@1849` |
-| `jwt.secret` | `FarmTrustSuperSecretKeyForJwtAuthentication2026Secure` |
+**Still hardcoded in `application.properties` (local dev):**
+
+| Key | Current Value | Recommendation |
+|---|---|---|
+| `spring.datasource.password` | `Hari@1849` | Move to `DB_PASSWORD` env var (planned for the Docker phase) |
+| `jwt.secret` | `FarmTrustSuperSecretKeyForJwtAuthentication2026Secure` | Move to `JWT_SECRET` env var (planned for the Docker phase) |
+
+> These will be converted to `${DB_PASSWORD:}` / `${JWT_SECRET:}` placeholders as part of Phase 12 (Docker & deployment).
 
 ---
 
