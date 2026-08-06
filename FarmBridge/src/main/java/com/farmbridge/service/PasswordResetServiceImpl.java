@@ -87,7 +87,13 @@ public class PasswordResetServiceImpl
 
         // IMPORTANT: never reveal whether the email exists — the
         // response is identical in both branches.
-        if (user == null) {
+        //
+        // SOFT DELETE: deactivated accounts also receive the same generic
+        // response and no reset token — an attacker cannot tell active
+        // accounts from inactive ones, and a deactivated account cannot
+        // obtain a reset link. They remain blocked from logging in until
+        // an admin reactivates the account.
+        if (user == null || !user.isActive()) {
             return GENERIC_RESPONSE;
         }
 

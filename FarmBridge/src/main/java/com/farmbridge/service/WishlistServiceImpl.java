@@ -63,6 +63,13 @@ public class WishlistServiceImpl implements WishlistService {
                         new RuntimeException("Buyer not found")
                 );
 
+        // SOFT DELETE: deactivated buyers cannot add to their wishlist
+        if (!buyer.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
+
         // One wishlist entry per buyer per product
         if (wishlistRepository
                 .existsByBuyerEmailAndProductId(

@@ -349,6 +349,33 @@
   color: #dc2626;
 }
 
+/* Reactivate (soft-delete restore) action */
+.adm-action-btn-restore {
+  color: #166534;
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.adm-action-btn-restore:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+}
+
+/* Inactive (soft-deleted) users — dimmed row + muted avatar */
+.adm-row-inactive td {
+  color: #9ca3af;
+}
+
+.adm-row-inactive .adm-entity-name {
+  color: #6b7280;
+}
+
+.adm-avatar-inactive {
+  background: #f1f5f9;
+  color: #9ca3af;
+}
+
 .adm-action-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

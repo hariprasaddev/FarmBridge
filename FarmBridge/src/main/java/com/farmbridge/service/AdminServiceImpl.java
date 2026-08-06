@@ -64,7 +64,7 @@ public class AdminServiceImpl implements AdminService {
                                 VerificationStatus.PENDING
                         );
 
-        return new AdminDashboardResponse(
+        AdminDashboardResponse response = new AdminDashboardResponse(
                 userRepository.count(),
                 userRepository.countByRole(Role.FARMER),
                 userRepository.countByRole(Role.BUYER),
@@ -72,6 +72,28 @@ public class AdminServiceImpl implements AdminService {
                 orderRepository.count(),
                 pendingVerifications
         );
+
+        // SOFT DELETE — account status breakdown. Deactivation never
+        // removes records, so the totals above stay accurate while these
+        // cards show enabled vs deactivated accounts.
+        response.setActiveUsers(
+                userRepository.countByActive(true)
+        );
+        response.setInactiveUsers(
+                userRepository.countByActive(false)
+        );
+        response.setActiveFarmers(
+                userRepository.countByRoleAndActive(
+                        Role.FARMER, true
+                )
+        );
+        response.setInactiveFarmers(
+                userRepository.countByRoleAndActive(
+                        Role.FARMER, false
+                )
+        );
+
+        return response;
     }
 
     // ==========================================
@@ -113,9 +135,15 @@ public class AdminServiceImpl implements AdminService {
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void deleteUser(Long id, String actingEmail) {
 
-        userService.deleteUser(id);
+        userService.deleteUser(id, actingEmail);
+    }
+
+    @Override
+    public UserResponse activateUser(Long id) {
+
+        return userService.activateUser(id);
     }
 
     // ==========================================
@@ -225,7 +253,8 @@ public class AdminServiceImpl implements AdminService {
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
-                user.getRole().name()
+                user.getRole().name(),
+                user.isActive()
         );
     }
 

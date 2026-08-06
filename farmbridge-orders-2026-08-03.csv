@@ -1,0 +1,6 @@
+"Order ID","Product","Buyer","Quantity","Total (INR)","Status"
+"6","Tomato","Prasad","1","40","COMPLETED"
+"7","potato","Prasad","1","56","COMPLETED"
+"8","potato","Prasad","25","1400","REJECTED"
+"10","potato","Prasad","1","56","REJECTED"
+"13","onions","Buyer5@gmail.com","1","12","COMPLETED"

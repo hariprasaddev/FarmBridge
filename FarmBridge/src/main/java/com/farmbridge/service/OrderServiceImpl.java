@@ -67,6 +67,13 @@ public class OrderServiceImpl implements OrderService {
                         new RuntimeException("Buyer not found")
                 );
 
+        // SOFT DELETE: deactivated buyers cannot place orders
+        if (!buyer.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
+
         // Find product
         Product product = productRepository
                 .findById(request.getProductId())
@@ -146,6 +153,18 @@ public class OrderServiceImpl implements OrderService {
     // ==========================================
 
     private void assertFarmerApproved(String farmerEmail) {
+
+        // SOFT DELETE: deactivated farmers cannot receive new orders or
+        // manage received orders.
+        User farmer = userRepository
+                .findByEmail(farmerEmail)
+                .orElse(null);
+
+        if (farmer == null || !farmer.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
 
         FarmerProfile profile = farmerProfileRepository
                 .findByUserEmail(farmerEmail)

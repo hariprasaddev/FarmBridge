@@ -30,6 +30,15 @@ public class User {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    // Enterprise SOFT DELETE flag. Deactivating a user never removes the
+    // row — it only flips this flag. Historical data (orders, reviews,
+    // wishlist, notifications, products, analytics) is fully preserved.
+    // Inactive users cannot log in and every secured endpoint rejects them.
+    // columnDefinition backfills existing rows with the DEFAULT TRUE on
+    // schema update, so pre-existing accounts stay active.
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean active = true;
+
     public User () {
 
     }
@@ -87,6 +96,14 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 
     // Stamp the registration timestamp before the account is persisted

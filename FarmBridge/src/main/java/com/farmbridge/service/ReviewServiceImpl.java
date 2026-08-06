@@ -67,6 +67,13 @@ public class ReviewServiceImpl implements ReviewService {
                         new RuntimeException("Buyer not found")
                 );
 
+        // SOFT DELETE: deactivated buyers cannot submit reviews
+        if (!buyer.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
+
         // Buyer must have actually purchased the product
         boolean purchased = orderRepository
                 .existsByBuyerEmailAndProductIdAndStatusIn(

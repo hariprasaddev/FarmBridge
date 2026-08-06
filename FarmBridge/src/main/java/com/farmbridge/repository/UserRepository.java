@@ -24,6 +24,16 @@ public interface UserRepository
     // Count users with a specific role
     long countByRole(Role role);
 
+    // ==========================================
+    // SOFT DELETE — ACCOUNT STATUS COUNTS
+    // ==========================================
+
+    // Count accounts by their active/deactivated status
+    long countByActive(boolean active);
+
+    // Count accounts of a role with a specific active status
+    long countByRoleAndActive(Role role, boolean active);
+
     // Newest farmer accounts (id order == registration order)
     List<User> findTop5ByRoleOrderByIdDesc(Role role);
 

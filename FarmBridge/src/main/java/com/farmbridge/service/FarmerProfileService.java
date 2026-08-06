@@ -57,6 +57,9 @@ public class FarmerProfileService {
             FarmerProfileRequest request,
             String email) {
 
+        // SOFT DELETE: deactivated farmers cannot update their profile
+        assertUserActive(email);
+
         FarmerProfile profile = farmerProfileRepository
                 .findByUserEmail(email)
                 .orElseThrow(() ->
@@ -107,6 +110,13 @@ public class FarmerProfileService {
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
+
+        // SOFT DELETE: deactivated farmers cannot create a profile
+        if (!user.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
 
         // Check if profile already exists for this farmer
         farmerProfileRepository.findByUserEmail(email)
@@ -197,6 +207,13 @@ public class FarmerProfileService {
                 .orElseThrow(() ->
                         new RuntimeException("User not found")
                 );
+
+        // SOFT DELETE: deactivated farmers cannot (re)submit verification
+        if (!user.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
 
         FarmerProfile profile = farmerProfileRepository
                 .findByUserEmail(email)
@@ -349,6 +366,21 @@ public class FarmerProfileService {
     // ==========================================
     // HELPERS
     // ==========================================
+
+    // SOFT DELETE: every farmer self-service action checks the account
+    // is still active before proceeding.
+    private void assertUserActive(String email) {
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElse(null);
+
+        if (user == null || !user.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
+    }
 
     private void requireDocument(MultipartFile file, String message) {
         if (file == null || file.isEmpty()) {

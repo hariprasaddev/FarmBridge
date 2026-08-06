@@ -6,10 +6,17 @@ import AdminPagination from '../components/AdminPagination';
 import { Modal, ConfirmDialog, Badge } from '../components/ui';
 import './AdminPages.css';
 
+const STATUS_FILTERS = [
+  { value: 'ALL', label: 'All Users' },
+  { value: 'ACTIVE', label: 'Active' },
+  { value: 'INACTIVE', label: 'Inactive' },
+];
+
 const ROLE_FILTERS = [
-  { value: 'ALL', label: 'All' },
-  { value: 'FARMER', label: 'Farmers' },
+  { value: 'ALL', label: 'All Roles' },
   { value: 'BUYER', label: 'Buyers' },
+  { value: 'FARMER', label: 'Farmers' },
+  { value: 'ADMIN', label: 'Admins' },
 ];
 
 const PAGE_SIZE = 10;
@@ -30,11 +37,12 @@ function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [filter, setFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [deleting, setDeleting] = useState(null);
-  const [confirmDeleteUser, setConfirmDeleteUser] = useState(null);
+  const [updating, setUpdating] = useState(null);
+  const [confirmDeactivateUser, setConfirmDeactivateUser] = useState(null);
 
   // Edit modal state
   const [editingUser, setEditingUser] = useState(null);
@@ -46,8 +54,9 @@ function AdminUsersPage() {
     loadUsers();
   }, []);
 
-  const loadUsers = async () => {
-    setLoading(true);
+  // `silent` skips the skeleton so post-action refreshes stay smooth.
+  const loadUsers = async (silent = false) => {
+    if (!silent) setLoading(true);
     setError('');
     try {
       const response = await adminAPI.getAllUsers();
@@ -55,30 +64,35 @@ function AdminUsersPage() {
     } catch (err) {
       setError(getErrorMessage(err, 'Failed to load the users. Please try again.'));
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  // Client-side search + role filter over the already-fetched users.
+  // Client-side search + status/role filters over the fetched users.
   const query = search.trim().toLowerCase();
   const filteredUsers = users.filter((u) => {
-    const matchesRole = filter === 'ALL' || u.role === filter;
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      (statusFilter === 'ACTIVE' ? u.active : !u.active);
+    const matchesRole = roleFilter === 'ALL' || u.role === roleFilter;
     const matchesSearch =
       !query ||
       (u.name || '').toLowerCase().includes(query) ||
       (u.email || '').toLowerCase().includes(query);
-    return matchesRole && matchesSearch;
+    return matchesStatus && matchesRole && matchesSearch;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pageUsers = filteredUsers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const filtersActive = search.trim() !== '' || filter !== 'ALL';
+  const filtersActive =
+    search.trim() !== '' || statusFilter !== 'ALL' || roleFilter !== 'ALL';
 
   const clearFilters = () => {
     setSearch('');
-    setFilter('ALL');
+    setStatusFilter('ALL');
+    setRoleFilter('ALL');
     setPage(1);
   };
 
@@ -111,20 +125,43 @@ function AdminUsersPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    setConfirmDeleteUser(null);
-    setDeleting(id);
+  // ==========================================
+  // SOFT DELETE — deactivate / reactivate
+  // The user record is NEVER removed. active=false
+  // blocks login + every secured endpoint while all
+  // historical data (orders, reviews, analytics) is kept.
+  // ==========================================
+
+  const handleDeactivate = async (id) => {
+    setConfirmDeactivateUser(null);
+    setUpdating(id);
     setError('');
     setSuccess('');
 
     try {
       await adminAPI.deleteUser(id);
-      setUsers((prev) => prev.filter((u) => u.id !== id));
-      setSuccess('User deleted successfully');
+      setSuccess('User deactivated successfully');
+      await loadUsers(true);
     } catch (err) {
-      setError(getErrorMessage(err, 'Failed to delete the user. Please try again.'));
+      setError(getErrorMessage(err, 'Failed to deactivate the user. Please try again.'));
     } finally {
-      setDeleting(null);
+      setUpdating(null);
+    }
+  };
+
+  const handleReactivate = async (id) => {
+    setUpdating(id);
+    setError('');
+    setSuccess('');
+
+    try {
+      await adminAPI.reactivateUser(id);
+      setSuccess('User activated successfully');
+      await loadUsers(true);
+    } catch (err) {
+      setError(getErrorMessage(err, 'Failed to reactivate the user. Please try again.'));
+    } finally {
+      setUpdating(null);
     }
   };
 
@@ -159,13 +196,29 @@ function AdminUsersPage() {
         </div>
 
         <div className="adm-pills">
+          {STATUS_FILTERS.map((status) => (
+            <button
+              key={status.value}
+              type="button"
+              className={`adm-pill${statusFilter === status.value ? ' active' : ''}`}
+              onClick={() => {
+                setStatusFilter(status.value);
+                setPage(1);
+              }}
+            >
+              {status.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="adm-pills">
           {ROLE_FILTERS.map((role) => (
             <button
               key={role.value}
               type="button"
-              className={`adm-pill${filter === role.value ? ' active' : ''}`}
+              className={`adm-pill${roleFilter === role.value ? ' active' : ''}`}
               onClick={() => {
-                setFilter(role.value);
+                setRoleFilter(role.value);
                 setPage(1);
               }}
             >
@@ -214,15 +267,18 @@ function AdminUsersPage() {
                   <th>User</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {pageUsers.map((user) => (
-                  <tr key={user.id}>
+                  <tr key={user.id} className={user.active ? '' : 'adm-row-inactive'}>
                     <td>
                       <div className="adm-entity-cell">
-                        <span className="adm-avatar">{getInitials(user.name)}</span>
+                        <span className={`adm-avatar${user.active ? '' : ' adm-avatar-inactive'}`}>
+                          {getInitials(user.name)}
+                        </span>
                         <span className="adm-entity-name">{user.name}</span>
                       </div>
                     </td>
@@ -238,22 +294,43 @@ function AdminUsersPage() {
                       </Badge>
                     </td>
                     <td>
+                      <Badge
+                        variant={user.active ? 'success' : 'danger'}
+                        solid
+                        className="adm-badge"
+                      >
+                        {user.active ? 'ACTIVE' : 'INACTIVE'}
+                      </Badge>
+                    </td>
+                    <td>
                       <div className="adm-actions">
                         <button
                           className="adm-action-btn"
                           onClick={() => openEdit(user)}
+                          disabled={updating === user.id}
                         >
                           <Icon name="edit" size={14} />
                           Edit
                         </button>
-                        <button
-                          className="adm-action-btn adm-action-btn-danger"
-                          onClick={() => setConfirmDeleteUser(user)}
-                          disabled={deleting === user.id}
-                        >
-                          <Icon name="trash" size={14} />
-                          {deleting === user.id ? 'Deleting...' : 'Delete'}
-                        </button>
+                        {user.active ? (
+                          <button
+                            className="adm-action-btn adm-action-btn-danger"
+                            onClick={() => setConfirmDeactivateUser(user)}
+                            disabled={updating === user.id}
+                          >
+                            <Icon name="xCircle" size={14} />
+                            {updating === user.id ? 'Deactivating...' : 'Deactivate'}
+                          </button>
+                        ) : (
+                          <button
+                            className="adm-action-btn adm-action-btn-restore"
+                            onClick={() => handleReactivate(user.id)}
+                            disabled={updating === user.id}
+                          >
+                            <Icon name="refreshCw" size={14} />
+                            {updating === user.id ? 'Reactivating...' : 'Reactivate'}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -340,21 +417,21 @@ function AdminUsersPage() {
       </Modal>
 
       {/* ==========================================
-          DELETE USER CONFIRMATION (design system)
+          DEACTIVATE USER CONFIRMATION (soft delete)
           ========================================== */}
       <ConfirmDialog
-        open={!!confirmDeleteUser}
-        onCancel={() => setConfirmDeleteUser(null)}
-        onConfirm={() => handleDelete(confirmDeleteUser.id)}
-        title="Delete user?"
+        open={!!confirmDeactivateUser}
+        onCancel={() => setConfirmDeactivateUser(null)}
+        onConfirm={() => handleDeactivate(confirmDeactivateUser.id)}
+        title="Deactivate User?"
         message={
-          confirmDeleteUser
-            ? `This will permanently delete ${confirmDeleteUser.name || 'this user'} (${confirmDeleteUser.email}) and all of their data. This action cannot be undone.`
+          confirmDeactivateUser
+            ? `${confirmDeactivateUser.name || 'This user'} (${confirmDeactivateUser.email}) will no longer be able to access FarmBridge. Their historical data will be preserved.`
             : ''
         }
-        confirmLabel="Delete User"
+        confirmLabel="Deactivate User"
         variant="danger"
-        loading={deleting === confirmDeleteUser?.id}
+        loading={updating === confirmDeactivateUser?.id}
       />
     </AdminLayout>
   );

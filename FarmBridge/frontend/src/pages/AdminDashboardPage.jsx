@@ -28,6 +28,7 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaStoreAlt,
+  FaUserSlash,
   FaStar,
 } from 'react-icons/fa';
 import { analyticsAPI, getErrorMessage } from '../services/api';
@@ -170,7 +171,11 @@ function AdminDashboardPage() {
         { label: 'Monthly Revenue', value: data.monthlyRevenue, icon: FaRupeeSign, tone: 'green', to: '/admin/orders', sub: 'Completed this month', currency: true },
         { label: 'Completed Orders', value: data.completedOrders, icon: FaCheckCircle, tone: 'emerald', to: '/admin/orders', sub: 'Delivered' },
         { label: 'Cancelled Orders', value: data.cancelledOrders, icon: FaTimesCircle, tone: 'red', to: '/admin/orders', sub: 'Rejected requests' },
-        { label: 'Active Farmers', value: data.activeFarmers, icon: FaStoreAlt, tone: 'cyan', to: '/admin/products', sub: 'Selling now' },
+        { label: 'Selling Farmers', value: data.sellingFarmers, icon: FaStoreAlt, tone: 'cyan', to: '/admin/products', sub: 'Selling now' },
+        { label: 'Active Users', value: data.activeUsers, icon: FaUsers, tone: 'green', to: '/admin/users', sub: 'Accounts enabled' },
+        { label: 'Inactive Users', value: data.inactiveUsers, icon: FaUserSlash, tone: 'red', to: '/admin/users', sub: 'Deactivated' },
+        { label: 'Active Farmers', value: data.activeFarmers, icon: FaLeaf, tone: 'emerald', to: '/admin/users', sub: 'Accounts enabled' },
+        { label: 'Inactive Farmers', value: data.inactiveFarmers, icon: FaLeaf, tone: 'orange', to: '/admin/users', sub: 'Deactivated' },
       ]
     : [];
 
@@ -283,7 +288,7 @@ function AdminDashboardPage() {
       {loading ? (
         <div className="an-loading">
           <div className="an-skeleton-grid">
-            {Array.from({ length: 13 }).map((_, i) => <CardSkeleton key={i} />)}
+            {Array.from({ length: 17 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
           <div className="an-skeleton-charts">
             <ChartSkeleton />

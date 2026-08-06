@@ -33,5 +33,8 @@ public interface AdminService {
 
     UserResponse updateUser(Long id, UserRequest request);
 
-    void deleteUser(Long id);
+    // actingEmail guards against an admin deactivating their own account
+    void deleteUser(Long id, String actingEmail);
+
+    UserResponse activateUser(Long id);
 }

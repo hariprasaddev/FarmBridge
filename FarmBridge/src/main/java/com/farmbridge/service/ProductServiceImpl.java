@@ -590,10 +590,22 @@ public class ProductServiceImpl implements ProductService {
     }
 
     // ==========================================
-    // HELPER — Assert the farmer is APPROVED (selling allowed)
+    // HELPER — Assert the farmer is ACTIVE and APPROVED (selling allowed)
     // ==========================================
 
     private void assertFarmerVerified(String email) {
+
+        // SOFT DELETE: deactivated farmers cannot create, edit, delete or
+        // upload images for products — their selling rights are revoked.
+        User user = userRepository
+                .findByEmail(email)
+                .orElse(null);
+
+        if (user == null || !user.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
 
         FarmerProfile profile = farmerProfileRepository
                 .findByUserEmail(email)
@@ -628,6 +640,13 @@ public class ProductServiceImpl implements ProductService {
         User farmer = product.getFarmer();
 
         if (farmer == null) {
+            return false;
+        }
+
+        // SOFT DELETE: products of deactivated farmers disappear from every
+        // buyer-visible surface (listing, search, category, details,
+        // wishlist) while remaining fully visible to admins.
+        if (!farmer.isActive()) {
             return false;
         }
 

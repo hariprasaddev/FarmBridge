@@ -93,6 +93,15 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
+        // SOFT DELETE: deactivated accounts can never sign in. No JWT is
+        // generated, so the user cannot access any secured endpoint until
+        // an admin reactivates the account.
+        if (!user.isActive()) {
+            throw new RuntimeException(
+                    "Your account has been deactivated. Please contact the administrator."
+            );
+        }
+
         // Generate JWT with email and role
         String token = jwtUtil.generateToken(
                 user.getEmail(),

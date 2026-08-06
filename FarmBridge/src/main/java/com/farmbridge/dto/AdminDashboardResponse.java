@@ -9,6 +9,12 @@ public class AdminDashboardResponse {
     private Long totalOrders;
     private Long pendingVerifications;
 
+    // SOFT DELETE — account status breakdown
+    private Long activeUsers;
+    private Long inactiveUsers;
+    private Long activeFarmers;
+    private Long inactiveFarmers;
+
     public AdminDashboardResponse() {
     }
 
@@ -74,5 +80,37 @@ public class AdminDashboardResponse {
 
     public void setPendingVerifications(Long pendingVerifications) {
         this.pendingVerifications = pendingVerifications;
+    }
+
+    public Long getActiveUsers() {
+        return activeUsers;
+    }
+
+    public void setActiveUsers(Long activeUsers) {
+        this.activeUsers = activeUsers;
+    }
+
+    public Long getInactiveUsers() {
+        return inactiveUsers;
+    }
+
+    public void setInactiveUsers(Long inactiveUsers) {
+        this.inactiveUsers = inactiveUsers;
+    }
+
+    public Long getActiveFarmers() {
+        return activeFarmers;
+    }
+
+    public void setActiveFarmers(Long activeFarmers) {
+        this.activeFarmers = activeFarmers;
+    }
+
+    public Long getInactiveFarmers() {
+        return inactiveFarmers;
+    }
+
+    public void setInactiveFarmers(Long inactiveFarmers) {
+        this.inactiveFarmers = inactiveFarmers;
     }
 }

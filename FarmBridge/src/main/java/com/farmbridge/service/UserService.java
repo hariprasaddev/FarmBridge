@@ -14,4 +14,10 @@ public interface UserService {
     UserResponse updateUser(Long id, UserRequest request);
 
     void deleteUser(Long id);
+
+    // Deactivates with the acting user's email so self-deactivation can be
+    // blocked (admin policy: block self + last active admin).
+    void deleteUser(Long id, String actingEmail);
+
+    UserResponse activateUser(Long id);
 }

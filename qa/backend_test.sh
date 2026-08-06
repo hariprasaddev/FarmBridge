@@ -812,6 +812,15 @@ import sys,json
 d=json.load(sys.stdin)
 for u in d:
     if u.get('email')=='$PWD': print(u.get('id')); break")
+ADM_ID=$(printf '%s' "$RESP_BODY" | python -c "
+import sys,json
+d=json.load(sys.stdin)
+for u in d:
+    if u.get('email')=='$ADM': print(u.get('id')); break")
+
+# Guard: an admin can never deactivate their own account
+call DELETE /api/admin/users/$ADM_ID "" "$ADM_TOKEN"
+check "admin cannot deactivate own account" 400 "own account"
 
 call GET /api/admin/users/$B1_ID "" "$ADM_TOKEN"
 check "admin get user by id" 200 "QA Buyer One"
@@ -829,10 +838,16 @@ call PUT /api/admin/users/$PWD_ID "{\"name\":\"QA Renamed\",\"email\":\"$PWD\"}"
 check "admin update missing role -> 400" 400 "Validation failed"
 
 call DELETE /api/admin/users/$PWD_ID "" "$ADM_TOKEN"
-check "admin deletes user without relations" 200 "deleted successfully"
+check "admin deactivates user without relations (soft delete)" 200 "deactivated successfully"
 
-call DELETE /api/admin/users/$B1_ID "" "$ADM_TOKEN"
-check "admin delete user with relations blocked" 400 "related data"
+call GET /api/admin/users/$PWD_ID "" "$ADM_TOKEN"
+check "deactivated user record preserved" 200 '"active":false'
+
+call PUT /api/admin/users/$PWD_ID/reactivate "" "$ADM_TOKEN"
+check "admin reactivates deactivated user" 200 "activated successfully"
+
+call GET /api/admin/users/$PWD_ID "" "$ADM_TOKEN"
+check "reactivated user record active again" 200 '"active":true'
 
 call GET /api/admin/farmers "" "$ADM_TOKEN"
 check "admin lists farmers" 200 "QA Farmer One"
@@ -1014,6 +1029,58 @@ fi
 
 call GET /api/buyer/analytics/spending "" "$B1_TOKEN"
 check "buyer monthly spending" 200 "value"
+
+# ============================================================
+section "SOFT DELETE — USER LIFECYCLE"
+# ============================================================
+# Enterprise soft delete: deactivating a user NEVER removes the record.
+# B1 has orders, reviews, wishlist and notifications — deactivation must
+# succeed (a hard delete would fail on these relations).
+
+call DELETE /api/admin/users/$B1_ID "" "$ADM_TOKEN"
+check "deactivate user with relations (soft delete)" 200 "deactivated successfully"
+
+call GET /api/admin/users/$B1_ID "" "$ADM_TOKEN"
+check "deactivated user still returned by admin" 200 '"active":false'
+
+call POST /api/auth/login "{\"email\":\"$B1\",\"password\":\"$PW\"}"
+check "deactivated buyer login blocked (403)" 403 "deactivated"
+
+call GET /api/buyer/products "" "$B1_TOKEN"
+check "deactivated buyer JWT rejected on secured endpoint" 403 "deactivated"
+
+call GET /api/buyer/products/$PROD1 "" "$B1_TOKEN"
+check "deactivated buyer cannot view product details" 403 "deactivated"
+
+call POST /api/buyer/orders "{\"productId\":$PROD1,\"quantity\":1}" "$B1_TOKEN"
+check "deactivated buyer cannot place order" 403 "deactivated"
+
+# Historical data must survive the deactivation — the record is still
+# listed by the admin and the order history remains intact.
+call GET /api/admin/users "" "$ADM_TOKEN"
+if printf '%s' "$RESP_BODY" | grep -q "$B1"; then
+  echo "PASS deactivated user still in admin user list (data preserved)"; PASS=$((PASS+1))
+else
+  echo "FAIL deactivated user missing from admin list"; FAIL=$((FAIL+1)); FAILED+=("deactivated user in admin list")
+fi
+
+# Admin reactivates the account
+call PUT /api/admin/users/$B1_ID/reactivate "" "$ADM_TOKEN"
+check "admin reactivates user" 200 "activated successfully"
+
+call GET /api/admin/users/$B1_ID "" "$ADM_TOKEN"
+check "reactivated user active again" 200 '"active":true'
+
+# Full access is restored
+call POST /api/auth/login "{\"email\":\"$B1\",\"password\":\"$PW\"}"
+check "reactivated buyer can log in" 200 "Login successful"
+B1_NEW_TOKEN=$(jf token)
+
+call GET /api/buyer/products "" "$B1_NEW_TOKEN"
+check "reactivated buyer can browse products" 200
+
+call GET /api/buyer/orders "" "$B1_NEW_TOKEN"
+check "reactivated buyer keeps order history" 200 "QA Organic Rice"
 
 # ============================================================
 section "SUMMARY"

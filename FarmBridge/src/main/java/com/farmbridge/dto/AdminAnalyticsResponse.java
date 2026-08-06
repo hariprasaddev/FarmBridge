@@ -22,7 +22,14 @@ public class AdminAnalyticsResponse {
     private double monthlyRevenue;
     private long completedOrders;
     private long cancelledOrders;
+    // Farmers currently selling (own at least one product)
+    private long sellingFarmers;
+
+    // SOFT DELETE — account status breakdown
+    private long activeUsers;
+    private long inactiveUsers;
     private long activeFarmers;
+    private long inactiveFarmers;
 
     // ============ CHARTS ============
     private List<MonthlyMetric> revenuePerMonth;
@@ -141,12 +148,44 @@ public class AdminAnalyticsResponse {
         this.cancelledOrders = cancelledOrders;
     }
 
+    public long getSellingFarmers() {
+        return sellingFarmers;
+    }
+
+    public void setSellingFarmers(long sellingFarmers) {
+        this.sellingFarmers = sellingFarmers;
+    }
+
+    public long getActiveUsers() {
+        return activeUsers;
+    }
+
+    public void setActiveUsers(long activeUsers) {
+        this.activeUsers = activeUsers;
+    }
+
+    public long getInactiveUsers() {
+        return inactiveUsers;
+    }
+
+    public void setInactiveUsers(long inactiveUsers) {
+        this.inactiveUsers = inactiveUsers;
+    }
+
     public long getActiveFarmers() {
         return activeFarmers;
     }
 
     public void setActiveFarmers(long activeFarmers) {
         this.activeFarmers = activeFarmers;
+    }
+
+    public long getInactiveFarmers() {
+        return inactiveFarmers;
+    }
+
+    public void setInactiveFarmers(long inactiveFarmers) {
+        this.inactiveFarmers = inactiveFarmers;
     }
 
     public List<MonthlyMetric> getRevenuePerMonth() {

@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -73,11 +74,25 @@ public class UserController {
     // ==========================================
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete a user", description = "Deletes a user account.")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    @Operation(summary = "Deactivate a user (soft delete)", description = "Deactivates a user account (active=false). The database record and all historical data are preserved; the account can no longer log in until reactivated. An admin cannot deactivate their own account, and the last active ADMIN can never be deactivated.")
+    public ResponseEntity<String> deleteUser(
+            @PathVariable Long id,
+            Authentication authentication) {
 
-        userService.deleteUser(id);
+        userService.deleteUser(
+                id,
+                authentication.getName()
+        );
 
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity.ok("User deactivated successfully");
+    }
+
+    @PutMapping("/{id}/reactivate")
+    @Operation(summary = "Reactivate a user", description = "Reactivates a deactivated account (active=true), restoring login and full access.")
+    public ResponseEntity<String> reactivateUser(@PathVariable Long id) {
+
+        userService.activateUser(id);
+
+        return ResponseEntity.ok("User activated successfully");
     }
 }

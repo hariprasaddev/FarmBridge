@@ -158,6 +158,11 @@ public class GlobalExceptionHandler {
             return HttpStatus.FORBIDDEN;
         }
 
+        // Deactivated (soft-deleted) account → 403
+        if (msg.contains("deactivated")) {
+            return HttpStatus.FORBIDDEN;
+        }
+
         // Resource not found → 404
         if (msg.contains("not found")) {
             return HttpStatus.NOT_FOUND;

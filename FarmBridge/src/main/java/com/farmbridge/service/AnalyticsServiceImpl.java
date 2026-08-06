@@ -128,8 +128,29 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         response.setCancelledOrders(
                 orderRepository.countByStatus(OrderStatus.REJECTED)
         );
-        response.setActiveFarmers(
+        response.setSellingFarmers(
                 productRepository.countActiveFarmers()
+        );
+
+        // ----- SOFT DELETE — ACCOUNT STATUS BREAKDOWN -----
+        // Historical records are never removed, so every total above is
+        // unaffected by deactivations. These cards show how many accounts
+        // are currently enabled vs deactivated.
+        response.setActiveUsers(
+                userRepository.countByActive(true)
+        );
+        response.setInactiveUsers(
+                userRepository.countByActive(false)
+        );
+        response.setActiveFarmers(
+                userRepository.countByRoleAndActive(
+                        Role.FARMER, true
+                )
+        );
+        response.setInactiveFarmers(
+                userRepository.countByRoleAndActive(
+                        Role.FARMER, false
+                )
         );
 
         // ----- CHARTS -----
@@ -513,7 +534,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                             user.getId(),
                             user.getName(),
                             user.getEmail(),
-                            "FARMER"
+                            "FARMER",
+                            user.isActive()
                     ))
                     .toList();
         }

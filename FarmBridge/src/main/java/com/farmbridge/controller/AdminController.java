@@ -103,13 +103,27 @@ public class AdminController {
     }
 
     @DeleteMapping("/users/{id}")
-    @Operation(summary = "Delete a user", description = "Admin deletes a user account. Fails if the user has related records.")
+    @Operation(summary = "Deactivate a user (soft delete)", description = "Admin deactivates a user account. The record is never deleted — active=false blocks login and every secured endpoint while all historical data (orders, reviews, analytics) is preserved. An admin cannot deactivate their own account, and the last active ADMIN can never be deactivated.")
     public ResponseEntity<String> deleteUser(
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        adminService.deleteUser(
+                id,
+                authentication.getName()
+        );
+
+        return ResponseEntity.ok("User deactivated successfully");
+    }
+
+    @PutMapping("/users/{id}/reactivate")
+    @Operation(summary = "Reactivate a user", description = "Admin reactivates a previously deactivated account (active=true), restoring login and full access. Historical data was never lost.")
+    public ResponseEntity<String> reactivateUser(
             @PathVariable Long id) {
 
-        adminService.deleteUser(id);
+        adminService.activateUser(id);
 
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity.ok("User activated successfully");
     }
 
     // ==========================================
