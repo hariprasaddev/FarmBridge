@@ -18,3 +18,12 @@ dist/
 # OS / editor cruft
 .DS_Store
 *.log
+# FarmBridge runtime files
+
+uploads/
+FarmBridge/uploads/
+
+# QA runtime files
+qa/.token
+qa/.token2
+qa/.resp

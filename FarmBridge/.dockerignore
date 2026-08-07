@@ -1,0 +1,53 @@
+# ============================================================
+# FarmBridge Backend — .dockerignore
+# Keeps the Docker build context small and excludes anything the
+# backend build/runtime does not need.
+# ============================================================
+
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# IDE / editor files
+.idea
+*.iml
+*.ipr
+*.iws
+.vscode
+.classpath
+.project
+.settings
+.apt_generated
+.factorypath
+.springBeans
+.sts4-cache
+
+# Maven build output (rebuilt inside the image)
+target
+*.class
+
+# Maven wrapper (the image provides its own Maven)
+.mvn
+
+# Frontend — NEVER part of the backend image (Dockerized in Phase 12 Step 2)
+frontend
+
+# Runtime uploads — generated data, never baked into the image
+uploads
+
+# Logs & temporary files
+*.log
+*.tmp
+*.swp
+*~
+*.pid
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local environment / secrets
+.env
+*.env

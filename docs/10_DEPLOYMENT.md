@@ -1,13 +1,15 @@
 # FarmBridge — Deployment Plan
 
-> **Document Version:** 1.0
-> **Last Updated:** 2026-08-06
+> **Document Version:** 1.1
+> **Last Updated:** 2026-08-07
 > **Framework:** TrainingMug ADF v1.0
-> **Status:** 📘 **Documentation only** — this is the PLAN for Phase 12+. No
-> Docker files, compose files, or CI/CD configuration exist in the repository yet.
+> **Status:** 🟡 **Partially implemented** — Phase 12 Step 1 (backend
+> Dockerization) is DONE (`FarmBridge/Dockerfile` + `FarmBridge/.dockerignore`,
+> image `farmbridge-backend`, see [reports/DockerBackend.md](reports/DockerBackend.md)).
+> Docker Compose, the frontend image, and CI/CD remain planned.
 >
 > Current runtime: local development (backend `:8080`, frontend `:5173`,
-> local MySQL `farmbridge` schema).
+> local MySQL `farmbridge` schema) + the containerized backend on `:8080`.
 
 ---
 
@@ -40,20 +42,26 @@
 
 ---
 
-## 2. Docker (planned — Phase 12)
+## 2. Docker (Phase 12)
 
-No `Dockerfile`s exist yet. The planned images:
+**✅ Step 1 (backend) implemented on 2026-08-07** — see
+[`reports/DockerBackend.md`](reports/DockerBackend.md) for the full verification
+record (50/50 tests, 218/218 QA E2E). Docker Compose and the frontend image
+remain planned:
 
-### 2.1 Backend image (`farmbridge-backend`)
+### 2.1 Backend image (`farmbridge-backend`) — ✅ IMPLEMENTED
 
 ```
-Multi-stage build:
-  Stage 1 (build):  maven:3.9-eclipse-temurin-25 → ./mvnw package -DskipTests
-  Stage 2 (runtime): eclipse-temurin:25-jre-alpine
-    - copy target/FarmBridge-*.jar
-    - ENTRYPOINT java -jar app.jar
+Multi-stage build (FarmBridge/Dockerfile):
+  Stage 1 (build):  maven:3.9-eclipse-temurin-25 → mvn package -DskipTests
+  Stage 2 (runtime): eclipse-temurin:25-jre-alpine (non-root appuser)
+    - copy target/FarmBridge-4.1.0.jar → /app/app.jar
+    - ENTRYPOINT exec java $JAVA_OPTS -jar /app/app.jar
     - EXPOSE 8080
-    - HEALTHCHECK curl -f http://localhost:8080/actuator/health (after adding Actuator)
+    - HEALTHCHECK (after adding Actuator — not yet in pom.xml)
+Run: docker run -d --name farmbridge-backend -p 8080:8080 -e TZ=Asia/Kolkata \
+     -e DB_URL=jdbc:mysql://host.docker.internal:3306/farmbridge \
+     -e DB_USERNAME / DB_PASSWORD / JWT_SECRET / MAIL_* farmbridge-backend
 ```
 
 ### 2.2 Frontend image (`farmbridge-frontend`)
@@ -167,7 +175,8 @@ builds must pass** before merge/deploy.
 - [ ] Move DB password + JWT secret to environment variables
 - [ ] Add Flyway or similar migration tool (replace bare `ddl-auto=update`)
 - [ ] Add Spring Boot Actuator health endpoint
-- [ ] Create Dockerfiles + docker-compose.yml
+- [x] Create the backend Dockerfile + .dockerignore (Phase 12 Step 1 — done 2026-08-07)
+- [ ] Create docker-compose.yml + frontend Dockerfile (Phase 12 Step 2/3)
 - [ ] Seed an initial ADMIN account (one-time script)
 - [ ] Configure managed MySQL (SSL, backups, firewall)
 - [ ] Set production `APP_BASE_URL` / `APP_RESET_PASSWORD_URL`
