@@ -1,0 +1,45 @@
+# ============================================================
+# FarmBridge — Frontend .dockerignore
+# ADF Phase 12 · Step 2
+# Keeps the Docker build context small and excludes anything the
+# build/runtime images must not contain.
+# ============================================================
+
+# Git / CI
+.git
+.gitignore
+.github
+
+# Dependencies — reinstalled inside the image via npm ci
+node_modules
+
+# Build output — regenerated inside the image
+dist
+
+# Local environment / secrets (never baked into an image)
+.env
+.env.*
+*.local
+
+# IDE / editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# Logs & temporary files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+*.tmp
+*.cache
+
+# Test / QA artifacts
+test-image.png
+coverage
+qa
+
+# Docker files (not required inside the build context)
+Dockerfile
+.dockerignore

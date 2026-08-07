@@ -3,13 +3,15 @@
 > **Document Version:** 1.1
 > **Last Updated:** 2026-08-07
 > **Framework:** TrainingMug ADF v1.0
-> **Status:** 🟡 **Partially implemented** — Phase 12 Step 1 (backend
-> Dockerization) is DONE (`FarmBridge/Dockerfile` + `FarmBridge/.dockerignore`,
-> image `farmbridge-backend`, see [reports/DockerBackend.md](reports/DockerBackend.md)).
-> Docker Compose, the frontend image, and CI/CD remain planned.
+> **Status:** 🟡 **Partially implemented** — Phase 12 Steps 1 & 2
+> (backend + frontend Dockerization) are DONE:
+> - Backend image `farmbridge-backend` — see [reports/DockerBackend.md](reports/DockerBackend.md)
+> - Frontend image `farmbridge-frontend` — see [reports/DockerFrontend.md](reports/DockerFrontend.md)
 >
-> Current runtime: local development (backend `:8080`, frontend `:5173`,
-> local MySQL `farmbridge` schema) + the containerized backend on `:8080`.
+> Docker Compose, MySQL containerization, and CI/CD remain planned.
+>
+> Current runtime: local MySQL `farmbridge` schema + containerized backend on
+> `:8080` + containerized frontend on `:5173`.
 
 ---
 
@@ -44,10 +46,11 @@
 
 ## 2. Docker (Phase 12)
 
-**✅ Step 1 (backend) implemented on 2026-08-07** — see
-[`reports/DockerBackend.md`](reports/DockerBackend.md) for the full verification
-record (50/50 tests, 218/218 QA E2E). Docker Compose and the frontend image
-remain planned:
+**✅ Steps 1 & 2 implemented on 2026-08-07** — see
+[`reports/DockerBackend.md`](reports/DockerBackend.md) (50/50 tests, 218/218
+QA E2E) and [`reports/DockerFrontend.md`](reports/DockerFrontend.md)
+(browser E2E 56/57 — one environment-limited announcement-toast check,
+see the report). Docker Compose and MySQL containerization remain planned:
 
 ### 2.1 Backend image (`farmbridge-backend`) — ✅ IMPLEMENTED
 
@@ -64,13 +67,20 @@ Run: docker run -d --name farmbridge-backend -p 8080:8080 -e TZ=Asia/Kolkata \
      -e DB_USERNAME / DB_PASSWORD / JWT_SECRET / MAIL_* farmbridge-backend
 ```
 
-### 2.2 Frontend image (`farmbridge-frontend`)
+### 2.2 Frontend image (`farmbridge-frontend`) — ✅ IMPLEMENTED
 
 ```
-Stage 1 (build):  node:20-alpine → npm ci && npm run build
-Stage 2 (runtime): nginx:alpine
-  - copy dist → /usr/share/nginx/html
-  - nginx.conf: serve SPA fallback + proxy /api and /uploads to backend:8080
+Multi-stage build (FarmBridge/frontend/Dockerfile):
+  Stage 1 (build):  node:22-alpine → npm ci && npm run build (792 modules)
+  Stage 2 (runtime): nginxinc/nginx-unprivileged:1.27-alpine (non-root, uid 101)
+    - copy dist → /usr/share/nginx/html
+    - nginx.conf (FarmBridge/frontend/nginx.conf): SPA fallback (try_files
+      /index.html) + reverse proxy /api and /uploads to
+      host.docker.internal:8080 (the Docker host, where the backend publishes 8080)
+    - listens on 8080 (unprivileged); host port 5173 → container 8080
+    - proxy timeouts raised to 300s (announcement endpoint fans out emails)
+Run: docker run -d --name farmbridge-frontend -p 5173:8080 farmbridge-frontend
+Linux hosts: add --add-host host.docker.internal:host-gateway
 ```
 
 ### 2.3 MySQL image (`mysql:8`)
@@ -176,7 +186,8 @@ builds must pass** before merge/deploy.
 - [ ] Add Flyway or similar migration tool (replace bare `ddl-auto=update`)
 - [ ] Add Spring Boot Actuator health endpoint
 - [x] Create the backend Dockerfile + .dockerignore (Phase 12 Step 1 — done 2026-08-07)
-- [ ] Create docker-compose.yml + frontend Dockerfile (Phase 12 Step 2/3)
+- [x] Create the frontend Dockerfile + .dockerignore + nginx.conf (Phase 12 Step 2 — done 2026-08-07)
+- [ ] Create docker-compose.yml (Phase 12 Step 3)
 - [ ] Seed an initial ADMIN account (one-time script)
 - [ ] Configure managed MySQL (SSL, backups, firewall)
 - [ ] Set production `APP_BASE_URL` / `APP_RESET_PASSWORD_URL`
