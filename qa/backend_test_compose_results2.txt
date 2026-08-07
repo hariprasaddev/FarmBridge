@@ -1,0 +1,383 @@
+
+======== AUTHENTICATION ========
+PASS register BUYER
+PASS register FARMER
+PASS register FARMER #2
+PASS register BUYER #2
+PASS duplicate registration
+PASS self-register ADMIN blocked (privilege escalation)
+PASS register without role blocked
+PASS register invalid email
+PASS register blank name
+PASS login buyer
+PASS login farmer
+PASS login wrong password
+PASS login unknown email
+PASS login missing password
+PASS no token on protected endpoint
+PASS invalid JWT rejected
+PASS BUYER on /api/farmer/** -> 403
+PASS FARMER on /api/buyer/** -> 403
+PASS BUYER on /api/admin/** -> 403
+PASS authenticated /api/test (any role)
+note: admin account seeded (qa_admin_1786086942@test.com)
+PASS admin login
+
+======== FARMER PROFILE ========
+PASS farmer creates profile
+PASS duplicate profile blocked
+PASS profile validation blank farmName
+PASS get my profile
+PASS update my profile
+PASS farmer without profile -> 404
+
+======== FARMER VERIFICATION ========
+note: wrote test image
+PASS farmer submits verification -> PENDING
+PASS farmer sees own verification status
+FAIL [body] unverified farmer create product -> 403 -> missing 'not been verified' in: Password reset successful.
+PASS unverified farmer update product -> 403
+PASS BUYER on farmer verification -> 403
+PASS verification requires auth -> 403
+PASS verification status without submission -> 404
+PASS missing documents rejected (400)
+PASS invalid upload rejected (400)
+PASS invalid mobile number rejected (400)
+PASS farmer2 submits verification -> PENDING
+PASS admin lists pending verifications
+PASS F1 in pending list
+PASS F2 in pending list
+PASS admin approves F1
+PASS admin rejects F2 with reason
+PASS reject without reason -> 400
+PASS F2 sees rejection reason
+PASS rejected farmer create product -> 403
+PASS F2 resubmits without documents -> PENDING
+PASS admin approves F2 after resubmit
+PASS approved farmer creates product
+PASS approved farmer deletes product
+
+======== PRODUCTS ========
+PASS farmer creates product (201 Created)
+PASS create product price<1 -> 400
+PASS create product qty<1 -> 400
+PASS create product blank name -> 400
+PASS farmer2 creates product (201 Created)
+PASS farmer2 creates 2nd product (201 Created)
+PASS farmer updates own product
+PASS farmer2 updates farmer1 product -> 400
+PASS farmer gets my products
+PASS buyer browses all products
+PASS buyer gets product details
+PASS product details has rating fields
+PASS product details not found -> 404
+PASS category filter (Grains)
+PASS category filter returns >=2 items (12)
+PASS category filter case-insensitive
+PASS unknown category returns empty list
+note: wrote test image
+PASS farmer uploads product image
+PASS uploaded image served publicly (200)
+PASS non-owner image upload blocked
+PASS non-image upload rejected
+FAIL [404|exp 200] farmer deletes own product -> {"errors":null,"message":"Product not found","status":404,"timestamp":"2026-08-07T12:46:03.594911123"}
+PASS farmer2 deletes farmer1 product -> 400
+PASS delete non-existent product -> 404
+
+======== ORDERS ========
+PASS buyer places order
+PASS order total price = 120*5 = 600 (600.0)
+FAIL stock deduction expected 40 got 
+PASS order exceeding stock -> 400
+PASS order non-existent product -> 404
+PASS order qty 0 -> 400
+PASS buyer2 places order
+PASS buyer2 places 2nd order
+PASS farmer sees received orders
+PASS farmer2 updates farmer1 order -> 400
+PASS update non-existent order -> 404
+PASS farmer accepts order
+PASS ACCEPTED->REJECTED invalid transition
+PASS farmer completes order
+PASS COMPLETED locked (cannot change)
+PASS buyer sees own orders
+PASS farmer rejects order
+PASS stock restored after rejection (35 -> 38)
+PASS REJECTED locked (cannot change)
+PASS farmer accepts order3 (for reviews)
+FAIL [body] buyer2 sees only own orders -> missing 'QA Organic Rice' in: [{"active":true,"email":"compose_buyer_1786086237@test.com","id":4,"name":"Compose Buyer","role":"BUYER"},{"active":true,"email":"qa_buyer1_1786086499@test.com"
+FAIL order isolation: buyer2 list contains buyer1's order 10
+
+======== REVIEWS ========
+FAIL [body] purchased buyer reviews product -> missing 'Excellent rice' in: [{"id":1,"name":"Organic Rice","description":"Premium organic rice from a verified farm","price":120.0,"quantity":498,"category":"Grains","farmerName":"QA Farme
+PASS duplicate review blocked
+PASS non-purchased buyer blocked
+PASS rating out of range -> 400
+PASS second purchased buyer reviews
+PASS rating aggregation avg=3.5 count=2
+PASS get product reviews
+PASS reviews list has 2 entries
+PASS get my review
+FAIL [404|exp 200] update own review -> {"errors":null,"message":"Review not found","status":404,"timestamp":"2026-08-07T12:46:11.749346833"}
+PASS update other buyer's review -> 400
+FAIL [body] farmer views reviews of own product -> missing 'Updated review' in: [{"id":6,"productId":21,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer Two","rating":2,"comment":"Mediocre","createdAt":"2026-08-07T12:46:10.4
+PASS farmer views reviews of other's product -> 400
+PASS delete other buyer's review -> 400
+FAIL [404|exp 200] delete own review -> {"errors":null,"message":"Review not found","status":404,"timestamp":"2026-08-07T12:46:12.784916347"}
+FAIL [body] delete deleted review -> 404 -> missing 'Review not found' in: 
+FAIL review count expected 1 got 2
+
+======== WISHLIST ========
+PASS add to wishlist
+PASS duplicate wishlist add -> 409
+PASS wishlist non-existent product -> 404
+PASS list wishlist
+PASS wishlist check true
+PASS wishlist check false
+PASS wishlist isolation (buyer2 empty)
+FAIL [body] remove from wishlist -> missing 'removed from wishlist' in: 
+FAIL [body] wishlist check false after remove -> missing 'false' in: 
+FAIL [body] remove not-wishlisted (idempotent) -> missing 'removed from wishlist' in: 
+PASS FARMER on wishlist -> 403
+
+======== NOTIFICATIONS ========
+PASS farmer gets notifications
+PASS buyer gets notifications
+PASS buyer notified on order completed
+FAIL [body] buyer2 notified of reject + accept -> missing 'Order Rejected' in: 
+FAIL buyer2 missing accepted notification
+PASS get unread notifications
+PASS mark one notification read
+backend_test.sh: line 683: {"activeFarmers":13,"activeUsers":29,"buyers":11,"cancelledOrders":3,"completedOrders":3,"farmerRegistrations":[{"year":2026,"month":8,"value":13.0,"count":13}],"inactiveFarmers":0,"inactiveUsers":0,"latestFarmers":[{"active":true,"email":"qa_farmer3_1786086906@test.com","id":29,"name":"QA Farmer Three","role":"FARMER"},{"active":true,"email":"qa_farmer2_1786086942@test.com","id":25,"name":"QA Farmer Two","role":"FARMER"},{"active":true,"email":"qa_farmer1_1786086942@test.com","id":24,"name":"QA Farmer One","role":"FARMER"},{"active":true,"email":"qa_farmer2_1786086906@test.com","id":20,"name":"QA Farmer Two","role":"FARMER"},{"active":true,"email":"qa_farmer1_1786086906@test.com","id":19,"name":"QA Farmer One","role":"FARMER"}],"latestOrders":[{"id":12,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer Two","farmerName":"QA Farmer One","quantity":2,"totalPrice":240.0,"status":"ACCEPTED","createdAt":"2026-08-07T12:46:05.985793"},{"id":11,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer Two","farmerName":"QA Farmer One","quantity":3,"totalPrice":360.0,"status":"REJECTED","createdAt":"2026-08-07T12:46:05.655588"},{"id":10,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer One","farmerName":"QA Farmer One","quantity":5,"totalPrice":600.0,"status":"COMPLETED","createdAt":"2026-08-07T12:46:04.228753"},{"id":9,"productName":"QA Organic Rice 1786086906","buyerName":"QA Buyer Two","farmerName":"QA Farmer One","quantity":2,"totalPrice":240.0,"status":"ACCEPTED","createdAt":"2026-08-07T12:45:30.309682"},{"id":8,"productName":"QA Organic Rice 1786086906","buyerName":"QA Buyer Two","farmerName":"QA Farmer One","quantity":3,"totalPrice":360.0,"status":"REJECTED","createdAt":"2026-08-07T12:45:29.957467"}],"latestReviews":[{"id":6,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer Two","rating":2,"comment":"Mediocre","createdAt":"2026-08-07T12:46:10.454287"},{"id":5,"productName":"QA Organic Rice 1786086942","buyerName":"QA Buyer One","rating":5,"comment":"Excellent rice!","createdAt":"2026-08-07T12:46:09.48417"},{"id":4,"productName":"QA Organic Rice 1786086906","buyerName":"QA Buyer Two","rating":2,"comment":"Mediocre","createdAt":"2026-08-07T12:45:35.036551"},{"id":2,"productName":"QA Organic Rice 1786086499","buyerName":"QA Buyer Two","rating":2,"comment":"Mediocre","createdAt":"2026-08-07T12:39:22.760663"}],"lowStockProducts":[{"id":24,"name":"QA Temp Product","category":"Other","quantity":5,"price":5.0,"farmerName":"QA Farmer Two"}],"monthlyOrders":12,"monthlyRevenue":1800.0,"orderStatus":[{"status":"PENDING","count":3},{"status":"COMPLETED","count":3},{"status":"REJECTED","count":3},{"status":"ACCEPTED","count":3}],"orders":12,"ordersPerMonth":[{"year":2026,"month":8,"value":12.0,"count":12}],"pendingVerificationList":[{"profileId":6,"userId":14,"farmerName":"UI Second Farmer","email":"uifarmer2_1786086618268@test.com","fullName":"UI Second Farmer","mobileNumber":"9876543210","aadhaarNumber":null,"village":"Test Village","mandal":"Test Mandal","district":"Test District","state":"Telangana","farmName":"UI Rejected Farm 1786086618268","location":"Test Village, Test Mandal, Test District, Telangana","farmAddress":"Survey 45, Test Village","farmSize":6.5,"surveyNumber":null,"cultivationMethod":"ORGANIC","mainCrops":"Rice, Cotton","farmingExperience":"8 years","farmerPhotoUrl":"/uploads/products/904b021a-4b64-4e73-8522-2c5d6455a2f3.png","landCertificateUrl":"/uploads/products/89bbc081-22e0-4bdd-8aab-7ce525b56bcb.png","farmPhotoUrl":"/uploads/products/8b93ed2b-e3ae-4d74-bd15-49ce6e4b4757.png","organicCertificateUrl":null,"verified":false,"verificationStatus":"PENDING","rejectionReason":null,"submittedAt":"2026-08-07T12:41:49.811596"},{"profileId":8,"userId":17,"farmerName":"UI Second Farmer","email":"uifarmer2_1786086807376@test.com","fullName":"UI Second Farmer","mobileNumber":"9876543210","aadhaarNumber":null,"village":"Test Village","mandal":"Test Mandal","district":"Test District","state":"Telangana","farmName":"UI Rejected Farm 1786086807376","location":"Test Village, Test Mandal, Test District, Telangana","farmAddress":"Survey 45, Test Village","farmSize":6.5,"surveyNumber":null,"cultivationMethod":"ORGANIC","mainCrops":"Rice, Cotton","farmingExperience":"8 years","farmerPhotoUrl":"/uploads/products/d94efbcf-e835-42fe-9f72-52ade18b88ea.png","landCertificateUrl":"/uploads/products/de76e1b8-c096-484b-a72a-b66cdfb12c87.png","farmPhotoUrl":"/uploads/products/32e2189f-d519-44fb-a684-7be39481f620.png","organicCertificateUrl":null,"verified":false,"verificationStatus":"PENDING","rejectionReason":null,"submittedAt":"2026-08-07T12:44:33.325273"},{"profileId":13,"userId":29,"farmerName":"QA Farmer Three","email":"qa_farmer3_1786086906@test.com","fullName":"QA Farmer One","mobileNumber":"9876543210","aadhaarNumber":null,"village":"TestVillage","mandal":"TestMandal","district":"TestDistrict","state":"Telangana","farmName":"QA Green Valley","location":"TestVillage, TestMandal, TestDistrict, Telangana","farmAddress":"Survey 45, TestVillage","farmSize":15.5,"surveyNumber":null,"cultivationMethod":"ORGANIC","mainCrops":"Rice, Wheat","farmingExperience":"10 years","farmerPhotoUrl":"/uploads/products/03dfe58b-d0ee-4d79-a0b0-3016c28e33e7.png","landCertificateUrl":"/uploads/products/ba2b2692-8906-4434-94d4-3389b3fb9bfb.png","farmPhotoUrl":"/uploads/products/2b413341-0c98-4516-9eb2-0b4800f5d92d.png","organicCertificateUrl":null,"verified":false,"verificationStatus":"PENDING","rejectionReason":null,"submittedAt":"2026-08-07T12:46:12.106677"}],"pendingVerifications":3,"platformRevenue":1800.0,"productCategories":[{"category":"Grains","count":12,"quantity":0.0},{"category":"Vegetables","count":1,"quantity":0.0},{"category":"Fruits","count":4,"quantity":0.0},{"category":"Dairy","count":1,"quantity":0.0},{"category":"Other","count":1,"quantity":0.0}],"products":19,"revenuePerMonth":[{"year":2026,"month":8,"value":1800.0,"count":3}],"sellingFarmers":9,"topBuyers":[{"userId":5,"name":"QA Buyer One","email":"qa_buyer1_1786086499@test.com","orderCount":1,"totalAmount":600.0},{"userId":8,"name":"QA Buyer Two","email":"qa_buyer2_1786086499@test.com","orderCount":2,"totalAmount":600.0},{"userId":18,"name":"QA Buyer One","email":"qa_buyer1_1786086906@test.com","orderCount":1,"totalAmount":600.0},{"userId":21,"name":"QA Buyer Two","email":"qa_buyer2_1786086906@test.com","orderCount":2,"totalAmount":600.0},{"userId":23,"name":"QA Buyer One","email":"qa_buyer1_1786086942@test.com","orFAIL [body] admin revenue per month -> missing 'value' in: {"errors":null,"message":"You are not allowed to access this notification","status":403,"timestamp":"2026-08-07T12:46:18.026368614"}
+PASS admin orders per month
+PASS admin top products
+PASS admin top farmers
+FAIL [body] admin top buyers -> missing 'email' in: []
+
+======== ANALYTICS — FARMER DASHBOARD ========
+FAIL [body] farmer analytics dashboard -> missing 'completedOrders' in: User Registered Successfully
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    d = json.load(sys.stdin)
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 293, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAIL farmer analytics reflects F1's real data
+FAIL [body] farmer sales per product -> missing 'productName' in: {"errors":{"email":"Invalid email format"},"message":"Validation failed","status":400,"timestamp":"2026-08-07T12:46:20.866430774"}
+
+======== ANALYTICS — BUYER DASHBOARD ========
+FAIL [body] buyer analytics dashboard -> missing 'favoriteCategory' in: If the email exists, a password reset link has been sent.
+Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    d = json.load(sys.stdin)
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 293, in load
+    return loads(fp.read(),
+        cls=cls, object_hook=object_hook,
+        parse_float=parse_float, parse_int=parse_int,
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 345, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harip\AppData\Local\Programs\Python\Python313\Lib\json\decoder.py", line 363, in raw_decode
+    raise JSONDecodeError("Expecting value", s, err.value) from None
+json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+FAIL buyer analytics reflects B1's real data
+PASS buyer monthly spending
+
+======== SOFT DELETE — USER LIFECYCLE ========
+FAIL [404|exp 200] deactivate user with relations (soft delete) -> {"errors":null,"message":"Resource not found","status":404,"timestamp":"2026-08-07T12:46:22.317893292"}
+FAIL [404|exp 200] deactivated user still returned by admin -> {"errors":null,"message":"Resource not found","status":404,"timestamp":"2026-08-07T12:46:22.666625531"}
+FAIL [200|exp 403] deactivated buyer login blocked (403) -> {"message":"Login successful","token":"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJxYV9idXllcjFfMTc4NjA4NjkwNkB0ZXN0LmNvbSIsInJvbGUiOiJCVVlFUiIsImlhdCI6MTc4NjA4Njk4MywiZXhw
+FAIL [200|exp 403] deactivated buyer JWT rejected on secured endpoint -> [{"id":1,"name":"Organic Rice","description":"Premium organic rice from a verified farm","price":120.0,"quantity":498,"category":"Grains","farmerName":"QA Farme
+FAIL [200|exp 403] deactivated buyer cannot view product details -> {"message":"Login successful","token":"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJxYV9wd2RfMTc4NjA4Njk0MkB0ZXN0LmNvbSIsInJvbGUiOiJCVVlFUiIsImlhdCI6MTc4NjA4Njk4NCwiZXhwIjox
+FAIL [201|exp 403] deactivated buyer cannot place order -> {"id":13,"productId":16,"productName":"QA Organic Rice 1786086906","buyerName":"QA Buyer One","farmerName":"QA Farmer One","quantity":1,"totalPrice":120.0,"stat
+FAIL deactivated user missing from admin list
+FAIL [403|exp 200] admin reactivates user -> 
+FAIL [404|exp 200] reactivated user active again -> {"errors":null,"message":"Resource not found","status":404,"timestamp":"2026-08-07T12:46:25.605118097"}
+PASS reactivated buyer can log in
+PASS reactivated buyer can browse products
+PASS reactivated buyer keeps order history
+
+======== SUMMARY ========
+
+TOTAL PASS: 179
+TOTAL FAIL: 36
+FAILED TESTS:
+  - mark one notification read
+  - mark all read count
+  - delete own notification
+  - login with old password rejected
+  - forgot-password (expiry test)
+  - expired token rejected
+  - admin cannot deactivate own account
+  - admin get user by id
+  - admin get user 404
+  - admin updates user
+  - admin update email conflict -> 409
+  - admin update missing role -> 400
+  - admin deactivates user without relations (soft delete)
+  - deactivated user record preserved
+  - admin reactivates deactivated user
+  - reactivated user record active again
+  - admin lists orders
+  - register FARMER #3
+  - F3 submit verification
+  - admin approves F3
+  - admin revenue per month
+  - admin top buyers
+  - farmer analytics dashboard
+  - farmer analytics reflects F1 data
+  - farmer sales per product
+  - buyer analytics dashboard
+  - buyer analytics reflects B1 data
+  - deactivate user with relations (soft delete)
+  - deactivated user still returned by admin
+  - deactivated buyer login blocked (403)
+  - deactivated buyer JWT rejected on secured endpoint
+  - deactivated buyer cannot view product details
+  - deactivated buyer cannot place order
+  - deactivated user in admin list
+  - admin reactivates user
+  - reactivated user active again
+dhaarNumber":null,"village":"TestVillage","mandal":"TestMandal","district":"TestDistrict","state":"Telangana","farmName":"QA Green Valley","location":"TestVillage, TestMandal, TestDistrict, Telangana","farmAddress":"Survey 45, TestVillage","farmSize":15.5,"surveyNumber":null,"cultivationMethod":"ORGANIC","mainCrops":"Rice, Wheat","farmingExperience":"10 years","farmerPhotoUrl":"/uploads/products/03dfe58b-d0ee-4d79-a0b0-3016c28e33e7.png","landCertificateUrl":"/uploads/products/ba2b2692-8906-4434-94d4-3389b3fb9bfb.png","farmPhotoUrl":"/uploads/products/2b413341-0c98-4516-9eb2-0b4800f5d92d.png","organicCertificateUrl":null,"verified":false,"verificationStatus":"PENDING","rejectionReason":null,"submittedAt":"2026-08-07T12:46:12.106677"}],"pendingVerifications":3,"platformRevenue":1800.0,"productCategories":[{"category":"Grains","count":12,"quantity":0.0},{"category":"Vegetables","count":1,"quantity":0.0},{"category":"Fruits","count":4,"quantity":0.0},{"category":"Dairy","count":1,"quantity":0.0},{"category":"Other","count":1,"quantity":0.0}],"products":19,"revenuePerMonth":[{"year":2026,"month":8,"value":1800.0,"count":3}],"sellingFarmers":9,"topBuyers":[{"userId":5,"name":"QA Buyer One","email":"qa_buyer1_1786086499@test.com","orderCount":1,"totalAmount":600.0},{"userId":8,"name":"QA Buyer Two","email":"qa_buyer2_1786086499@test.com","orderCount":2,"totalAmount":600.0},{"userId":18,"name":"QA Buyer One","email":"qa_buyer1_1786086906@test.com","orderCount":1,"totalAmount":600.0},{"userId":21,"name":"QA Buyer Two","email":"qa_buyer2_1786086906@test.com","orderCount":2,"totalAmount":600.0},{"userId":23,"name":"QA Buyer One","email":"qa_buyer1_1786086942@test.com","orderCount":1,"totalAmount":600.0}],"topFarmers":[{"userId":6,"name":"QA Farmer One","email":"qa_farmer1_1786086499@test.com","orderCount":3,"totalAmount":1200.0},{"userId":19,"name":"QA Farmer One","email":"qa_farmer1_1786086906@test.com","orderCount":3,"totalAmount":1200.0},{"userId":24,"name":"QA Farmer One","email":"qa_farmer1_1786086942@test.com","orderCount":3,"totalAmount":1200.0},{"userId":3,"name":"QA Farmer One","email":"qa_farmer1_1785918721@test.com","orderCount":3,"totalAmount":431.0}],"topProducts":[{"productId":7,"productName":"QA Organic Rice 1786086499","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":16,"productName":"QA Organic Rice 1786086906","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":21,"productName":"QA Organic Rice 1786086942","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":5,"productName":"Compose Wheat 1786086254","category":"Grains","quantity":2.0,"revenue":191.0},{"productId":1,"productName":"Organic Rice","category":"Grains","quantity":2.0,"revenue":240.0}],"topSellingCategories":[{"category":"Grains","count":12,"quantity":34.0}],"totalFarmers":13,"totalUsers":29,"verifiedFarmers":10}")
+PASS mark other user's notification read -> 403
+PASS delete other user's notification -> 403
+FAIL [body] delete non-existent notification -> 404 -> missing 'Notification not found' in: [{"year":2026,"month":8,"value":12.0,"count":12}]
+PASS mark all read
+FAIL unread count expected 0 got [{"productId":7,"productName":"QA Organic Rice 1786086499","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":16,"productName":"QA Organic Rice 1786086906","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":21,"productName":"QA Organic Rice 1786086942","category":"Grains","quantity":10.0,"revenue":1200.0},{"productId":5,"productName":"Compose Wheat 1786086254","category":"Grains","quantity":2.0,"revenue":191.0},{"productId":1,"productName":"Organic Rice","category":"Grains","quantity":2.0,"revenue":240.0}]
+PASS delete own notification
+PASS clear all notifications
+PASS notifications empty after clear
+PASS notifications require auth -> 403
+
+======== FORGOT / RESET PASSWORD ========
+PASS register pwd-reset user
+PASS forgot-password known email -> generic response
+PASS forgot-password unknown email -> generic response
+PASS no account enumeration (identical responses)
+PASS forgot-password invalid email -> 400
+PASS reset with invalid token -> 400
+PASS reset with short password -> 400
+PASS forgot-password again creates token
+note: reset token read from DB (36 chars)
+PASS successful password reset
+PASS login with new password
+FAIL [body] login with old password rejected -> missing 'Invalid email or password' in: {"id":13,"productId":16,"productName":"QA Organic Rice 1786086906","buyerName":"QA Buyer One","farmerName":"QA Farmer One","quantity":1,"totalPrice":120.0,"stat
+PASS used token cannot be reused
+PASS forgot-password (expiry test)
+PASS expired token rejected
+
+======== ADMIN ========
+PASS admin dashboard stats
+note: stats -> users=30 farmers=13 buyers=12 products=19 orders=13 pending=3
+PASS stats users >= 5 (30)
+PASS admin lists users
+PASS stats users == users list length (30)
+PASS admin cannot deactivate own account
+PASS admin get user by id
+PASS admin get user 404
+PASS admin updates user
+PASS admin update email conflict -> 409
+PASS admin update missing role -> 400
+PASS admin deactivates user without relations (soft delete)
+PASS deactivated user record preserved
+PASS admin reactivates deactivated user
+PASS reactivated user record active again
+PASS admin lists farmers
+PASS admin lists buyers
+PASS admin lists products
+PASS stats products == admin products (19)
+PASS admin lists orders
+PASS stats orders == admin orders (13)
+PASS register FARMER #3
+PASS F3 submits verification -> PENDING
+PASS admin lists unverified farmers
+PASS admin approves F3
+PASS verify non-existent profile -> 404
+PASS approved farmer removed from pending list
+PASS product reflects farmer verified flag
+
+======== ANALYTICS — AUTHORIZATION ========
+PASS admin analytics blocked for buyer
+PASS admin analytics blocked for farmer
+PASS admin analytics blocked unauthenticated
+PASS admin revenue blocked for buyer
+PASS admin top-buyers blocked for farmer
+PASS farmer analytics blocked for admin
+PASS farmer analytics blocked for buyer
+PASS farmer analytics blocked unauthenticated
+PASS buyer analytics blocked for farmer
+PASS buyer analytics blocked for admin
+PASS buyer analytics blocked unauthenticated
+
+======== ANALYTICS — ADMIN DASHBOARD ========
+PASS admin analytics dashboard
+PASS admin analytics internal consistency (status sum == orders, tables populated)
+PASS admin revenue per month
+PASS admin orders per month
+PASS admin top products
+PASS admin top farmers
+PASS admin top buyers
+
+======== ANALYTICS — FARMER DASHBOARD ========
+PASS farmer analytics dashboard
+PASS farmer analytics reflects F1's real orders/products
+PASS farmer sales per product
+
+======== ANALYTICS — BUYER DASHBOARD ========
+PASS buyer analytics dashboard
+PASS buyer analytics reflects B1's real orders
+PASS buyer monthly spending
+
+======== SOFT DELETE — USER LIFECYCLE ========
+PASS deactivate user with relations (soft delete)
+PASS deactivated user still returned by admin
+PASS deactivated buyer login blocked (403)
+PASS deactivated buyer JWT rejected on secured endpoint
+PASS deactivated buyer cannot view product details
+PASS deactivated buyer cannot place order
+PASS deactivated user still in admin user list (data preserved)
+PASS admin reactivates user
+PASS reactivated user active again
+PASS reactivated buyer can log in
+PASS reactivated buyer can browse products
+PASS reactivated buyer keeps order history
+
+======== SUMMARY ========
+
+TOTAL PASS: 198
+TOTAL FAIL: 19
+FAILED TESTS:
+  - unverified farmer create product -> 403
+  - farmer deletes own product
+  - stock deduction
+  - buyer2 sees only own orders
+  - order isolation
+  - purchased buyer reviews product
+  - update own review
+  - farmer views reviews of own product
+  - delete own review
+  - delete deleted review -> 404
+  - review count after delete
+  - remove from wishlist
+  - wishlist check false after remove
+  - remove not-wishlisted (idempotent)
+  - buyer2 notified of reject + accept
+  - accepted notification
+  - delete non-existent notification -> 404
+  - mark all read count
+  - login with old password rejected

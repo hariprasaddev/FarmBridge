@@ -27,3 +27,7 @@ FarmBridge/uploads/
 qa/.token
 qa/.token2
 qa/.resp
+
+# Local Compose environment (never commit real secrets)
+.env
+.env.local

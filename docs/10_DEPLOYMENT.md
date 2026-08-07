@@ -3,15 +3,16 @@
 > **Document Version:** 1.1
 > **Last Updated:** 2026-08-07
 > **Framework:** TrainingMug ADF v1.0
-> **Status:** 🟡 **Partially implemented** — Phase 12 Steps 1 & 2
-> (backend + frontend Dockerization) are DONE:
-> - Backend image `farmbridge-backend` — see [reports/DockerBackend.md](reports/DockerBackend.md)
-> - Frontend image `farmbridge-frontend` — see [reports/DockerFrontend.md](reports/DockerFrontend.md)
+> **Status:** 🟡 **Partially implemented** — Phase 12 Steps 1–3
+> (backend + frontend Dockerization + Docker Compose & MySQL) are DONE:
+> - Backend image `farmbridge-backend` — [reports/DockerBackend.md](reports/DockerBackend.md)
+> - Frontend image `farmbridge-frontend` — [reports/DockerFrontend.md](reports/DockerFrontend.md)
+> - Full Compose stack (MySQL + backend + frontend) — [reports/DockerCompose.md](reports/DockerCompose.md)
 >
-> Docker Compose, MySQL containerization, and CI/CD remain planned.
+> CI/CD and cloud deployment remain planned.
 >
-> Current runtime: local MySQL `farmbridge` schema + containerized backend on
-> `:8080` + containerized frontend on `:5173`.
+> Current runtime: Docker Compose stack — MySQL container (host 3307),
+> backend on `:8080`, frontend on `:5173` (all healthy).
 
 ---
 
@@ -46,11 +47,12 @@
 
 ## 2. Docker (Phase 12)
 
-**✅ Steps 1 & 2 implemented on 2026-08-07** — see
+**✅ Steps 1–3 implemented on 2026-08-07** — see
 [`reports/DockerBackend.md`](reports/DockerBackend.md) (50/50 tests, 218/218
-QA E2E) and [`reports/DockerFrontend.md`](reports/DockerFrontend.md)
-(browser E2E 56/57 — one environment-limited announcement-toast check,
-see the report). Docker Compose and MySQL containerization remain planned:
+QA E2E), [`reports/DockerFrontend.md`](reports/DockerFrontend.md) (browser E2E
+57/57 after the Step-3 mail change), and
+[`reports/DockerCompose.md`](reports/DockerCompose.md) (full stack: backend
+QA 218/218, browser QA 57/57, persistence + clean-rebuild verified).
 
 ### 2.1 Backend image (`farmbridge-backend`) — ✅ IMPLEMENTED
 
@@ -83,34 +85,32 @@ Run: docker run -d --name farmbridge-frontend -p 5173:8080 farmbridge-frontend
 Linux hosts: add --add-host host.docker.internal:host-gateway
 ```
 
-### 2.3 MySQL image (`mysql:8`)
+### 2.3 MySQL container (`mysql:8.0`) — ✅ IMPLEMENTED (Step 3)
 
-- Named volume for data persistence.
-- Init script (mounted at `/docker-entrypoint-initdb.d/`) to seed the admin
-  account (the app has no ADMIN self-registration).
+- `mysql:8.0`, database `farmbridge`, user `farmbridge` (env-driven).
+- Named volume `farmbridge_mysql_data` → `/var/lib/mysql` (survives `down`).
+- Host port **3307** → 3306 (host 3306 stays with the local dev MySQL).
+- Healthcheck `mysqladmin ping`; backend waits on `service_healthy`.
+- Admin seed via `mysql/seed/seed.sql` (run once through `docker compose
+  exec` after the backend creates the schema — the app has no ADMIN
+  self-registration).
 
 ---
 
-## 3. Docker Compose (planned)
+## 3. Docker Compose — ✅ IMPLEMENTED (Step 3)
+
+See [`reports/DockerCompose.md`](reports/DockerCompose.md). `docker-compose.yml`
+(at the repo root) defines `mysql` / `backend` / `frontend` on the dedicated
+`farmbridge-network`, with named volumes `farmbridge_mysql_data` and
+`farmbridge_uploads`, healthcheck-chained `depends_on`, and secrets from the
+git-ignored `.env`:
 
 ```
-services:
-  mysql:
-    image: mysql:8
-    environment: MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD
-    volumes: [mysql-data, ./init:/docker-entrypoint-initdb.d]
-    healthcheck: mysqladmin ping
-  backend:
-    build: ./backend
-    depends_on: mysql (healthy)
-    environment: DB_URL, DB_USERNAME, DB_PASSWORD, JWT_SECRET,
-                 MAIL_*, APP_BASE_URL, APP_RESET_PASSWORD_URL
-    ports: ["8080:8080"]
-  frontend:
-    build: ./frontend
-    depends_on: backend
-    ports: ["80:80"]
-networks: farmbridge-net
+ports:    frontend 5173→8080 · backend 8080→8080 · mysql 3307→3306
+network:  farmbridge-network (service DNS: mysql, backend)
+db:       backend → jdbc:mysql://mysql:3306/farmbridge
+proxy:    frontend nginx → http://backend:8080 (BACKEND_UPSTREAM env)
+startup:  mysql healthy → backend healthy → frontend
 ```
 
 ---
@@ -131,10 +131,17 @@ networks: farmbridge-net
 | `APP_BASE_URL` | `app.base-url` | Frontend origin for email links | `https://farmbridge.app` |
 | `APP_RESET_PASSWORD_URL` | `app.reset-password-url` | Reset-page URL in emails | `https://farmbridge.app/reset-password` |
 | `APP_SUPPORT_EMAIL` | `app.support-email` | Support address in emails | `support@farmbridge.com` |
+| `MYSQL_DATABASE` | (mysql image) | Database name | `farmbridge` |
+| `MYSQL_USER` | (mysql image) | App DB user | `farmbridge` |
+| `MYSQL_PASSWORD` | (mysql image + `DB_PASSWORD`) | DB password (secret) | — |
+| `MYSQL_ROOT_PASSWORD` | (mysql image) | Root password (secret) | — |
+| `BACKEND_UPSTREAM` | (nginx template) | Compose service name | `backend:8080` |
 
-> Hardening task (Phase 12): convert the currently hardcoded
-> `spring.datasource.password` and `jwt.secret` to `${DB_PASSWORD:}` /
-> `${JWT_SECRET:}` placeholders.
+> The Compose `.env` (git-ignored) supplies every value above; `docker-compose.yml`
+> uses fail-fast `${VAR:?...}` for secrets. DB and JWT secrets already flow
+> through `${DB_PASSWORD:}` / `${JWT_SECRET:}` placeholders in
+> `application.properties` (Step 1/3) — remaining hardening (Flyway, rotation)
+> is a later phase.
 
 ---
 
@@ -187,8 +194,8 @@ builds must pass** before merge/deploy.
 - [ ] Add Spring Boot Actuator health endpoint
 - [x] Create the backend Dockerfile + .dockerignore (Phase 12 Step 1 — done 2026-08-07)
 - [x] Create the frontend Dockerfile + .dockerignore + nginx.conf (Phase 12 Step 2 — done 2026-08-07)
-- [ ] Create docker-compose.yml (Phase 12 Step 3)
-- [ ] Seed an initial ADMIN account (one-time script)
+- [x] Create docker-compose.yml + MySQL containerization (Phase 12 Step 3 — done 2026-08-07)
+- [x] Seed an initial ADMIN account (`mysql/seed/seed.sql` — Step 3)
 - [ ] Configure managed MySQL (SSL, backups, firewall)
 - [ ] Set production `APP_BASE_URL` / `APP_RESET_PASSWORD_URL`
 - [ ] Run both QA suites against a staging deployment

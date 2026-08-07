@@ -288,13 +288,41 @@
 
 ---
 
+## Phase 12 — Containerization & Deployment Readiness (Aug 7)
+
+### Step 1 — Backend Dockerization
+
+- `FarmBridge/Dockerfile` + `.dockerignore`; image `farmbridge-backend`
+  (multi-stage, Java 25, non-root). Verified: 50/50 tests, 218/218 QA E2E.
+- **Status:** ✅ Complete · **Report:** [DockerBackend.md](reports/DockerBackend.md)
+
+### Step 2 — Frontend Dockerization
+
+- `FarmBridge/frontend/Dockerfile` + `.dockerignore` + `nginx.conf`; image
+  `farmbridge-frontend` (Node 22 build → non-root nginx). SPA fallback +
+  `/api` + `/uploads` proxy. Browser QA 56/57 (announcement-toast timing,
+  resolved in Step 3).
+- **Status:** ✅ Complete · **Report:** [DockerFrontend.md](reports/DockerFrontend.md)
+
+### Step 3 — Docker Compose + MySQL
+
+- Root `docker-compose.yml`: `mysql` (8.0, volume `farmbridge_mysql_data`),
+  `backend` (volume `farmbridge_uploads`), `frontend` on the
+  `farmbridge-network`; healthcheck-chained startup; secrets from the
+  git-ignored `.env`; one-time seed `mysql/seed/seed.sql`. Service DNS
+  everywhere (no `host.docker.internal`). Verified: persistence across
+  `down`/`up`, clean `--no-cache` rebuild, backend QA 218/218, browser QA
+  57/57.
+- **Status:** ✅ Complete · **Report:** [DockerCompose.md](reports/DockerCompose.md)
+
+---
+
 ## Upcoming / Planned
 
 | Task | Phase |
 |---|---|
-| Docker images + Docker Compose | Phase 12 (next) |
-| Environment-variable hardening (DB password, JWT secret) | Phase 12 |
-| CI/CD pipeline (GitHub Actions) | Phase 13 |
+| CI/CD pipeline (GitHub Actions) | Phase 13 (next) |
+| Environment-variable hardening (Flyway, secret rotation) | Phase 13 |
 | Cloud deployment (Azure backend, Vercel frontend, managed MySQL) | Phase 14 |
 | Health checks + rollback strategy | Phase 14 |
 | Product search by name endpoint | Optional backlog |

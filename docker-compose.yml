@@ -1,0 +1,121 @@
+# ============================================================
+# FarmBridge — Docker Compose stack (local production-like)
+# ADF Phase 12 · Step 3 · Compose + MySQL containerization
+#
+# Stack:  Browser → frontend (nginx) → backend (Spring Boot) → MySQL
+#
+# Prerequisites:
+#   1. Copy .env.example to .env and set the secrets (never commit .env).
+#   2. docker compose build      (builds backend + frontend images)
+#   3. docker compose up -d      (starts mysql → backend → frontend)
+#   4. One-time seed (after the backend has created the schema):
+#        docker compose exec -T mysql sh -c \
+#          'mysql -ufarmbridge -p"$MYSQL_PASSWORD" farmbridge' < mysql/seed/seed.sql
+#
+# NOTE: the frontend nginx proxies /api and /uploads to the backend via the
+# Compose service name `backend` (BACKEND_UPSTREAM=backend:8080) — NOT
+# host.docker.internal. The standalone image default (host.docker.internal)
+# is overridden here for in-network service DNS.
+# ============================================================
+
+name: farmbridge
+
+services:
+  # ---------------- MySQL 8 ----------------
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      # Secrets come from .env — never hardcoded here.
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-farmbridge}
+      MYSQL_USER: ${MYSQL_USER:-farmbridge}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
+    ports:
+      # Host loopback 3307 → container 3306 (3306 is used by the local dev
+      # MySQL; the backend reaches this container via the internal network).
+      # Loopback-only: MySQL is never exposed on other host interfaces.
+      - "127.0.0.1:3307:3306"
+    volumes:
+      # Named volume — the database survives `docker compose down`.
+      - farmbridge_mysql_data:/var/lib/mysql
+    networks:
+      - farmbridge-network
+    healthcheck:
+      # Real MySQL readiness (the backend waits for this).
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  # ---------------- Backend (Spring Boot) ----------------
+  backend:
+    build:
+      context: ./FarmBridge
+    image: farmbridge-backend:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Backend → MySQL uses Docker service-name DNS (NOT host.docker.internal).
+      DB_URL: ${DB_URL:-jdbc:mysql://mysql:3306/farmbridge}
+      DB_USERNAME: ${DB_USERNAME:-farmbridge}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-true}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      APP_RESET_PASSWORD_URL: ${APP_RESET_PASSWORD_URL:-http://localhost:5173/reset-password}
+      APP_SUPPORT_EMAIL: ${APP_SUPPORT_EMAIL:-support@farmbridge.com}
+      # Match the host timezone so the QA suite's expired-token timing works.
+      TZ: ${TZ:-Asia/Kolkata}
+    volumes:
+      # Named volume for uploaded product images / verification documents.
+      # file.upload-dir=uploads/products resolves to /app/uploads/products
+      # (workdir /app); mounting /app/uploads persists all uploads.
+      - farmbridge_uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - farmbridge-network
+    healthcheck:
+      # Public OpenAPI docs endpoint → 200 when the app is up.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/v3/api-docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  # ---------------- Frontend (React + nginx) ----------------
+  frontend:
+    build:
+      context: ./FarmBridge/frontend
+    image: farmbridge-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "5173:8080"
+    environment:
+      # nginx template renders /api + /uploads → backend:8080 (service DNS).
+      BACKEND_UPSTREAM: ${BACKEND_UPSTREAM:-backend:8080}
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - farmbridge-network
+    # Image ships a HEALTHCHECK (wget http://127.0.0.1:8080/).
+
+networks:
+  farmbridge-network:
+    name: farmbridge-network
+
+volumes:
+  farmbridge_mysql_data:
+    name: farmbridge_mysql_data
+  farmbridge_uploads:
+    name: farmbridge_uploads

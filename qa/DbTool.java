@@ -17,9 +17,16 @@ import java.sql.*;
  */
 public class DbTool {
 
-    private static final String URL = "jdbc:mysql://localhost:3306/farmbridge";
-    private static final String USER = "root";
-    private static final String PASS = "Hari@1849";
+    // Connection is configurable via env vars so the QA suite can run
+    // against the Docker Compose MySQL (localhost:3307) as well as the
+    // local dev MySQL. Defaults preserve the original local-dev behavior
+    // when no env vars are set.
+    private static final String URL =
+            System.getenv().getOrDefault("DB_URL", "jdbc:mysql://localhost:3306/farmbridge");
+    private static final String USER =
+            System.getenv().getOrDefault("DB_USERNAME", "root");
+    private static final String PASS =
+            System.getenv().getOrDefault("DB_PASSWORD", "Hari@1849");
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {

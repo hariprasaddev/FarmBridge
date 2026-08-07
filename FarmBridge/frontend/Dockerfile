@@ -32,13 +32,22 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 # listens on 8080 — no root privileges anywhere in the runtime container.
 
 # SPA-aware nginx config: serves the app with BrowserRouter fallback and
-# reverse-proxies /api + /uploads to the Dockerized backend on the host
-# (Docker Desktop resolves host.docker.internal to the host loopback,
-# where the backend container publishes port 8080).
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# reverse-proxies /api + /uploads to the backend. The config is shipped as
+# an envsubst TEMPLATE — the official nginx entrypoint renders
+# /etc/nginx/templates/*.template → /etc/nginx/conf.d/*.conf at container
+# start, substituting $BACKEND_UPSTREAM. This lets ONE image serve both:
+#   - standalone `docker run`        → host.docker.internal:8080 (default)
+#   - docker compose                 → backend:8080 (Compose service DNS)
+COPY nginx.conf /etc/nginx/templates/default.conf.template
+ENV BACKEND_UPSTREAM=host.docker.internal:8080
 
-# Validate the nginx config at image build time (fail fast on syntax errors).
-RUN nginx -t
+# Validate the TEMPLATE at image build time: render it the same way the
+# entrypoint will (envsubst of the env var) and run nginx -t against the
+# result, then discard it (the entrypoint re-renders at container start).
+RUN envsubst '${BACKEND_UPSTREAM}' < /etc/nginx/templates/default.conf.template \
+      > /etc/nginx/conf.d/default.conf \
+    && nginx -t \
+    && rm /etc/nginx/conf.d/default.conf
 
 # Copy only the built static bundle — no source, no node_modules, no
 # development files, no secrets are present in the final image.

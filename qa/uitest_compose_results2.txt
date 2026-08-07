@@ -1,0 +1,81 @@
+
+===== AUTH FLOWS =====
+PASS root "/" redirects to /login (protected route)
+PASS register buyer via UI shows success message + redirects to login
+PASS login with wrong password shows error alert
+PASS login lands on buyer dashboard
+
+===== BUYER FLOWS =====
+PASS product grid renders 10 cards
+PASS search 'Rice' filters 10 -> 2 cards
+PASS product details render name + price
+PASS non-purchased buyer sees review eligibility notice (form hidden)
+PASS wishlist heart toggles to active
+PASS wishlist page lists the saved product
+PASS removing from wishlist shows empty state
+PASS order placed from details page -> order card visible
+PASS notifications page renders (empty state or list)
+PASS logout returns to login
+
+===== FARMER FLOWS (seeded QA farmer) =====
+PASS farmer login lands on dashboard
+PASS farmer dashboard renders 11 analytics stat cards
+PASS farmer creates a product through the UI (visible in My Products)
+PASS farmer orders page renders
+PASS notification bell present in navbar
+PASS farmer logout
+
+===== ADMIN FLOWS (seeded QA admin) =====
+PASS admin login lands on dashboard
+PASS admin page /admin/users renders (Users)
+PASS admin page /admin/products renders (Products)
+PASS admin page /admin/orders renders (Orders)
+PASS admin page /admin/verification renders (Verification)
+PASS admin page /admin/announcements renders (Email Announcements)
+PASS announcement sent through the UI (success toast)
+PASS admin logout
+
+===== FARMER VERIFICATION UI FLOWS =====
+PASS new farmer dashboard shows verification-pending banner
+PASS Add Product quick action is locked for unverified farmer
+PASS verification submitted -> PENDING screen shown
+PASS second farmer verification submitted -> PENDING
+PASS admin finds second farmer in pending verification list
+PASS admin rejects second farmer with reason
+PASS admin finds first farmer in pending verification list
+PASS admin approves first farmer
+PASS rejected farmer sees the stored rejection reason
+PASS rejected farmer resubmits -> PENDING again
+PASS approved farmer sees Verified Farmer screen
+PASS approved farmer creates product through the UI
+PASS buyer sees Verified Farmer badge on the approved farmer's product card
+PASS verification flow logout
+
+===== ANALYTICS DASHBOARDS =====
+PASS admin analytics dashboard renders stat cards
+PASS admin analytics dashboard renders charts
+PASS admin analytics dashboard renders tables
+PASS admin dashboard renders 6+ real recharts charts (6)
+PASS farmer analytics dashboard renders stat cards
+PASS farmer analytics dashboard renders charts
+PASS farmer analytics dashboard renders sections
+PASS farmer dashboard renders all 6 chart panels (6 panels, 4 live charts)
+PASS buyer analytics dashboard renders stat cards
+PASS buyer analytics dashboard renders charts
+PASS buyer analytics dashboard renders sections
+PASS buyer dashboard renders all 3 chart panels (3 panels, 2 live charts)
+PASS analytics dashboards logout
+
+===== PROTECTED ROUTES =====
+PASS unauthenticated user is redirected from protected route to /login
+
+===== SUMMARY =====
+PASS: 56
+FAIL: 0
+CONSOLE ERRORS: 4
+   Failed to load resource: the server responded with a status of 400 ()
+   Failed to load resource: the server responded with a status of 404 ()
+   Failed to load resource: the server responded with a status of 404 ()
+   Failed to load resource: the server responded with a status of 404 ()
+NETWORK ERRORS (4xx/5xx, excluding expected 404s): 1
+   HTTP400: http://localhost:5173/api/auth/login
