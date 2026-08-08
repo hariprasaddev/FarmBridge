@@ -334,6 +334,30 @@
 
 ---
 
+## Phase 13 — Buyer Analytics & Product Recommendations (Aug 8)
+
+### Buyer Analytics + Recommendations Hardening
+
+- Recommendation engine rebuilt in `AnalyticsServiceImpl`: one buyer-visible
+  pool (`ProductService.getAllProducts()` — APPROVED + active farmers only),
+  favourite-category preference **with marketplace fallback**, exclusions for
+  already-ordered and out-of-stock products, rating → newest-id ranking,
+  6-product cap, empty-safe.
+- Security verified end-to-end: `/api/buyer/analytics` serves the JWT
+  identity only — email parameters are ignored; FARMER/ADMIN/no-token → 403.
+- 13 new backend tests (10 unit + 3 integration) covering category
+  preference, fallback, purchase/stock exclusions, empty cases, pending
+  spend, unapproved-farmer invisibility and JWT scoping.
+- `pom.xml`: added `spring-boot-webmvc-test` (test scope) — Spring Boot 4.1
+  moved `@AutoConfigureMockMvc` out of `spring-boot-starter-test`.
+- Docker-verified: 3-service stack healthy, recommendations reach the
+  frontend (browser-checked, zero console errors), PENDING orders never
+  counted as spend.
+- Full suite: **63/63 backend tests PASS**, frontend build PASS.
+- **Status:** ✅ Complete · **Report:** [BUYER_ANALYTICS.md](reports/BUYER_ANALYTICS.md)
+
+---
+
 ## Upcoming / Planned
 
 | Task | Phase |

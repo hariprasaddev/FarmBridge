@@ -28,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -49,6 +50,17 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private static final int ENDPOINT_N = 10;
     private static final int LOW_STOCK_THRESHOLD = 5;
     private static final int RECOMMENDED_N = 6;
+
+    // Recommendation ranking: average rating descending (unrated products
+    // last), then newest product id first as a deterministic tie-breaker.
+    private static final Comparator<ProductResponse> BY_RATING_THEN_NEWEST =
+            Comparator.comparing(
+                    ProductResponse::getAverageRating,
+                    Comparator.nullsLast(Comparator.reverseOrder())
+            ).thenComparing(
+                    ProductResponse::getId,
+                    Comparator.reverseOrder()
+            );
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
@@ -464,43 +476,109 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     // ==========================================
 
     /**
-     * Recommendations are real products — the buyer's most-purchased
-     * category first, falling back to the whole marketplace, excluding
-     * products they already ordered. Only APPROVED farmers appear
-     * (ProductService already enforces that for buyer-visible lists).
+     * Personalized product recommendations for a buyer.
+     *
+     * Eligibility (all applied on one pool):
+     *  - Only buyer-visible products — the pool comes from
+     *    ProductService#getAllProducts(), which already restricts the list
+     *    to products of ACTIVE + APPROVED farmers (the exact visibility
+     *    rule of the marketplace), so unverified farmers can never leak in
+     *    and rating stats arrive in a single batched query (no N+1).
+     *  - Products the buyer has already ordered (any order status) are
+     *    excluded — never recommend something already in their history.
+     *  - Out-of-stock products (quantity &lt;= 0) are excluded — they cannot
+     *    be ordered, so recommending them would be a dead end.
+     *
+     * Ranking:
+     *  - The buyer's favourite category (their most-ordered category) is
+     *    preferred first, then the rest of the marketplace fills the
+     *    remaining slots — the favourite category is a preference, not a
+     *    hard limit, so the list is always topped up when a category has
+     *    too few eligible products.
+     *  - Within each group products are sorted by average rating
+     *    (descending, unrated last) and then by newest product id.
+     *
+     * Empty pool / no orders / everything purchased all resolve to an
+     * empty list without errors.
      */
     private List<ProductResponse> buildRecommendations(
             String email,
             String favoriteCategory) {
 
-        List<ProductResponse> pool;
+        // One buyer-visible pool (single product query + one batched
+        // rating-stats query + one batched profile query inside
+        // ProductService) — the same source the marketplace uses.
+        // Deliberate trade-off: this loads the WHOLE marketplace (with its
+        // rating stats) rather than just the favourite category, because the
+        // fallback below needs the rest of the marketplace anyway. Do not
+        // "optimise" this back to a category-only query — that reintroduces
+        // the no-fallback bug.
+        List<ProductResponse> marketplace =
+                productService.getAllProducts();
 
-        if (favoriteCategory != null && !favoriteCategory.isBlank()) {
-            pool = productService.getProductsByCategory(favoriteCategory);
-        } else {
-            pool = productService.getAllProducts();
+        if (marketplace.isEmpty()) {
+            return List.of();
         }
 
-        Set<Long> purchased =
-                new HashSet<>(orderRepository.findBuyerProductIds(email));
-
-        Comparator<ProductResponse> byRating = Comparator.comparing(
-                ProductResponse::getAverageRating,
-                Comparator.nullsLast(Comparator.reverseOrder())
+        // Products this buyer has already ordered (any status).
+        Set<Long> purchased = new HashSet<>(
+                orderRepository.findBuyerProductIds(email)
         );
 
-        return pool.stream()
-                .filter(product -> !purchased.contains(product.getId()))
-                .sorted(
-                        byRating.thenComparing(
-                                Comparator.comparing(
-                                        ProductResponse::getId,
-                                        Comparator.reverseOrder()
-                                )
-                        )
+        // Eligible = buyer-visible, never ordered, and currently in stock.
+        List<ProductResponse> inStock = marketplace.stream()
+                .filter(product ->
+                        !purchased.contains(product.getId())
                 )
+                .filter(product ->
+                        product.getQuantity() != null
+                                && product.getQuantity() > 0
+                )
+                .toList();
+
+        if (inStock.isEmpty()) {
+            return List.of();
+        }
+
+        boolean hasFavorite =
+                favoriteCategory != null && !favoriteCategory.isBlank();
+
+        // Split once: favourite-category candidates vs. the marketplace
+        // rest — partitioned so the favourite is ranked first without
+        // ever blocking the fallback.
+        Map<Boolean, List<ProductResponse>> byPreference = inStock.stream()
+                .collect(Collectors.partitioningBy(
+                        product -> hasFavorite
+                                && favoriteCategory.equalsIgnoreCase(
+                                        product.getCategory()
+                                )
+                ));
+
+        // The favourite category is capped to the target size too — a
+        // category with more eligible products than RECOMMENDED_N must
+        // not push the result over the limit.
+        List<ProductResponse> preferred = byPreference
+                .getOrDefault(true, List.of()).stream()
+                .sorted(BY_RATING_THEN_NEWEST)
                 .limit(RECOMMENDED_N)
                 .toList();
+
+        List<ProductResponse> fallback = byPreference
+                .getOrDefault(false, List.of()).stream()
+                .sorted(BY_RATING_THEN_NEWEST)
+                .toList();
+
+        List<ProductResponse> recommendations =
+                new ArrayList<>(preferred);
+
+        for (ProductResponse product : fallback) {
+            if (recommendations.size() >= RECOMMENDED_N) {
+                break;
+            }
+            recommendations.add(product);
+        }
+
+        return recommendations;
     }
 
     /**

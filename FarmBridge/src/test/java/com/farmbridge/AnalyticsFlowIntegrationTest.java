@@ -23,10 +23,14 @@ import com.farmbridge.repository.OrderRepository;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.ReviewRepository;
 import com.farmbridge.repository.UserRepository;
+import com.farmbridge.security.JwtUtil;
 import com.farmbridge.service.AnalyticsService;
 import com.farmbridge.service.OrderService;
 import com.farmbridge.service.ProductService;
 import com.farmbridge.service.ReviewService;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -39,12 +43,17 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * End-to-end analytics verification against real data: seeds an approved
@@ -54,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@AutoConfigureMockMvc
 class AnalyticsFlowIntegrationTest {
 
     private static final long TS = System.currentTimeMillis();
@@ -61,6 +71,8 @@ class AnalyticsFlowIntegrationTest {
     private static final String FARMER_EMAIL = "analytics.farmer." + TS + "@example.com";
     private static final String BUYER1_EMAIL = "analytics.buyer1." + TS + "@example.com";
     private static final String BUYER2_EMAIL = "analytics.buyer2." + TS + "@example.com";
+    private static final String HIDDEN_FARMER_EMAIL = "analytics.hidden." + TS + "@example.com";
+    private static final String ADMIN_EMAIL = "analytics.admin." + TS + "@example.com";
     private static final String PASSWORD = "AnalyticsPass123!";
 
     @Autowired private AnalyticsService analyticsService;
@@ -75,6 +87,12 @@ class AnalyticsFlowIntegrationTest {
     @Autowired private NotificationRepository notificationRepository;
     @Autowired private PasswordEncoder passwordEncoder;
     @Autowired private TransactionTemplate transactionTemplate;
+    @Autowired private MockMvc mockMvc;
+    @Autowired private JwtUtil jwtUtil;
+
+    // Plain Jackson reader for the MockMvc response bodies (this Spring
+    // Boot 4.1 test context does not expose an ObjectMapper bean).
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private Long riceId;
     private Long wheatId;
@@ -92,6 +110,8 @@ class AnalyticsFlowIntegrationTest {
         User farmer = saveUser("Analytics Farmer", FARMER_EMAIL, Role.FARMER);
         User buyer1 = saveUser("Analytics Buyer One", BUYER1_EMAIL, Role.BUYER);
         User buyer2 = saveUser("Analytics Buyer Two", BUYER2_EMAIL, Role.BUYER);
+        User hiddenFarmer = saveUser("Hidden Farmer", HIDDEN_FARMER_EMAIL, Role.FARMER);
+        saveUser("Analytics Admin", ADMIN_EMAIL, Role.ADMIN);
 
         // Approved farmer profile
         FarmerProfile profile = new FarmerProfile();
@@ -101,6 +121,16 @@ class AnalyticsFlowIntegrationTest {
         profile.setVerified(true);
         profile.setVerificationStatus(VerificationStatus.APPROVED);
         farmerProfileRepository.save(profile);
+
+        // Unapproved (PENDING) farmer — their products must never be
+        // recommended to buyers (the buyer-visible pool excludes them).
+        FarmerProfile hiddenProfile = new FarmerProfile();
+        hiddenProfile.setUser(hiddenFarmer);
+        hiddenProfile.setFarmName("Hidden Farm");
+        hiddenProfile.setLocation("Hidden, Telangana");
+        hiddenProfile.setVerified(false);
+        hiddenProfile.setVerificationStatus(VerificationStatus.PENDING);
+        farmerProfileRepository.save(hiddenProfile);
 
         // Two products (both Grains)
         riceId = productService.createProduct(
@@ -149,6 +179,17 @@ class AnalyticsFlowIntegrationTest {
                     .ifPresent(userRepository::delete);
             userRepository.findByEmail(BUYER2_EMAIL)
                     .ifPresent(userRepository::delete);
+
+            // Hidden (PENDING) farmer + admin seeded for the security tests
+            productRepository.deleteAll(
+                    productRepository.findByFarmerEmail(HIDDEN_FARMER_EMAIL)
+            );
+            farmerProfileRepository.findByUserEmail(HIDDEN_FARMER_EMAIL)
+                    .ifPresent(farmerProfileRepository::delete);
+            userRepository.findByEmail(HIDDEN_FARMER_EMAIL)
+                    .ifPresent(userRepository::delete);
+            userRepository.findByEmail(ADMIN_EMAIL)
+                    .ifPresent(userRepository::delete);
         });
     }
 
@@ -162,12 +203,16 @@ class AnalyticsFlowIntegrationTest {
     }
 
     private ProductRequest productRequest(String name, double price, int quantity) {
+        return productRequest(name, price, quantity, "Grains");
+    }
+
+    private ProductRequest productRequest(String name, double price, int quantity, String category) {
         ProductRequest request = new ProductRequest();
         request.setName(name);
         request.setDescription("Analytics test product");
         request.setPrice(price);
         request.setQuantity(quantity);
-        request.setCategory("Grains");
+        request.setCategory(category);
         return request;
     }
 
@@ -427,5 +472,109 @@ class AnalyticsFlowIntegrationTest {
                     "Ranking must be sorted by total amount descending"
             );
         }
+    }
+
+    // ==========================================
+    // BUYER RECOMMENDATIONS — EXTENDED COVERAGE
+    // ==========================================
+
+    @Test
+    @Order(9)
+    @DisplayName("Pending orders count as pending but never as completed spending")
+    void buyerPendingOrder_notCountedAsSpend() {
+        // Third product in a different category so the earlier buyer
+        // assertions (which ran before this test) stay untouched.
+        Long carrotId = productService.createProduct(
+                productRequest("Analytics Carrot", 20.0, 40, "Vegetables"),
+                FARMER_EMAIL
+        ).getId();
+
+        // Leave the order PENDING — the farmer never touches it.
+        OrderRequest request = new OrderRequest();
+        request.setProductId(carrotId);
+        request.setQuantity(2);
+        orderService.placeOrder(request, BUYER2_EMAIL);
+
+        BuyerAnalyticsResponse response =
+                analyticsService.getBuyerAnalytics(BUYER2_EMAIL);
+
+        assertEquals(2, response.getOrders());
+        assertEquals(1, response.getPendingOrders());
+        assertEquals(1, response.getCompletedOrders());
+        assertEquals(EXPECTED_BUYER2_SPEND, response.getMoneySpent(), 0.001,
+                "PENDING orders must never count towards money spent");
+    }
+
+    @Test
+    @Order(10)
+    @DisplayName("Products of unapproved farmers never appear in recommendations")
+    void unapprovedFarmerProducts_neverRecommended() {
+        User hiddenFarmer = userRepository
+                .findByEmail(HIDDEN_FARMER_EMAIL)
+                .orElseThrow();
+
+        Product hidden = new Product();
+        hidden.setName("Hidden Unverified Product");
+        hidden.setDescription("Must never be recommended");
+        hidden.setPrice(99.0);
+        hidden.setQuantity(50);
+        hidden.setCategory("Grains");
+        hidden.setFarmer(hiddenFarmer);
+        productRepository.save(hidden);
+
+        BuyerAnalyticsResponse response =
+                analyticsService.getBuyerAnalytics(BUYER1_EMAIL);
+
+        assertTrue(response.getRecommendedProducts().stream()
+                        .noneMatch(p -> hidden.getId().equals(p.getId())),
+                "Unapproved farmers' products must be invisible to buyers");
+    }
+
+    @Test
+    @Order(11)
+    @DisplayName("Buyer analytics endpoint is scoped to the JWT identity — email parameters are ignored")
+    void buyerAnalytics_endpointScopedByJwt() throws Exception {
+        String buyer1Token = jwtUtil.generateToken(BUYER1_EMAIL, "BUYER");
+        String buyer2Token = jwtUtil.generateToken(BUYER2_EMAIL, "BUYER");
+        String farmerToken = jwtUtil.generateToken(FARMER_EMAIL, "FARMER");
+        String adminToken = jwtUtil.generateToken(ADMIN_EMAIL, "ADMIN");
+
+        // 1. A buyer cannot read another buyer's analytics — even with an
+        //    explicit ?email= parameter, the endpoint serves the JWT identity.
+        MvcResult result = mockMvc.perform(get("/api/buyer/analytics")
+                        .param("email", BUYER2_EMAIL)
+                        .header("Authorization", "Bearer " + buyer1Token))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(
+                result.getResponse().getContentAsString());
+        assertEquals(EXPECTED_BUYER1_SPEND, body.get("moneySpent").asDouble(), 0.001,
+                "The email parameter must be ignored — buyer1's own spend is served");
+
+        // 2. A different buyer sees only their own data. NOTE: we assert
+        //    moneySpent (COMPLETED-only), NOT the order count — buyer2's
+        //    total order count was mutated by the pending-order test above,
+        //    while their completed spend is unchanged and still distinguishes
+        //    the two buyers deterministically.
+        result = mockMvc.perform(get("/api/buyer/analytics")
+                        .header("Authorization", "Bearer " + buyer2Token))
+                .andExpect(status().isOk())
+                .andReturn();
+        body = objectMapper.readTree(result.getResponse().getContentAsString());
+        assertEquals(EXPECTED_BUYER2_SPEND, body.get("moneySpent").asDouble(), 0.001,
+                "Each buyer sees only their own completed spend");
+
+        // 3. Wrong roles are rejected by the SecurityConfig path rules.
+        mockMvc.perform(get("/api/buyer/analytics")
+                        .header("Authorization", "Bearer " + farmerToken))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/buyer/analytics")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isForbidden());
+
+        // 4. No token → rejected.
+        mockMvc.perform(get("/api/buyer/analytics"))
+                .andExpect(status().isForbidden());
     }
 }

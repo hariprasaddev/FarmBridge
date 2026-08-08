@@ -1403,7 +1403,7 @@ Every analytics dashboard fetches its **full payload from a single endpoint**; t
   "monthlySpending": [ { "year": 2026, "month": 7, "value": 1250.0, "count": 4 } ],
   "purchasesByCategory": [ { "category": "Grains", "count": 4, "quantity": 9 } ],
   "ordersTimeline": [ { "year": 2026, "month": 7, "value": 4.0, "count": 4 } ],
-  "recommendedProducts": [ /* ProductResponse[] — only APPROVED farmers, excludes already-purchased */ ],
+  "recommendedProducts": [ /* ProductResponse[] — in-stock, APPROVED-farmer products; favourite category first with marketplace fallback, excludes already-ordered (max 6) */ ],
   "latestOrders": [ { "id": 120, "productName": "Rice", "buyerName": "Jane", "farmerName": "John", "quantity": 2, "totalPrice": 100.0, "status": "PENDING", "createdAt": "2026-08-05T10:00:00" } ],
   "favoriteFarmers": [ { "userId": 2, "name": "John", "email": "john@farm.com", "orderCount": 4, "totalAmount": 1250.0 } ]
 }
@@ -1983,7 +1983,7 @@ curl -X GET http://localhost:8080/api/test \
 | `favoriteCategory` | String | Most-purchased category (null when no orders) |
 | `monthlySpending`, `ordersTimeline` | `MonthlyMetric[]` | Monthly series |
 | `purchasesByCategory` | `CategoryMetric[]` | Quantity per category |
-| `recommendedProducts` | `ProductResponse[]` | Top-rated products of the favourite category (or marketplace-wide), APPROVED farmers only, excluding purchased |
+| `recommendedProducts` | `ProductResponse[]` | In-stock products of APPROVED (active) farmers — favourite category first, topped up from the rest of the marketplace; excludes already-ordered products; capped at 6 |
 | `latestOrders` | `OrderMetric[]` | Latest 5 orders |
 | `favoriteFarmers` | `UserMetric[]` | Top 5 farmers by spend |
 

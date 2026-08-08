@@ -109,6 +109,16 @@
 			<scope>test</scope>
 		</dependency>
 
+		<!-- MockMvc HTTP-layer tests (@AutoConfigureMockMvc). Spring Boot 4.x
+		     moved this module out of spring-boot-starter-test — without it the
+		     controller/security integration tests cannot be compiled. Test
+		     scope only; the runtime image is unaffected. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>

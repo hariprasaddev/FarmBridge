@@ -335,8 +335,8 @@ function BuyerDashboardPage() {
                   <h2><FaThumbsUp size={16} /> Recommended For You</h2>
                   <p>
                     {data?.favoriteCategory
-                      ? `Picked from your favourite category (${data.favoriteCategory})`
-                      : 'Top-rated products on the marketplace'}
+                      ? `Based on your favourite category (${data.favoriteCategory}) and top-rated picks`
+                      : 'Top-rated, in-stock picks from verified farmers'}
                   </p>
                 </div>
               </div>
