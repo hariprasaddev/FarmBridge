@@ -96,6 +96,7 @@ class AnalyticsFlowIntegrationTest {
 
     private Long riceId;
     private Long wheatId;
+    private Long barleyId;
     private Long order1Id;
     private Long order2Id;
     private Long order3Id;
@@ -140,6 +141,17 @@ class AnalyticsFlowIntegrationTest {
         // Low stock on purpose — 3 units left after the order below
         wheatId = productService.createProduct(
                 productRequest("Analytics Wheat", 50.0, 3),
+                FARMER_EMAIL
+        ).getId();
+
+        // A third Grains product that buyer1 NEVER purchases. Keeps the
+        // recommendation assertions deterministic on a clean CI database:
+        // buyer1 buys rice + wheat, so without a third eligible product the
+        // recommendedProducts list would be empty and the test would fail
+        // (it only passed locally because the dev MySQL has extra products).
+        // The existing cleanup already deletes every product of FARMER_EMAIL.
+        barleyId = productService.createProduct(
+                productRequest("Analytics Barley", 75.0, 20),
                 FARMER_EMAIL
         ).getId();
 
@@ -323,7 +335,8 @@ class AnalyticsFlowIntegrationTest {
                 analyticsService.getFarmerAnalytics(FARMER_EMAIL);
 
         // Cards
-        assertEquals(2, response.getProducts());
+        // Three products now: rice + wheat (both sold) + barley (never ordered)
+        assertEquals(3, response.getProducts());
         assertEquals(3, response.getCompletedOrders());
         assertEquals(0, response.getPendingOrders());
         assertEquals(0, response.getAcceptedOrders());
@@ -400,12 +413,17 @@ class AnalyticsFlowIntegrationTest {
                         && f.getOrderCount() == 2));
 
         // Recommendations — real APPROVED-farmer products only, and they
-        // must not include products the buyer already ordered.
+        // must not include products the buyer already ordered. Barley is the
+        // one un-purchased Grains product, so it must be recommended via the
+        // favourite-category path — deterministic on any database.
         assertFalse(response.getRecommendedProducts().isEmpty());
         assertTrue(response.getRecommendedProducts().stream()
                 .noneMatch(p -> p.getId().equals(riceId) || p.getId().equals(wheatId)));
         assertTrue(response.getRecommendedProducts().stream()
                 .allMatch(p -> Boolean.TRUE.equals(p.getFarmerVerified())));
+        assertTrue(response.getRecommendedProducts().stream()
+                        .anyMatch(p -> p.getId().equals(barleyId)),
+                "The un-purchased Grains product must be recommended (favourite-category path)");
     }
 
     @Test
