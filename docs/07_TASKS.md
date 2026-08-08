@@ -317,14 +317,31 @@
 
 ---
 
+## Phase 13 — CI/CD (Aug 8)
+
+### CI/CD Pipeline (GitHub Actions)
+
+- `.github/workflows/ci-cd.yml`: `build-and-test` (PRs + pushes to main —
+  Java 25 + Maven backend with a throwaway MySQL 8 service container,
+  Node 22 + npm frontend; no secrets) and `publish` (main only — Docker
+  Hub login via `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` secrets, pushes
+  `farmbridge-backend` and `farmbridge-frontend` as `latest` + commit SHA).
+- `mvnw` was checked in without the executable bit (Windows-created repo);
+  the workflow `chmod +x`s it before use.
+- Docs updated: `10_DEPLOYMENT.md` §5, `README.md` (badge + CI/CD section),
+  this timeline.
+- **Status:** ✅ Complete · **Report:** [CICD.md](reports/CICD.md)
+
+---
+
 ## Upcoming / Planned
 
 | Task | Phase |
 |---|---|
-| CI/CD pipeline (GitHub Actions) | Phase 13 (next) |
-| Environment-variable hardening (Flyway, secret rotation) | Phase 13 |
+| Environment-variable hardening (Flyway, secret rotation) | Deferred (post-Phase 14) |
 | Cloud deployment (Azure backend, Vercel frontend, managed MySQL) | Phase 14 |
 | Health checks + rollback strategy | Phase 14 |
+| Live E2E QA suites (backend_test.sh / uitest.js) wired into CI | Optional (Phase 14) |
 | Product search by name endpoint | Optional backlog |
 | Payment integration, shopping cart | Backlog |
 

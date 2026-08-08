@@ -1,0 +1,191 @@
+# ============================================================
+# FarmBridge — CI/CD pipeline (ADF Phase 13)
+#
+# Jobs:
+#   1. build-and-test  — runs on EVERY pull request and every push
+#                        to `main`. Compiles + tests the Spring Boot
+#                        backend against a throwaway MySQL 8 service
+#                        container, and installs + builds the React
+#                        frontend. No secrets are required here.
+#   2. publish         — runs ONLY on pushes to `main`, after
+#                        build-and-test passes. Logs in to Docker Hub
+#                        using GitHub Secrets and pushes two images:
+#                          <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+#                          <DOCKERHUB_USERNAME>/farmbridge-backend:<sha>
+#                          <DOCKERHUB_USERNAME>/farmbridge-frontend:latest
+#                          <DOCKERHUB_USERNAME>/farmbridge-frontend:<sha>
+#
+# Required GitHub Secrets (Settings → Secrets and variables → Actions):
+#   DOCKERHUB_USERNAME   — Docker Hub account name (used as image prefix)
+#   DOCKERHUB_TOKEN      — Docker Hub access token (never a password;
+#                          create at hub.docker.com → Account Settings →
+#                          Personal access tokens, scope Read/Write)
+#
+# Security notes:
+#   - No credentials are hardcoded. The MySQL credentials below are
+#     throwaway CI-only values (they exist only inside this ephemeral
+#     runner and match the service container); production values live in
+#     the git-ignored .env and are never needed by CI.
+#   - Docker Hub login happens ONLY in the publish job (main pushes),
+#     never on pull requests — PRs never receive the Docker secrets.
+#   - Jobs use least-privilege `permissions: contents: read`.
+#
+# Manual trigger: Actions → CI/CD → "Run workflow" (workflow_dispatch).
+# ============================================================
+
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch: # allow manual runs from the Actions tab
+
+# Cancel superseded runs of the same workflow on the same ref
+# (e.g. a new commit pushed while an older run is still going).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Versions pinned to what the project actually uses:
+  #   FarmBridge/pom.xml                    -> <java.version>25</java.version>
+  #   FarmBridge/frontend/Dockerfile        -> node:22-alpine
+  JAVA_VERSION: '25'
+  NODE_VERSION: '22'
+
+jobs:
+  # ============================================================
+  # Job 1 — Build & test (pull requests and pushes to main)
+  # ============================================================
+  build-and-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    services:
+      # Ephemeral MySQL 8 for the Spring Boot integration tests
+      # (@SpringBootTest classes connect to localhost:3306 via the
+      # test application.properties defaults, overridden below with the
+      # same throwaway CI credentials).
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: farmbridge
+          MYSQL_USER: farmbridge
+          MYSQL_PASSWORD: farmbridge_ci_pass
+          MYSQL_ROOT_PASSWORD: farmbridge_ci_root_pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -u root -pfarmbridge_ci_root_pass"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --health-start-period 20s
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ---------------- Backend (Maven / Spring Boot) ----------------
+      - name: Set up JDK ${{ env.JAVA_VERSION }} (Temurin)
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven # caches ~/.m2 between runs (keyed on pom.xml)
+
+      - name: Build and test backend
+        working-directory: FarmBridge
+        env:
+          # Throwaway CI-only database credentials — KEEP IN SYNC with the
+          # mysql service container above (DB_USERNAME/DB_PASSWORD must
+          # equal MYSQL_USER/MYSQL_PASSWORD). Production values are never
+          # used in CI.
+          DB_URL: jdbc:mysql://localhost:3306/farmbridge
+          DB_USERNAME: farmbridge
+          DB_PASSWORD: farmbridge_ci_pass
+        run: |
+          # The wrapper is checked in without the executable bit (repo
+          # was created on Windows); Linux runners need it set.
+          chmod +x mvnw
+          # Compiles main + test sources, runs every @SpringBootTest
+          # integration test, then packages the executable JAR.
+          ./mvnw -B package
+
+      # ---------------- Frontend (React / Vite / npm) ----------------
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: FarmBridge/frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: FarmBridge/frontend
+        run: npm ci
+
+      - name: Build frontend production bundle
+        working-directory: FarmBridge/frontend
+        run: npm run build
+
+      - name: Run frontend tests (if a test script exists)
+        working-directory: FarmBridge/frontend
+        run: |
+          if npm run | grep -q '^  test'; then
+            npm test
+          else
+            echo "FarmBridge frontend defines no 'test' script (package.json has dev/build/preview only) — the production build above is the CI gate for the frontend."
+          fi
+
+  # ============================================================
+  # Job 2 — Publish Docker images (pushes to main ONLY)
+  # ============================================================
+  publish:
+    name: Publish Docker images
+    needs: build-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Docker Hub login happens ONLY here, inside the main-only job.
+      # Credentials come exclusively from GitHub Secrets — never from
+      # source files, and never on pull requests.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./FarmBridge
+          file: ./FarmBridge/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/farmbridge-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/farmbridge-backend:${{ github.sha }}
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./FarmBridge/frontend
+          file: ./FarmBridge/frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/farmbridge-frontend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/farmbridge-frontend:${{ github.sha }}

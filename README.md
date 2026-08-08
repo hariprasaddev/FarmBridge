@@ -7,6 +7,8 @@ orders, and administrators can manage users, products, and farmer
 verifications. The platform is built with a Spring Boot REST API secured by
 JWT and a responsive React frontend.
 
+[![CI/CD](https://github.com/hariprasaddev/FarmBridge/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/hariprasaddev/FarmBridge/actions/workflows/ci-cd.yml)
+
 ## Features
 
 - JWT Authentication
@@ -203,6 +205,65 @@ Interactive API documentation is available through Swagger UI
 ### Buyer Analytics Dashboard
 
 ![Buyer Analytics Dashboard](qa/screenshots/buyer-analytics.png)
+
+## CI/CD (GitHub Actions)
+
+The repository ships a GitHub Actions pipeline —
+[`.github/workflows/ci-cd.yml`](.github/workflows/ci-cd.yml).
+
+- **CI (Continuous Integration):** every pull request and every push to
+  `main` builds the Spring Boot backend (Java 25 / Maven) and runs its full
+  integration test suite against a throwaway **MySQL 8 service container**,
+  then installs (`npm ci`) and builds (`npm run build`) the React frontend
+  (Node 22). These jobs require **no secrets**.
+- **CD (Continuous Delivery — images):** when a commit lands on `main` and
+  all checks pass, the pipeline logs in to Docker Hub and publishes both
+  images tagged `latest` and with the Git commit SHA:
+  - `<DOCKERHUB_USERNAME>/farmbridge-backend:latest` · `:<sha>`
+  - `<DOCKERHUB_USERNAME>/farmbridge-frontend:latest` · `:<sha>`
+- **Manual trigger:** Actions tab → **CI/CD** → **Run workflow**
+  (`workflow_dispatch`) — runs CI only; it never publishes images (those
+  are reserved for real pushes to `main`).
+
+### Docker Hub setup
+
+1. Create an account at **hub.docker.com**.
+2. Generate a **Personal Access Token** (Read & Write) under Account
+   Settings → Personal Access Tokens.
+3. Add two repository secrets under **Settings → Secrets and variables →
+   Actions**:
+
+| Secret | Purpose |
+|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub username (image prefix — must be **lowercase**) |
+| `DOCKERHUB_TOKEN` | Docker Hub personal access token |
+
+### What happens when you push
+
+- **PR branch push** → the CI build/test check appears on the pull request.
+- **Push to `main`** → CI runs first; on success the publish job builds both
+  Docker images and pushes `latest` + the commit SHA to Docker Hub.
+
+### Run the published images
+
+```bash
+docker pull <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+docker pull <DOCKERHUB_USERNAME>/farmbridge-frontend:latest
+
+docker run -d --name farmbridge-backend -p 8080:8080 \
+  -e DB_URL=jdbc:mysql://host:3306/farmbridge \
+  -e DB_USERNAME=farmbridge -e DB_PASSWORD='***' -e JWT_SECRET='***' \
+  <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+
+docker run -d --name farmbridge-frontend -p 5173:8080 \
+  -e BACKEND_UPSTREAM=host.docker.internal:8080 \
+  <DOCKERHUB_USERNAME>/farmbridge-frontend:latest
+```
+
+Linux hosts: add `--add-host host.docker.internal:host-gateway` to the
+frontend run. See [`docs/10_DEPLOYMENT.md`](docs/10_DEPLOYMENT.md) §5 and
+[`docs/reports/CICD.md`](docs/reports/CICD.md) for the full walkthrough,
+including how to verify the published images.
 
 ## Future Enhancements
 

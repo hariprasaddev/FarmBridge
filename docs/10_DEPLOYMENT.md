@@ -1,15 +1,16 @@
 # FarmBridge — Deployment Plan
 
-> **Document Version:** 1.1
-> **Last Updated:** 2026-08-07
+> **Document Version:** 1.2
+> **Last Updated:** 2026-08-08
 > **Framework:** TrainingMug ADF v1.0
-> **Status:** 🟡 **Partially implemented** — Phase 12 Steps 1–3
-> (backend + frontend Dockerization + Docker Compose & MySQL) are DONE:
+> **Status:** 🟡 **Partially implemented** — Phase 12 (Dockerization +
+> Compose + MySQL) and **Phase 13 (CI/CD via GitHub Actions)** are DONE:
 > - Backend image `farmbridge-backend` — [reports/DockerBackend.md](reports/DockerBackend.md)
 > - Frontend image `farmbridge-frontend` — [reports/DockerFrontend.md](reports/DockerFrontend.md)
 > - Full Compose stack (MySQL + backend + frontend) — [reports/DockerCompose.md](reports/DockerCompose.md)
+> - CI/CD pipeline (GitHub Actions, Docker Hub publish) — [reports/CICD.md](reports/CICD.md)
 >
-> CI/CD and cloud deployment remain planned.
+> Cloud deployment remains planned (Phase 14).
 >
 > Current runtime: Docker Compose stack — MySQL container (host 3307),
 > backend on `:8080`, frontend on `:5173` (all healthy).
@@ -145,25 +146,160 @@ startup:  mysql healthy → backend healthy → frontend
 
 ---
 
-## 5. CI/CD (planned — Phase 13)
+## 5. CI/CD — ✅ IMPLEMENTED (Phase 13)
 
-GitHub Actions workflow stages:
+CI/CD is handled entirely by **GitHub Actions** — one workflow,
+[`.github/workflows/ci-cd.yml`](../.github/workflows/ci-cd.yml).
 
+### 5.1 What CI means
+
+**Continuous Integration** = every code change is automatically built and
+tested the moment it is pushed. For every **pull request** (and every push
+to `main`) the workflow checks out the repository, sets up Java 25,
+compiles the Spring Boot backend and runs its full `@SpringBootTest`
+integration suite against a **throwaway MySQL 8 service container** (a fresh
+`farmbridge` database created and destroyed per run — no production
+database is ever touched), then sets up Node 22, installs the frontend
+dependencies with `npm ci` and builds the production bundle with
+`npm run build`. If anything fails, the PR shows a red check and cannot be
+merged — problems surface in minutes instead of at deploy time.
+
+### 5.2 What CD means
+
+**Continuous Delivery (images)** = every commit merged to `main` that
+passes the build/test job automatically produces ready-to-deploy Docker
+images and pushes them to **Docker Hub**. FarmBridge's CD stage stops at the
+registry — Phase 14 adds actual cloud deployment of those images. Two tags
+are published per commit:
+
+| Image | Tags |
+|---|---|
+| `<DOCKERHUB_USERNAME>/farmbridge-backend` | `latest`, `<git-commit-sha>` |
+| `<DOCKERHUB_USERNAME>/farmbridge-frontend` | `latest`, `<git-commit-sha>` |
+
+`latest` is the most recent `main` build; the `<sha>` tag pins the exact
+commit, enabling rollbacks by redeploying a previous SHA.
+
+### 5.3 What happens when code is pushed
+
+| Event | What runs | Outcome |
+|---|---|---|
+| Push to a PR branch | `build-and-test` job (backend build+tests, frontend build) | PR status check; blocks merge on failure |
+| Push/merge to `main` | `build-and-test` first, then `publish` job | Both images published to Docker Hub (`latest` + SHA) |
+| Manual run (Actions tab → **Run workflow**) | `build-and-test` job | One-off validation of any branch |
+
+### 5.4 Workflow explanation (`.github/workflows/ci-cd.yml`)
+
+Two jobs on `ubuntu-latest`:
+
+**`build-and-test`** (PRs + pushes to `main`; no secrets required):
+
+1. `actions/checkout@v4` — checkout the repository.
+2. `actions/setup-java@v5` — Temurin **JDK 25** with Maven `~/.m2` caching
+   (matches `pom.xml` `<java.version>25`).
+3. `./mvnw -B package` — compile + run every backend test + package the
+   JAR. (`mvnw` is `chmod +x` first: the wrapper is checked in without the
+   executable bit because the repo was created on Windows.) The tests run
+   against a MySQL 8.0 **service container** declared at the job level
+   (ports `3306` on the runner, CI-only throwaway credentials) — a fresh
+   `farmbridge` database created and destroyed per run.
+4. `actions/setup-node@v4` — **Node 22** with npm cache
+   (matches the `node:22-alpine` Docker build stage).
+5. `npm ci` — install frontend dependencies from the lock file.
+6. `npm run build` — produce the production bundle. A final step runs
+   `npm test` only if a `test` script exists (the frontend currently defines
+   none, so the build is the gate).
+
+**`publish`** (pushes to `main` only, `needs: build-and-test`):
+
+1. `actions/checkout@v4`.
+2. `docker/setup-buildx-action@v3` — enable Buildx.
+3. `docker/login-action@v4` — **Docker Hub login using the two GitHub
+   Secrets** (`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`). Login happens only
+   here, never on pull requests.
+4. `docker/build-push-action@v6` × 2 — build and push the backend image
+   (`./FarmBridge/Dockerfile`) and the frontend image
+   (`./FarmBridge/frontend/Dockerfile`), each tagged `latest` + `${{ github.sha }}`.
+
+**Quality gates:** all backend integration tests and both production builds
+must pass before images are published. The live E2E suites
+(`qa/backend_test.sh`, `qa/uitest.js`) are *not* part of the automated
+pipeline (they need a fully-running stack, a seeded admin and Chrome); they
+remain the manual release gate before Phase 14 deployment.
+
+### 5.5 Docker Hub setup
+
+1. Create a free account at **hub.docker.com**.
+2. Create a **Personal Access Token** (Account Settings → Personal Access
+   Tokens → Generate new token) with **Read & Write** scope. Tokens are
+   safer than account passwords and can be revoked individually.
+3. In the GitHub repository go to **Settings → Secrets and variables →
+   Actions → New repository secret** and add the two secrets below.
+
+### 5.6 Required GitHub Secrets
+
+| Secret | Purpose | Example |
+|---|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub account name — used as the image prefix | `hariprasaddev` |
+| `DOCKERHUB_TOKEN` | Docker Hub Personal Access Token (Read/Write) | `dckr_pat_...` |
+
+Add them at **repo → Settings → Secrets and variables → Actions**.
+> Docker Hub image names must be **lowercase** — make sure the
+> `DOCKERHUB_USERNAME` value contains no uppercase characters, or the push
+> will be rejected.
+> The pipeline requires **no other secrets**: the MySQL credentials inside
+> the workflow are throwaway CI-only values for the ephemeral service
+> container, and production values (`.env`) are never needed by CI.
+
+### 5.7 Manual trigger
+
+The workflow defines `workflow_dispatch`, so it can be started manually:
+**Actions** tab → select **CI/CD** → **Run workflow** → pick the branch and
+run. This is useful for validating a branch before opening a PR, or
+re-running a failed pipeline.
+> A manual run only executes the **CI** job (`build-and-test`) — it never
+> logs in to Docker Hub or publishes images; publishing is reserved for real
+> pushes to `main`.
+
+### 5.8 Verifying published Docker images
+
+- **Docker Hub web UI:** hub.docker.com → your namespace → the
+  `farmbridge-backend` / `farmbridge-frontend` repositories show `latest`
+  and the SHA tags with their push dates.
+- **CLI (after `docker login`):**
+  ```bash
+  docker buildx imagetools inspect <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+  docker buildx imagetools inspect <DOCKERHUB_USERNAME>/farmbridge-frontend:<full-sha>
+  ```
+- **GitHub:** Actions → CI/CD → the main-branch `publish` job run log lists
+  every tag pushed.
+
+### 5.9 Pulling and running the published images
+
+Any developer (or a Phase 14 host) can run the published images with the
+same environment contract as the Compose stack:
+
+```bash
+docker pull <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+docker pull <DOCKERHUB_USERNAME>/farmbridge-frontend:latest
+
+# Backend (MySQL must already be reachable; env vars match application.properties)
+docker run -d --name farmbridge-backend -p 8080:8080 \
+  -e DB_URL=jdbc:mysql://host:3306/farmbridge \
+  -e DB_USERNAME=farmbridge -e DB_PASSWORD='***' -e JWT_SECRET='***' \
+  -e TZ=Asia/Kolkata \
+  <DOCKERHUB_USERNAME>/farmbridge-backend:latest
+
+# Frontend (proxies /api + /uploads to the backend at $BACKEND_UPSTREAM)
+docker run -d --name farmbridge-frontend -p 5173:8080 \
+  -e BACKEND_UPSTREAM=host.docker.internal:8080 \
+  <DOCKERHUB_USERNAME>/farmbridge-frontend:latest
 ```
-1. Backend: setup Java 25 + Maven → ./mvnw test
-2. Frontend: setup Node 20 → npm ci && npm run build
-3. QA: start MySQL service container + backend + frontend
-        → run qa/backend_test.sh and qa/uitest.js
-4. Build images: docker build backend + frontend → push to container registry
-5. Deploy (on main):
-     frontend → Vercel (or pull image into Vercel/static hosting)
-     backend  → Azure App Service / Azure Container Apps
-     migrations → run on managed MySQL
-6. Notify: Slack/email on success/failure
-```
 
-Quality gates: **all backend tests, both QA suites, and both production
-builds must pass** before merge/deploy.
+On Linux add `--add-host host.docker.internal:host-gateway` to the frontend
+run command. Easiest of all: use the repo's `docker-compose.yml` with a
+`.env` file, or point its `backend`/`frontend` services at the published
+images directly.
 
 ---
 
