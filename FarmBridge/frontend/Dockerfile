@@ -41,11 +41,6 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 ENV BACKEND_UPSTREAM=host.docker.internal:8080
 
-# Validate the TEMPLATE at image build time: render it the same way the
-# entrypoint will (envsubst of the env var) and run nginx -t against the
-# result, then discard it (the entrypoint re-renders at container start).
-RUN BACKEND_UPSTREAM=127.0.0.1:8080 sh -c 'envsubst "${BACKEND_UPSTREAM}" < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -t && rm /etc/nginx/conf.d/default.conf'
-
 # Copy only the built static bundle — no source, no node_modules, no
 # development files, no secrets are present in the final image.
 COPY --from=build /build/dist /usr/share/nginx/html
