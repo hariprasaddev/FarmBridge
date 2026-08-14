@@ -137,10 +137,15 @@ public class FileStorageService {
 
         String publicId = CLOUDINARY_PUBLIC_ID_PREFIX + uuid;
 
-        try (InputStream in = file.getInputStream()) {
+        try {
+
+            // cloudinary-http5's upload() does not accept a raw
+            // InputStream ("Unrecognized file parameter") — it needs the
+            // actual bytes.
+            byte[] fileBytes = file.getBytes();
 
             Map<?, ?> result = cloudinary.uploader().upload(
-                    in,
+                    fileBytes,
                     ObjectUtils.asMap(
                             "public_id", publicId,
                             "resource_type", "image",
