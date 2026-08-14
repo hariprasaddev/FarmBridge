@@ -17,6 +17,15 @@ function ProductImage({ product, className = '', alt, eager = false }) {
       onError={(e) => {
         if (e.currentTarget.dataset.fallback === 'true') return;
         e.currentTarget.dataset.fallback = 'true';
+        // Development-only diagnostic: a load failure usually means the
+        // imageUrl points at a host that cannot serve the file. Never
+        // surfaced to production users — the fallback image is shown.
+        if (import.meta.env.DEV) {
+          console.warn(
+            '[ProductImage] failed to load image, falling back to category default:',
+            { src: e.currentTarget.src, category: product?.category }
+          );
+        }
         e.currentTarget.src = getCategoryDefaultImage(product?.category);
       }}
     />

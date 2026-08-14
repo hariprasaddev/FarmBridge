@@ -1,5 +1,7 @@
 package com.farmbridge.service;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,30 +12,57 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class FileStorageService {
 
-    // Public URL prefix under which stored images are served
+    // Public URL prefix under which locally-stored images are served
     // (mapped to the upload directory in WebConfig).
     private static final String PUBLIC_URL_PREFIX = "/uploads/products/";
 
+    // Public-id prefix (folder) used for Cloudinary product images.
+    private static final String CLOUDINARY_PUBLIC_ID_PREFIX = "products/";
+
     private final Path uploadRoot;
 
+    // Null when Cloudinary is not configured — the service then behaves
+    // exactly like the original local-filesystem implementation.
+    private final Cloudinary cloudinary;
+
     public FileStorageService(
-            @Value("${file.upload-dir:uploads/products}") String uploadDir) {
+            @Value("${file.upload-dir:uploads/products}") String uploadDir,
+            @Value("${cloudinary.cloud-name:}") String cloudName,
+            @Value("${cloudinary.api-key:}") String apiKey,
+            @Value("${cloudinary.api-secret:}") String apiSecret) {
 
         this.uploadRoot = Paths.get(uploadDir)
                 .toAbsolutePath()
                 .normalize();
+
+        this.cloudinary = (cloudName == null || cloudName.isBlank())
+                ? null
+                : new Cloudinary(ObjectUtils.asMap(
+                        "cloud_name", cloudName,
+                        "api_key", apiKey,
+                        "api_secret", apiSecret,
+                        "secure", true));
+    }
+
+    /** Whether persistent Cloudinary storage is enabled (prod) vs local FS (dev/tests). */
+    public boolean isCloudinaryEnabled() {
+        return cloudinary != null;
     }
 
     /**
-     * Stores an uploaded image on the local filesystem using a UUID filename.
-     * The file extension is derived from the detected image format, so the
-     * served content type always matches the actual content.
-     * Returns the public URL path (e.g. /uploads/products/xxxx.png).
+     * Stores an uploaded image and returns its public URL:
+     * - Cloudinary mode: uploads the image and returns its secure HTTPS
+     *   CDN URL, e.g.
+     *   https://res.cloudinary.com/<cloud>/image/upload/v<ts>/products/<uuid>.<ext>
+     * - Local mode: writes the file under the upload directory and returns
+     *   the relative path, e.g. /uploads/products/<uuid>.<ext>.
+     * In both modes only the returned URL string is ever persisted.
      */
     public String storeImage(MultipartFile file) {
 
@@ -51,7 +80,13 @@ public class FileStorageService {
             );
         }
 
-        String filename = UUID.randomUUID() + "." + format;
+        String uuid = UUID.randomUUID().toString();
+
+        if (cloudinary != null) {
+            return uploadToCloudinary(file, uuid);
+        }
+
+        String filename = uuid + "." + format;
 
         try {
             Files.createDirectories(uploadRoot);
@@ -74,12 +109,57 @@ public class FileStorageService {
     }
 
     /**
-     * Deletes a previously stored image file. No-op when the imageUrl
-     * is blank or the file does not exist.
+     * Uploads the image bytes to Cloudinary under a unique public id.
+     * The secure_url returned by Cloudinary is the public HTTPS URL.
+     */
+    private String uploadToCloudinary(MultipartFile file, String uuid) {
+
+        String publicId = CLOUDINARY_PUBLIC_ID_PREFIX + uuid;
+
+        try (InputStream in = file.getInputStream()) {
+
+            Map<?, ?> result = cloudinary.uploader().upload(
+                    in,
+                    ObjectUtils.asMap(
+                            "public_id", publicId,
+                            "resource_type", "image",
+                            "overwrite", true
+                    )
+            );
+
+            Object secureUrl = result.get("secure_url");
+
+            if (secureUrl == null) {
+                throw new RuntimeException(
+                        "Failed to store the uploaded image"
+                );
+            }
+
+            return secureUrl.toString();
+
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new RuntimeException(
+                    "Failed to store the uploaded image",
+                    e
+            );
+        }
+    }
+
+    /**
+     * Deletes a previously stored image (Cloudinary asset or local file).
+     * No-op when the imageUrl is blank or the asset does not exist.
      */
     public void deleteImage(String imageUrl) {
 
         if (imageUrl == null || imageUrl.isBlank()) {
+            return;
+        }
+
+        if (isCloudinaryUrl(imageUrl)) {
+            deleteFromCloudinary(imageUrl);
             return;
         }
 
@@ -97,7 +177,67 @@ public class FileStorageService {
     }
 
     // ==========================================
-    // HELPERS
+    // CLOUDINARY HELPERS
+    // ==========================================
+
+    private boolean isCloudinaryUrl(String url) {
+        return url.startsWith("https://res.cloudinary.com/")
+                || url.startsWith("http://res.cloudinary.com/");
+    }
+
+    private void deleteFromCloudinary(String imageUrl) {
+
+        String publicId = extractPublicId(imageUrl);
+
+        if (publicId == null) {
+            return;
+        }
+
+        try {
+            cloudinary.uploader().destroy(
+                    publicId,
+                    ObjectUtils.emptyMap()
+            );
+        } catch (Exception ignored) {
+            // Deleting a stale image must never break the main operation.
+        }
+    }
+
+    /**
+     * Extracts the Cloudinary public id from a secure image URL, e.g.
+     * https://res.cloudinary.com/<cloud>/image/upload/v1234/products/abc.jpg
+     * -> "products/abc" (Cloudinary stores the public id without extension).
+     */
+    private String extractPublicId(String url) {
+
+        String marker = "/image/upload/";
+        int idx = url.indexOf(marker);
+
+        if (idx < 0) {
+            return null;
+        }
+
+        String path = url.substring(idx + marker.length());
+
+        // Strip the optional version segment (v<number>/)
+        int firstSlash = path.indexOf('/');
+        if (firstSlash > 0
+                && path.startsWith("v")
+                && path.substring(0, firstSlash).matches("v\\d+")) {
+            path = path.substring(firstSlash + 1);
+        }
+
+        // Strip the file extension to match the stored public id
+        int dot = path.lastIndexOf('.');
+        if (dot > 0) {
+            path = path.substring(0, dot);
+        }
+
+        return path;
+    }
+
+    // ==========================================
+    // LOCAL-FILESYSTEM HELPERS
     // ==========================================
 
     private Path toStoragePath(String imageUrl) {

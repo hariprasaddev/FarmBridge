@@ -102,6 +102,17 @@
 			<version>3.0.3</version>
 		</dependency>
 
+		<!-- Cloudinary (optional) — persistent production image storage.
+		     When CLOUDINARY_CLOUD_NAME is configured, uploaded images are
+		     stored in Cloudinary and served from its CDN (survives Render
+		     restarts/redeploys). Without credentials the app falls back to
+		     the local filesystem, so dev/tests need no Cloudinary account. -->
+		<dependency>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http5</artifactId>
+			<version>2.3.2</version>
+		</dependency>
+
 		<!-- Testing -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -118,6 +129,7 @@
 			<artifactId>spring-boot-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
 
 	</dependencies>
 	<build>
