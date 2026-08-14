@@ -2,6 +2,8 @@ package com.farmbridge.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,6 +19,9 @@ import java.util.UUID;
 
 @Service
 public class FileStorageService {
+
+    private static final Logger log =
+            LoggerFactory.getLogger(FileStorageService.class);
 
     // Public URL prefix under which locally-stored images are served
     // (mapped to the upload directory in WebConfig).
@@ -44,10 +49,25 @@ public class FileStorageService {
         this.cloudinary = (cloudName == null || cloudName.isBlank())
                 ? null
                 : new Cloudinary(ObjectUtils.asMap(
-                        "cloud_name", cloudName,
-                        "api_key", apiKey,
-                        "api_secret", apiSecret,
-                        "secure", true));
+                "cloud_name", cloudName,
+                "api_key", apiKey,
+                "api_secret", apiSecret,
+                "secure", true));
+
+        // Log (without secrets) whether Cloudinary is active, so this is
+        // visible in Render logs right at startup — no need to trigger an
+        // upload just to find out which mode is active.
+        if (this.cloudinary != null) {
+            log.info(
+                    "FileStorageService: Cloudinary ENABLED (cloud_name='{}')",
+                    cloudName
+            );
+        } else {
+            log.info(
+                    "FileStorageService: Cloudinary DISABLED — using local filesystem storage at '{}'",
+                    this.uploadRoot
+            );
+        }
     }
 
     /** Whether persistent Cloudinary storage is enabled (prod) vs local FS (dev/tests). */
@@ -101,6 +121,7 @@ public class FileStorageService {
             return PUBLIC_URL_PREFIX + filename;
 
         } catch (IOException e) {
+            log.error("Failed to store image locally", e);
             throw new RuntimeException(
                     "Failed to store the uploaded image",
                     e
@@ -130,6 +151,10 @@ public class FileStorageService {
             Object secureUrl = result.get("secure_url");
 
             if (secureUrl == null) {
+                log.error(
+                        "Cloudinary upload returned no secure_url. Full result: {}",
+                        result
+                );
                 throw new RuntimeException(
                         "Failed to store the uploaded image"
                 );
@@ -138,6 +163,15 @@ public class FileStorageService {
             return secureUrl.toString();
 
         } catch (Exception e) {
+            // Log the real cause — this is what was previously swallowed
+            // and never appeared in the logs.
+            log.error(
+                    "Cloudinary upload failed for publicId='{}': {}",
+                    publicId,
+                    e.getMessage(),
+                    e
+            );
+
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             }
@@ -198,8 +232,14 @@ public class FileStorageService {
                     publicId,
                     ObjectUtils.emptyMap()
             );
-        } catch (Exception ignored) {
-            // Deleting a stale image must never break the main operation.
+        } catch (Exception e) {
+            // Deleting a stale image must never break the main operation,
+            // but still log it so cleanup failures are visible.
+            log.warn(
+                    "Failed to delete Cloudinary asset publicId='{}': {}",
+                    publicId,
+                    e.getMessage()
+            );
         }
     }
 
@@ -318,4 +358,5 @@ public class FileStorageService {
                 && h[10] == 0x42
                 && h[11] == 0x50;
     }
+
 }
