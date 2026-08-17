@@ -408,6 +408,50 @@
 }
 
 /* ------------------------------------------------------------
+   SHOW/HIDE PASSWORD TOGGLE (Login & Register)
+   Placed inside the existing password input on the right side.
+   ------------------------------------------------------------ */
+
+/* Extra right padding so typed text never runs under the toggle */
+.auth-input-pad-right {
+  padding-right: 44px !important;
+}
+
+.auth-toggle {
+  position: absolute;
+  right: 6px;
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.auth-toggle:hover {
+  color: var(--auth-primary);
+  background: rgba(46, 125, 50, 0.08);
+}
+
+.auth-toggle:focus-visible {
+  outline: 2px solid var(--auth-primary-soft);
+  outline-offset: 1px;
+}
+
+/* Inline field validation message (Register) */
+.auth-field-error {
+  font-size: 13px;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+/* ------------------------------------------------------------
    RESPONSIVE
    ------------------------------------------------------------ */
 

@@ -5,9 +5,12 @@ import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
 import Icon from '../components/Icon';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function LoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -32,11 +35,32 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent duplicate submits (covers Enter-key resubmission too)
+    if (loading) return;
+
     setError('');
+
+    // Client-side validation — required fields + email format.
+    // The backend is never called until these pass.
+    const email = formData.email.trim();
+    if (!email) {
+      setError('Email is required.');
+      return;
+    }
+    if (!EMAIL_PATTERN.test(email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!formData.password) {
+      setError('Password is required.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await authAPI.login(formData);
+      const response = await authAPI.login({ email, password: formData.password });
       const data = response.data;
       login(data, rememberMe);
     } catch (err) {
@@ -58,7 +82,7 @@ function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="auth-form">
+      <form onSubmit={handleSubmit} className="auth-form" noValidate>
         <div className="auth-field">
           <label htmlFor="email">Email</label>
           <div className="auth-input-wrap">
@@ -71,6 +95,7 @@ function LoginPage() {
               placeholder="name@example.com"
               value={formData.email}
               onChange={handleChange}
+              autoComplete="email"
               required
             />
           </div>
@@ -82,14 +107,25 @@ function LoginPage() {
             <Icon name="lock" size={18} />
             <input
               id="password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               name="password"
-              className="auth-input"
+              className="auth-input auth-input-pad-right"
               placeholder="Enter your password"
               value={formData.password}
               onChange={handleChange}
+              autoComplete="current-password"
               required
             />
+            <button
+              type="button"
+              className="auth-toggle"
+              onClick={() => setShowPassword((s) => !s)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              title={showPassword ? 'Hide password' : 'Show password'}
+              aria-pressed={showPassword}
+            >
+              <Icon name={showPassword ? 'eyeOff' : 'eye'} size={18} />
+            </button>
           </div>
         </div>
 
