@@ -131,7 +131,7 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: FarmBridge/frontend
-        run: npm ci
+        run: npm install --include=optional
 
       - name: Build frontend production bundle
         working-directory: FarmBridge/frontend
