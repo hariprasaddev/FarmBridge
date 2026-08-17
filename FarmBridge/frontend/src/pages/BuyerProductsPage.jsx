@@ -1,17 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { buyerProductsAPI, buyerOrdersAPI, getErrorMessage } from '../services/api';
 import Icon from '../components/Icon';
 import ProductImage from '../components/ProductImage';
 import WishlistButton from '../components/WishlistButton';
 import { getStock } from '../utils/stock';
-import { Modal } from '../components/ui';
+import { Modal, Pagination } from '../components/ui';
 import './BuyerProductsPage.css';
 
+// Server-side page size for the product catalog grid.
+const PAGE_SIZE = 12;
+
+const SORT_OPTIONS = [
+  { value: 'id,desc', label: 'Newest first' },
+  { value: 'price,asc', label: 'Price: low to high' },
+  { value: 'price,desc', label: 'Price: high to low' },
+  { value: 'name,asc', label: 'Name A–Z' },
+];
+
 function BuyerProductsPage() {
+  // Browse mode: the grid shows one server-side page of the catalog
+  // (`products` = current page content; page/totalPages/totalElements come
+  // from the Page payload). Search mode: the grid shows the full backend
+  // search results, with the category pills applied client-side on top.
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [paging, setPaging] = useState(false);
   const [error, setError] = useState('');
+
+  // Pagination state (page is 0-based to match the Spring Page API).
+  const [page, setPage] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [sort, setSort] = useState(SORT_OPTIONS[0].value);
 
   // Search & category filter state.
   // The category can be pre-selected from the URL (?category=...),
@@ -22,6 +45,11 @@ function BuyerProductsPage() {
     () => searchParams.get('category') || 'ALL'
   );
 
+  // Guards against out-of-order responses: searchRef protects the debounced
+  // search; fetchSeq bumps on every page fetch so stale pages are ignored.
+  const searchRef = useRef('');
+  const fetchSeq = useRef(0);
+
   // Place-order modal state
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -30,37 +58,110 @@ function BuyerProductsPage() {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    setLoading(true);
+  // Fetches one server-side page of the catalog. `category` is applied on
+  // the server (exact totalElements), `sort` is a Spring sort expression.
+  const fetchPage = async (pageIndex, cat, sortBy) => {
+    const seq = ++fetchSeq.current;
+    setPaging(true);
     setError('');
     try {
-      const response = await buyerProductsAPI.getAllProducts();
-      setProducts(response.data);
+      const response = await buyerProductsAPI.getAllProducts({
+        page: pageIndex,
+        size: PAGE_SIZE,
+        ...(cat && cat !== 'ALL' ? { category: cat } : {}),
+        sort: sortBy,
+      });
+      if (seq !== fetchSeq.current) return; // stale response — ignore
+      const data = response.data || {};
+      setProducts(data.content || []);
+      setTotalElements(data.totalElements ?? 0);
+      setTotalPages(data.totalPages ?? 1);
+      setPage(data.number ?? pageIndex);
     } catch (err) {
+      if (seq !== fetchSeq.current) return;
       setError(getErrorMessage(err, 'Failed to load available products. Please try again.'));
     } finally {
-      setLoading(false);
+      if (seq === fetchSeq.current) setPaging(false);
     }
   };
 
-  // Derived: all categories present in the loaded products
-  const categories = ['ALL', ...new Set(products.map((p) => p.category))];
+  useEffect(() => {
+    setLoading(true);
+    // Category pills come from a lightweight metadata endpoint so the
+    // catalog itself can stay fully paginated.
+    buyerProductsAPI
+      .getCategories()
+      .then((res) => setCategories(res.data || []))
+      .catch(() => setCategories([]));
+    fetchPage(0, category, sort).finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Derived: apply client-side search + category filter
-  const query = search.trim().toLowerCase();
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      !query ||
-      product.name.toLowerCase().includes(query) ||
-      (product.description || '').toLowerCase().includes(query);
-    const matchesCategory =
-      category === 'ALL' || product.category === category;
-    return matchesSearch && matchesCategory;
-  });
+  // Debounced backend search. Typing is delayed ~300ms so the search API
+  // is called once per pause, not once per keystroke. Clearing the box
+  // restores the paginated catalog. A failed search keeps the current grid
+  // and surfaces the error alert instead of emptying the page.
+  useEffect(() => {
+    const query = search.trim();
+    searchRef.current = query;
+
+    if (!query) {
+      // Back to browse mode — refetch the current page (fresh content,
+      // e.g. after a new order deducted stock).
+      fetchPage(page, category, sort);
+      setSearching(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setError('');
+      try {
+        const response = await buyerProductsAPI.searchProducts(query);
+        if (searchRef.current !== query) return; // stale response — ignore
+        setProducts(response.data || []);
+      } catch (err) {
+        if (searchRef.current !== query) return;
+        setError(getErrorMessage(err, 'Failed to search products. Please try again.'));
+      } finally {
+        if (searchRef.current === query) setSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
+
+  const hasQuery = search.trim() !== '';
+
+  // In search mode the pills filter the (complete) search results
+  // client-side; in browse mode the server already applied the category.
+  const filteredProducts = hasQuery
+    ? products.filter((p) => category === 'ALL' || p.category === category)
+    : products;
+
+  const handleCategory = (cat) => {
+    setCategory(cat);
+    if (hasQuery) return; // searching: pills filter results client-side
+    setPage(0);
+    fetchPage(0, cat, sort);
+  };
+
+  const handleSort = (e) => {
+    const value = e.target.value;
+    setSort(value);
+    if (hasQuery) return;
+    setPage(0);
+    fetchPage(0, category, value);
+  };
+
+  // The Pagination component is 1-based; the API is 0-based.
+  const handlePage = (oneBased) => {
+    const next = oneBased - 1;
+    if (next === page) return;
+    setPage(next);
+    fetchPage(next, category, sort);
+  };
 
   const clearFilters = () => {
     setSearch('');
@@ -199,18 +300,40 @@ function BuyerProductsPage() {
             )}
           </div>
 
+          {!hasQuery && (
+            <select
+              className="bp-sort"
+              value={sort}
+              onChange={handleSort}
+              aria-label="Sort products"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          )}
+
           <div className="bp-pills">
-            {categories.map((cat) => (
+            {['ALL', ...categories].map((cat) => (
               <button
                 key={cat}
                 className={`bp-pill ${category === cat ? 'active' : ''}`}
-                onClick={() => setCategory(cat)}
+                onClick={() => handleCategory(cat)}
               >
                 {cat === 'ALL' ? 'All' : cat}
               </button>
             ))}
           </div>
         </div>
+
+        {(searching || paging) && (
+          <div className="bp-search-status" role="status">
+            <span className="spinner" aria-hidden="true" />
+            {searching ? 'Searching…' : 'Loading…'}
+          </div>
+        )}
 
         {error && <div className="alert alert-error">{error}</div>}
 
@@ -222,14 +345,16 @@ function BuyerProductsPage() {
               <Icon name="search" size={28} />
             </span>
             <h2>
-              {products.length === 0 ? 'No products available' : 'No products found'}
+              {hasQuery || totalElements > 0 ? 'No products found' : 'No products available'}
             </h2>
             <p>
-              {products.length === 0
-                ? 'Check back soon — farmers are adding new listings.'
-                : 'Try another search or category.'}
+              {hasQuery
+                ? 'Try a different search term or category.'
+                : totalElements === 0
+                  ? 'Check back soon — farmers are adding new listings.'
+                  : 'Try another category.'}
             </p>
-            {(search || category !== 'ALL') && (
+            {(hasQuery || category !== 'ALL') && (
               <button type="button" className="bp-empty-btn" onClick={clearFilters}>
                 Clear filters
               </button>
@@ -237,6 +362,16 @@ function BuyerProductsPage() {
           </div>
         ) : (
           <div className="bp-grid">{filteredProducts.map(renderCard)}</div>
+        )}
+
+        {!hasQuery && (
+          <Pagination
+            page={page + 1}
+            totalPages={totalPages}
+            onPageChange={handlePage}
+            totalItems={totalElements}
+            pageSize={PAGE_SIZE}
+          />
         )}
       </div>
 

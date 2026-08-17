@@ -24,21 +24,22 @@ Four complementary layers:
 
 ## 2. Backend Unit & Integration Tests (`./mvnw test`)
 
-**Current count: 50 test methods across 6 classes.**
+**Current count: 78 test methods across 9 classes** (verified via `./mvnw test`).
 
 | Test class | Methods | Coverage |
 |---|---|---|
-| `AnalyticsFlowIntegrationTest` | 8 | Admin/farmer/buyer analytics values + authorization matrix (403s) |
-| `EmailNotificationFlowIntegrationTest` | 13 | All 9 email flows (mocked `JavaMailSender`), audience filtering, SMTP-failure non-rollback, cleanup |
+| `AnalyticsFlowIntegrationTest` | 11 | Admin/farmer/buyer analytics values + authorization matrix (403s, JWT-scoped) |
+| `AnalyticsServiceImplTest` | 11 | Analytics service aggregation edge cases (unit) |
+| `EmailNotificationFlowIntegrationTest` | 13 | All email flows (mocked `JavaMailSender`), audience filtering, SMTP-failure non-rollback, cleanup |
 | `FarmerVerificationFlowIntegrationTest` | 10 | Submit/resubmit, approve/reject-with-reason, 403 gates, document rules, buyer visibility |
 | `PasswordResetFlowIntegrationTest` | 7 | Forgot/reset lifecycle, enumeration safety, expiry, single-use tokens |
+| `ProductSearchIntegrationTest` | 6 | Search API: partial match, case-insensitivity, empty results, approval filtering, 403s |
+| `ProductPaginationIntegrationTest` | 8 | Server-side pagination/sorting: page metadata, size, sort, category filter, exact totals, 403s |
 | `SoftDeleteFlowIntegrationTest` | 11 | Deactivate → blocked everywhere → reactivate → restored; data preserved; admin guards |
-| `FramTrustApplicationTests` | 1 | Spring context loads |
+| `FarmBridgeApplicationTests` | 1 | Spring context loads |
 
 Historical progression (from the milestone reports in `docs/reports/`):
-18 → 26 → 39 → **50** (methods were added beyond the counts reported on
-their milestone days; the current total was verified as 50/50 in the
-Release Candidate validation).
+18 → 26 → 39 → 50 → 70 (search added) → **78** (pagination added).
 
 ---
 
@@ -89,7 +90,7 @@ Release Candidate validation).
 
 ## 6. Swagger Verification
 
-- UI: `http://localhost:8080/swagger-ui` — all 74 endpoints listed, grouped
+- UI: `http://localhost:8080/swagger-ui` — all 73 endpoints listed, grouped
   by `@Tag` (Admin, Farmer Products, Orders, Reviews, Wishlist, Notifications,
   Analytics, Password Reset, …).
 - JSON: `http://localhost:8080/v3/api-docs`.
@@ -123,9 +124,9 @@ Release Candidate validation).
 | # | Limitation | Impact / Note |
 |---|---|---|
 | 1 | No load/performance testing yet | NFR-PERF targets (<500 ms, ~100 users) unverified |
-| 2 | Product search by name has no endpoint | Repository support exists; UI search is not wired server-side |
-| 3 | DB password + JWT secret hardcoded in `application.properties` | Local dev only; env-var hardening planned for Phase 12 |
-| 4 | No CI/CD pipeline yet | Tests are run manually / locally |
+| 2 | ~~Product search has no endpoint~~ | **Resolved** — `GET /api/buyer/products/search` + debounced UI + tests |
+| 3 | ~~DB password + JWT secret hardcoded~~ | **Resolved** — env-only placeholders (`${DB_PASSWORD:}` / `${JWT_SECRET:}`) |
+| 4 | ~~No CI/CD pipeline~~ | **Resolved** — GitHub Actions CI/CD with Docker Hub publish
 | 5 | Email delivery is best-effort (no retry queue) | Fail-safe by design; deliveries depend on SMTP provider |
 | 6 | No dedicated unit tests for every service method | Integration + E2E suites cover the main paths |
 | 7 | Notifications use REST polling, not websockets | Acceptable for the current scale |

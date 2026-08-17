@@ -42,16 +42,6 @@ public class AdminController {
     }
 
     // ==========================================
-    // ADMIN GREETING (Stub)
-    // ==========================================
-
-    @GetMapping
-    @Operation(summary = "Admin dashboard greeting", description = "Simple greeting endpoint to verify admin authentication works.")
-    public String adminDashboard() {
-        return "Welcome Admin!";
-    }
-
-    // ==========================================
     // DASHBOARD STATS
     // ==========================================
 

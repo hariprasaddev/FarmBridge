@@ -2185,14 +2185,14 @@ When request validation fails (Jakarta `@Valid`), Spring Boot returns a default 
 MAIL_USERNAME / MAIL_PASSWORD), `APP_BASE_URL`, `APP_RESET_PASSWORD_URL`,
 `APP_SUPPORT_EMAIL` — nothing sensitive for email is hardcoded.
 
-**Still hardcoded in `application.properties` (local dev):**
+**Environment-driven (no defaults — implemented):**
 
-| Key | Current Value | Recommendation |
+| Key | Value | How it is supplied |
 |---|---|---|
-| `spring.datasource.password` | `Hari@1849` | Move to `DB_PASSWORD` env var (planned for the Docker phase) |
-| `jwt.secret` | `FarmTrustSuperSecretKeyForJwtAuthentication2026Secure` | Move to `JWT_SECRET` env var (planned for the Docker phase) |
+| `spring.datasource.password` | `${DB_PASSWORD:}` | `DB_PASSWORD` env var (`.env` / docker-compose / Render) |
+| `jwt.secret` | `${JWT_SECRET:}` | `JWT_SECRET` env var, ≥ 32 chars (`.env` / docker-compose / Render) |
 
-> These will be converted to `${DB_PASSWORD:}` / `${JWT_SECRET:}` placeholders as part of Phase 12 (Docker & deployment).
+> Both placeholders are empty by default — the application will not start without them, which forces correct configuration in every environment.
 
 ---
 

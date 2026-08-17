@@ -3,6 +3,9 @@ package com.farmbridge.controller;
 import com.farmbridge.dto.ProductResponse;
 import com.farmbridge.service.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,14 +22,62 @@ public class BuyerProductController {
     }
 
     // ==========================================
-    // GET ALL PRODUCTS (BUYER BROWSE)
+    // GET ALL PRODUCTS (BUYER BROWSE — PAGINATED)
     // ==========================================
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
+    @Operation(
+            summary = "Get all products (paginated)",
+            description = "Buyer browses products with server-side pagination, sorting and an "
+                    + "optional category filter. Only products of APPROVED farmers are returned "
+                    + "and totalElements reflects that filtered count. "
+                    + "Query params: page (0-based), size, sort (e.g. name,asc | price,desc), category."
+    )
+    public ResponseEntity<Page<ProductResponse>> getAllProducts(
+            @RequestParam(value = "category", required = false) String category,
+            @PageableDefault(size = 12, sort = "id") Pageable pageable) {
+
+        Page<ProductResponse> response =
+                productService.getAllProducts(category, pageable);
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // GET BUYER-VISIBLE CATEGORIES (FILTER PILLS)
+    // ==========================================
+
+    @GetMapping("/categories")
+    @Operation(
+            summary = "Get product categories",
+            description = "Distinct categories present in the buyer-visible catalog (products of "
+                    + "APPROVED farmers only), sorted alphabetically. Used by the filter pills "
+                    + "so the full catalog can stay paginated."
+    )
+    public ResponseEntity<List<String>> getCategories() {
+
+        List<String> response =
+                productService.getBuyerVisibleCategories();
+
+        return ResponseEntity.ok(response);
+    }
+
+    // ==========================================
+    // SEARCH PRODUCTS BY NAME (BUYER VIEW)
+    // ==========================================
+
+    @GetMapping("/search")
+    @Operation(
+            summary = "Search products by name",
+            description = "Buyer searches products by name (case-insensitive, partial match). "
+                    + "Only products of APPROVED farmers are returned — the same "
+                    + "visibility rule as the buyer product listing."
+    )
+    public ResponseEntity<List<ProductResponse>> searchProducts(
+            @RequestParam("name") String name) {
 
         List<ProductResponse> response =
-                productService.getAllProducts();
+                productService.searchProductsByName(name);
 
         return ResponseEntity.ok(response);
     }

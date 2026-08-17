@@ -17,6 +17,7 @@ JWT and a responsive React frontend.
 - Buyer Module
 - Admin Module
 - Product Management
+- Product Search API + Server-Side Pagination & Sorting
 - Order Management
 - Farmer Verification
 - Analytics Dashboards (Admin / Farmer / Buyer)

@@ -2,6 +2,7 @@ package com.farmbridge.config;
 
 import com.farmbridge.security.JwtAuthFilter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,7 +21,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -28,10 +30,18 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
 
+    // Comma-separated list of frontend origins allowed to call this API.
+    // Environment-driven via app.cors.allowed-origins (CORS_ALLOWED_ORIGINS)
+    // so production does not need a code change when the frontend moves.
+    private final String allowedOrigins;
+
     public SecurityConfig(
-            JwtAuthFilter jwtAuthFilter) {
+            JwtAuthFilter jwtAuthFilter,
+            @Value("${app.cors.allowed-origins:http://localhost:5173}")
+            String allowedOrigins) {
 
         this.jwtAuthFilter = jwtAuthFilter;
+        this.allowedOrigins = allowedOrigins;
     }
 
     @Bean
@@ -40,18 +50,24 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // NEW: Defines which frontend origins are allowed to call this API
+    // Defines which frontend origins are allowed to call this API.
+    // Origins come from app.cors.allowed-origins (env-driven), so adding a
+    // new deployment URL is a configuration change, not a code change.
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "https://farmbridge-frontend.onrender.com"
+        configuration.setAllowedOrigins(Arrays.stream(
+                        allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isEmpty())
+                .collect(Collectors.toList())
+        );
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS"
         ));
-        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -89,6 +105,9 @@ public class SecurityConfig {
                         // Swagger UI / OpenAPI docs — public
                         .requestMatchers("/swagger-ui/**").permitAll()
                         .requestMatchers("/v3/api-docs/**").permitAll()
+
+                        // Actuator health — public (used by Docker healthchecks)
+                        .requestMatchers("/actuator/health").permitAll()
 
                         // Role-based APIs
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

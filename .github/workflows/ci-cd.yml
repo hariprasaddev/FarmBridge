@@ -109,6 +109,10 @@ jobs:
           DB_URL: jdbc:mysql://localhost:3306/farmbridge
           DB_USERNAME: farmbridge
           DB_PASSWORD: farmbridge_ci_pass
+          # Throwaway CI-only JWT signing key (>= 32 chars) — the app has
+          # NO default secret, so CI must provide one. Production values
+          # live in the git-ignored .env and are never needed by CI.
+          JWT_SECRET: farmbridge_ci_jwt_secret_2026_for_build_tests_only
         run: |
           # The wrapper is checked in without the executable bit (repo
           # was created on Windows); Linux runners need it set.

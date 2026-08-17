@@ -150,8 +150,8 @@ check "FARMER on /api/buyer/** -> 403" 403
 call GET /api/admin/stats "" "Bearer $B1_TOKEN"
 check "BUYER on /api/admin/** -> 403" 403
 
-call GET /api/test "" "$B1_TOKEN"
-check "authenticated /api/test (any role)" 200 "JWT Authentication is working!"
+call GET /api/buyer/products "" "$B1_TOKEN"
+check "authenticated buyer can browse (any role gate)" 200
 
 # ---------- seed admin early (needed by the verification workflow) ----------
 if [ -n "$MYSQL_JAR" ] && [ -n "$CRYPTO_JAR" ]; then
@@ -390,6 +390,26 @@ if [ "$RESP_CODE" == "200" ] && [ "$(printf '%s' "$RESP_BODY" | python -c 'impor
 else
   echo "FAIL unknown category should return empty list (code=$RESP_CODE)"; FAIL=$((FAIL+1)); FAILED+=("empty category")
 fi
+
+# --- product search (backend API) ---
+call GET "/api/buyer/products/search?name=rice" "" "$B1_TOKEN"
+check "buyer searches products by name" 200 "QA Organic Rice"
+
+call GET "/api/buyer/products/search?name=RICE" "" "$B1_TOKEN"
+check "search is case-insensitive" 200 "QA Organic Rice"
+
+call GET "/api/buyer/products/search?name=NoSuchProduct_$TS" "" "$B1_TOKEN"
+if [ "$RESP_CODE" == "200" ] && [ "$(printf '%s' "$RESP_BODY" | python -c 'import sys,json;print(len(json.load(sys.stdin)))')" == "0" ]; then
+  echo "PASS search unknown term returns empty list"; PASS=$((PASS+1))
+else
+  echo "FAIL search unknown term should return empty list (code=$RESP_CODE)"; FAIL=$((FAIL+1)); FAILED+=("empty search")
+fi
+
+call GET "/api/buyer/products/search?name=rice"
+check "search requires auth -> 403" 403
+
+call GET "/api/buyer/products/search?name=rice" "" "$F1_TOKEN"
+check "FARMER on buyer search -> 403" 403
 
 # --- image upload ---
 python - "$QA_DIR/test.png" <<'PYEOF'

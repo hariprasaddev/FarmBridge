@@ -85,8 +85,8 @@ services:
     networks:
       - farmbridge-network
     healthcheck:
-      # Public OpenAPI docs endpoint → 200 when the app is up.
-      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/v3/api-docs"]
+      # Spring Boot Actuator health endpoint → 200 with {"status":"UP"}.
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/actuator/health"]
       interval: 10s
       timeout: 5s
       retries: 12

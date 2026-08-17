@@ -532,3 +532,36 @@
   font-weight: 700;
   white-space: nowrap;
 }
+
+/* Backend search in-flight indicator (shown while the search request runs) */
+.bp-search-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0 0 0.9rem;
+}
+
+.bp-search-status .spinner {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
+/* Server-side sort dropdown in the toolbar */
+.bp-sort {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+}
+
+.bp-sort:focus-visible {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+}

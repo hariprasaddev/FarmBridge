@@ -60,6 +60,12 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- Actuator — exposes /actuator/health for container & LB probes -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!-- MySQL -->
 		<dependency>
 			<groupId>com.mysql</groupId>

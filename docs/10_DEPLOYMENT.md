@@ -64,7 +64,7 @@ Multi-stage build (FarmBridge/Dockerfile):
     - copy target/FarmBridge-4.1.0.jar → /app/app.jar
     - ENTRYPOINT exec java $JAVA_OPTS -jar /app/app.jar
     - EXPOSE 8080
-    - HEALTHCHECK (after adding Actuator — not yet in pom.xml)
+    - HEALTHCHECK (Spring Boot Actuator `/actuator/health` — implemented)
 Run: docker run -d --name farmbridge-backend -p 8080:8080 -e TZ=Asia/Kolkata \
      -e DB_URL=jdbc:mysql://host.docker.internal:3306/farmbridge \
      -e DB_USERNAME / DB_PASSWORD / JWT_SECRET / MAIL_* farmbridge-backend
@@ -305,12 +305,10 @@ images directly.
 
 ## 6. Health Checks
 
-- Add **Spring Boot Actuator** (planned): `GET /actuator/health` for container
-  and load-balancer probes.
-- Docker `HEALTHCHECK` on backend + MySQL (`mysqladmin ping`).
-- Frontend: nginx `healthz` endpoint; SPA uptime monitor (e.g. UptimeRobot).
-- Custom readiness signal: after startup, `GET /api/test` returns
-  `"JWT Authentication is working!"` (existing endpoint).
+- **Spring Boot Actuator** (implemented): `GET /actuator/health` returns
+  `{"status":"UP"}` — used by the backend container HEALTHCHECK.
+- Docker `HEALTHCHECK` on backend (`/actuator/health`) + MySQL (`mysqladmin ping`).
+- Frontend: nginx image HEALTHCHECK (`wget http://127.0.0.1:8080/`).
 
 ---
 
@@ -327,7 +325,7 @@ images directly.
 
 - [ ] Move DB password + JWT secret to environment variables
 - [ ] Add Flyway or similar migration tool (replace bare `ddl-auto=update`)
-- [ ] Add Spring Boot Actuator health endpoint
+- [x] Add Spring Boot Actuator health endpoint
 - [x] Create the backend Dockerfile + .dockerignore (Phase 12 Step 1 — done 2026-08-07)
 - [x] Create the frontend Dockerfile + .dockerignore + nginx.conf (Phase 12 Step 2 — done 2026-08-07)
 - [x] Create docker-compose.yml + MySQL containerization (Phase 12 Step 3 — done 2026-08-07)

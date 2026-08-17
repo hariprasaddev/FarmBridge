@@ -3,6 +3,7 @@ package com.farmbridge.repository;
 import com.farmbridge.dto.CategoryMetric;
 import com.farmbridge.dto.LowStockProduct;
 import com.farmbridge.entity.Product;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -16,6 +17,39 @@ public interface ProductRepository
         extends JpaRepository<Product, Long> {
     // Search products by name
     List<Product> findByNameContainingIgnoreCase(String name);
+
+    // ==========================================
+    // BUYER-VISIBLE CATALOG (server-side pagination)
+    // ==========================================
+
+    // Paged catalog restricted to products of ACTIVE + APPROVED farmers —
+    // the exact visibility rule of the buyer surfaces. The optional
+    // category filter (case-insensitive) keeps the pills working on the
+    // server, so totalElements always reflects the filtered count.
+    @Query("""
+            SELECT p FROM Product p
+            JOIN p.farmer f
+            JOIN FarmerProfile fp ON fp.user = f
+            WHERE f.active = true
+              AND fp.verificationStatus = com.farmbridge.entity.VerificationStatus.APPROVED
+              AND (:category IS NULL OR LOWER(p.category) = LOWER(:category))
+            """)
+    Page<Product> findBuyerVisible(
+            @Param("category") String category,
+            Pageable pageable
+    );
+
+    // Distinct categories present in the buyer-visible catalog (drives the
+    // category pills without loading every product).
+    @Query("""
+            SELECT DISTINCT p.category FROM Product p
+            JOIN p.farmer f
+            JOIN FarmerProfile fp ON fp.user = f
+            WHERE f.active = true
+              AND fp.verificationStatus = com.farmbridge.entity.VerificationStatus.APPROVED
+            ORDER BY p.category
+            """)
+    List<String> findBuyerVisibleCategories();
 
     // Find products by category
     List<Product> findByCategoryIgnoreCase(String category);

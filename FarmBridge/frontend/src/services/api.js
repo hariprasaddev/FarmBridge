@@ -90,10 +90,19 @@ export const farmerProductsAPI = {
 
 // Buyer Products API
 export const buyerProductsAPI = {
-  getAllProducts: () => api.get('/buyer/products'),
+  // Paged catalog: page (0-based), size, sort (e.g. 'name,asc'), category.
+  // Returns a Spring Page payload: { content, page, size, totalElements,
+  // totalPages, first, last, ... }.
+  getAllProducts: (params) => api.get('/buyer/products', { params }),
+  // Distinct categories of the buyer-visible catalog (filter pills).
+  getCategories: () => api.get('/buyer/products/categories'),
   getProductById: (id) => api.get(`/buyer/products/${id}`),
   getProductsByCategory: (category) =>
     api.get(`/buyer/products/category/${encodeURIComponent(category)}`),
+  // Backend search by name (case-insensitive). Only products of
+  // APPROVED farmers are returned — same rule as the listing.
+  searchProducts: (name) =>
+    api.get('/buyer/products/search', { params: { name } }),
 };
 
 // Buyer Reviews API

@@ -11,7 +11,11 @@ import com.farmbridge.repository.FarmerProfileRepository;
 import com.farmbridge.repository.ProductRepository;
 import com.farmbridge.repository.ReviewRepository;
 import com.farmbridge.repository.UserRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Collection;
@@ -360,6 +364,59 @@ public class ProductServiceImpl implements ProductService {
                         toProductResponse(product, stats, profiles)
                 )
                 .toList();
+    }
+
+    // ==========================================
+    // GET ALL PRODUCTS — PAGINATED (BUYER BROWSE)
+    // ==========================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getAllProducts(
+            String category,
+            Pageable pageable) {
+
+        // Approval + optional category filter happen in the query, so
+        // totalElements is exact (no in-memory filtering on the page).
+        Page<Product> page =
+                productRepository.findBuyerVisible(category, pageable);
+
+        List<Product> products = page.getContent();
+
+        Map<String, FarmerProfile> profiles =
+                loadFarmerProfiles(
+                        farmerEmailsOf(products)
+                );
+
+        Map<Long, RatingStats> stats =
+                loadRatingStats(
+                        products.stream()
+                                .map(Product::getId)
+                                .toList()
+                );
+
+        List<ProductResponse> content = products.stream()
+                .map(product ->
+                        toProductResponse(product, stats, profiles)
+                )
+                .toList();
+
+        return new PageImpl<>(
+                content,
+                pageable,
+                page.getTotalElements()
+        );
+    }
+
+    // ==========================================
+    // GET BUYER-VISIBLE CATEGORIES
+    // ==========================================
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getBuyerVisibleCategories() {
+
+        return productRepository.findBuyerVisibleCategories();
     }
 
     // ==========================================
