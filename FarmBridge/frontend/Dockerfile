@@ -18,7 +18,7 @@ WORKDIR /build
 # Install dependencies first — leverages Docker layer caching:
 # package.json/package-lock.json change far less often than source.
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --include=optional
 
 # Copy the remaining source and build the production bundle.
 # (.dockerignore keeps node_modules / dist / local artifacts out.)
